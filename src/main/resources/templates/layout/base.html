@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/head :: head(${pageTitle})}"></head>
+<body class="bg-background text-on-surface font-body antialiased min-h-screen">
+
+    <!-- Fixed Dual-Tier Top Navigation Bar (Header + Module Horizontal Tabs) -->
+    <header th:replace="~{fragments/topbar :: topbar(${pageTitle})}"></header>
+
+    <!-- Fixed Sub-Tools Sidebar (Positioned from top-28 to bottom-0) -->
+    <aside th:replace="~{fragments/sidebar :: sidebar(${currentPage})}"></aside>
+
+    <!-- Main Content Area with offset for fixed sidebar (pl-64) and topbar (pt-32) -->
+    <div class="pl-64 flex flex-col min-h-screen">
+        <main class="flex-1 w-full pt-32 px-6 lg:px-10 pb-12">
+            <div class="max-w-[1440px] mx-auto w-full">
+                <!-- Flash Alerts Fragment -->
+                <div th:replace="~{fragments/alerts :: alerts}"></div>
+
+                <!-- Page Content Injected Here -->
+                <div th:insert="${content}"></div>
+            </div>
+        </main>
+    </div>
+
+</body>
+</html>

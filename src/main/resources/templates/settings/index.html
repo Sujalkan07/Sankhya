@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: html}"
+      lang="en">
+<body>
+<div th:fragment="content" class="flex flex-col gap-6 max-w-4xl mx-auto">
+
+    <!-- Breadcrumb -->
+    <div class="flex items-center gap-2 text-xs font-semibold text-on-surface-variant">
+        <a th:href="@{/dashboard}" class="hover:text-primary transition-colors flex items-center gap-1">
+            <span class="material-symbols-outlined text-[15px]">home</span>
+            <span>Overview</span>
+        </a>
+        <span class="material-symbols-outlined text-[14px]">chevron_right</span>
+        <span class="text-primary font-bold">Settings</span>
+    </div>
+
+    <div class="space-y-6">
+        <!-- Account Settings Card -->
+        <div class="p-6 lg:p-8 rounded-2xl bg-surface-container-lowest border border-[#E7E9E3] shadow-xs">
+            <div class="flex items-center gap-2 mb-1">
+                <span class="material-symbols-outlined text-primary text-[20px]">manage_accounts</span>
+                <h2 class="font-headline font-bold text-lg text-on-surface">User Account Profile</h2>
+            </div>
+            <p class="text-xs text-tertiary mb-6">Manage your authenticated session and user credentials.</p>
+
+            <div class="space-y-4 max-w-xl text-xs">
+                <div>
+                    <label class="block font-semibold text-on-surface mb-1">Full Name</label>
+                    <input type="text" readonly
+                           th:value="${currentUser != null ? currentUser.fullName : 'Rajesh Kumar'}"
+                           class="w-full px-3.5 py-2.5 bg-surface-container-low rounded-xl text-on-surface border border-transparent font-medium outline-none"/>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-on-surface mb-1">Email Address</label>
+                    <input type="text" readonly
+                           th:value="${currentUser != null ? currentUser.username : 'manager@supermarket.com'}"
+                           class="w-full px-3.5 py-2.5 bg-surface-container-low rounded-xl text-on-surface border border-transparent font-medium outline-none"/>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-on-surface mb-1">Authority Role</label>
+                    <input type="text" readonly
+                           th:value="${currentUser != null ? currentUser.authorities : '[ROLE_USER]'}"
+                           class="w-full px-3.5 py-2.5 bg-surface-container-low rounded-xl text-on-surface border border-transparent font-mono outline-none"/>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Store Context Card -->
+        <div class="p-6 lg:p-8 rounded-2xl bg-surface-container-lowest border border-[#E7E9E3] shadow-xs">
+            <div class="flex items-center gap-2 mb-1">
+                <span class="material-symbols-outlined text-primary text-[20px]">storefront</span>
+                <h2 class="font-headline font-bold text-lg text-on-surface">Active Store Context</h2>
+            </div>
+            <p class="text-xs text-tertiary mb-6">Currently active supermarket workspace in session.</p>
+
+            <div class="p-4 rounded-xl bg-surface-container-low border border-primary/20 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <span class="w-10 h-10 rounded-xl bg-primary text-on-primary flex items-center justify-center shadow-xs">
+                        <span class="material-symbols-outlined text-[20px]">storefront</span>
+                    </span>
+                    <div>
+                        <div class="font-bold text-sm text-on-surface"
+                             th:text="${activeWorkspace != null ? activeWorkspace.name : 'No Workspace Selected'}">
+                            Green Basket Supermarket
+                        </div>
+                        <div class="text-xs text-tertiary"
+                             th:text="${activeWorkspace != null ? activeWorkspace.description : 'Standard store branch'}">
+                            Primary retail hypermarket branch.
+                        </div>
+                    </div>
+                </div>
+
+                <a th:href="@{/workspaces}"
+                   class="px-4 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-bold border border-[#E7E9E3] transition-colors">
+                    Manage Stores
+                </a>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

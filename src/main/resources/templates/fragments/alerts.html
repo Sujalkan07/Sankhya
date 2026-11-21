@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="alerts">
+    <!-- Success Alert -->
+    <div th:if="${successMessage != null}"
+         class="mb-6 flex items-center justify-between p-4 rounded-xl bg-surface-container-low border border-primary/20 text-on-surface shadow-xs transition-all">
+        <div class="flex items-center gap-3">
+            <span class="w-8 h-8 rounded-lg bg-primary text-on-primary flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined text-[20px]">check_circle</span>
+            </span>
+            <span class="text-sm font-medium" th:text="${successMessage}">Operation successful!</span>
+        </div>
+        <button type="button" onclick="this.parentElement.remove()" class="text-on-surface-variant hover:text-on-surface p-1">
+            <span class="material-symbols-outlined text-[18px]">close</span>
+        </button>
+    </div>
+
+    <!-- Error Alert -->
+    <div th:if="${errorMessage != null}"
+         class="mb-6 flex items-center justify-between p-4 rounded-xl bg-error-container/60 border border-error/20 text-on-surface shadow-xs transition-all">
+        <div class="flex items-center gap-3">
+            <span class="w-8 h-8 rounded-lg bg-error text-on-primary flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined text-[20px]">error</span>
+            </span>
+            <span class="text-sm font-medium text-error" th:text="${errorMessage}">An error occurred!</span>
+        </div>
+        <button type="button" onclick="this.parentElement.remove()" class="text-error/70 hover:text-error p-1">
+            <span class="material-symbols-outlined text-[18px]">close</span>
+        </button>
+    </div>
+
+    <!-- Warning Alert -->
+    <div th:if="${warningMessage != null}"
+         class="mb-6 flex items-center justify-between p-4 rounded-xl bg-tertiary-fixed/30 border border-tertiary/20 text-on-surface shadow-xs transition-all">
+        <div class="flex items-center gap-3">
+            <span class="w-8 h-8 rounded-lg bg-tertiary text-on-primary flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined text-[20px]">warning</span>
+            </span>
+            <span class="text-sm font-medium" th:text="${warningMessage}">Warning notification</span>
+        </div>
+        <button type="button" onclick="this.parentElement.remove()" class="text-on-surface-variant hover:text-on-surface p-1">
+            <span class="material-symbols-outlined text-[18px]">close</span>
+        </button>
+    </div>
+
+    <!-- Info Alert -->
+    <div th:if="${infoMessage != null}"
+         class="mb-6 flex items-center justify-between p-4 rounded-xl bg-surface-container border border-outline-variant text-on-surface shadow-xs transition-all">
+        <div class="flex items-center gap-3">
+            <span class="w-8 h-8 rounded-lg bg-secondary text-on-primary flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined text-[20px]">info</span>
+            </span>
+            <span class="text-sm font-medium" th:text="${infoMessage}">Information message</span>
+        </div>
+        <button type="button" onclick="this.parentElement.remove()" class="text-on-surface-variant hover:text-on-surface p-1">
+            <span class="material-symbols-outlined text-[18px]">close</span>
+        </button>
+    </div>
+</div>
+</body>
+</html>

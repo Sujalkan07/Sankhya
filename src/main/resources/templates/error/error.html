@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/head :: head('Application Error')}"></head>
+<body class="bg-background text-on-surface font-body antialiased min-h-screen flex items-center justify-center p-4">
+
+    <div class="max-w-md w-full p-8 rounded-2xl bg-surface-container-lowest border border-outline-variant shadow-md text-center">
+        <div class="w-16 h-16 rounded-2xl bg-error-container/60 text-error flex items-center justify-center mx-auto mb-4">
+            <span class="material-symbols-outlined text-[32px]">warning</span>
+        </div>
+
+        <div class="text-xs font-mono font-bold text-error uppercase mb-1" th:text="'Error ' + ${errorCode != null ? errorCode : 500}">
+            Error 404
+        </div>
+
+        <h1 class="font-headline font-bold text-xl text-on-surface mb-2"
+            th:text="${errorTitle != null ? errorTitle : 'Application Error'}">
+            Resource Not Found
+        </h1>
+
+        <p class="text-xs text-on-surface-variant mb-6 leading-relaxed"
+           th:text="${errorMessage != null ? errorMessage : 'The requested resource was not found.'}">
+            The requested resource was not found.
+        </p>
+
+        <a th:href="@{/dashboard}"
+           class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-on-primary font-headline text-xs font-bold transition-all">
+            <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+            <span>Return to Dashboard</span>
+        </a>
+    </div>
+
+</body>
+</html>

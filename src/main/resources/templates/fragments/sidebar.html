@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<aside th:fragment="sidebar(currentPage)"
+       class="fixed left-0 top-28 bottom-0 w-64 bg-surface-container-lowest border-r border-[#E7E9E3] shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-30 flex flex-col justify-between py-3 overflow-y-auto">
+
+    <!-- Top Section: Intelligence Sub-Tools & Department Pivots (From Stitch Reference) -->
+    <div class="flex flex-col gap-3 px-3">
+        <!-- Sub-Tools Header -->
+        <div class="px-2 py-1 flex items-center justify-between">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-tertiary">Intelligence Sub-Tools</span>
+            <span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+        </div>
+
+        <!-- Sub-Tools Navigation -->
+        <nav class="flex flex-col gap-1">
+            <!-- Overview: KPI Command Core -->
+            <a th:href="@{/dashboard}"
+               th:classappend="${currentPage == 'overview' ? 'bg-surface-container text-primary font-bold shadow-xs' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors">
+                <span class="material-symbols-outlined text-[18px]">speed</span>
+                <span>KPI Command Core</span>
+            </a>
+
+            <!-- Sales: Revenue & Baskets -->
+            <a th:href="@{/analytics/sales}"
+               th:classappend="${currentPage == 'sales-analytics' ? 'bg-surface-container text-primary font-bold shadow-xs' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors">
+                <span class="material-symbols-outlined text-[18px]">payments</span>
+                <span>Revenue & Baskets</span>
+            </a>
+
+            <!-- Customers: Cohort Dynamics -->
+            <a th:href="@{/analytics/customers}"
+               th:classappend="${currentPage == 'customer-intelligence' ? 'bg-surface-container text-primary font-bold shadow-xs' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors">
+                <span class="material-symbols-outlined text-[18px]">group</span>
+                <span>Cohort Dynamics</span>
+            </a>
+
+            <!-- Recommendations: Cross-Sell Neural ML -->
+            <a th:href="@{/analytics/recommendations}"
+               th:classappend="${currentPage == 'recommendations' ? 'bg-surface-container text-primary font-bold shadow-xs' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors">
+                <span class="material-symbols-outlined text-[18px]">auto_awesome</span>
+                <span>Cross-Sell Neural ML</span>
+            </a>
+
+            <!-- Inventory: Spoilage & Stock Drift -->
+            <a th:href="@{/analytics/inventory}"
+               th:classappend="${currentPage == 'inventory' ? 'bg-surface-container text-primary font-bold shadow-xs' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors">
+                <span class="material-symbols-outlined text-[18px]">warehouse</span>
+                <span>Spoilage & Stock Drift</span>
+            </a>
+
+            <!-- Products: SKU Margins & Velocity -->
+            <a th:href="@{/analytics/products}"
+               th:classappend="${currentPage == 'product-intelligence' ? 'bg-surface-container text-primary font-bold shadow-xs' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors">
+                <span class="material-symbols-outlined text-[18px]">category</span>
+                <span>SKU Margins & Velocity</span>
+            </a>
+
+            <!-- AI Insights: Executive Forecasts -->
+            <a th:href="@{/analytics/ai-insights}"
+               th:classappend="${currentPage == 'ai-insights' ? 'bg-surface-container text-primary font-bold shadow-xs' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors">
+                <span class="material-symbols-outlined text-[18px]">query_stats</span>
+                <span>Executive Forecasts</span>
+            </a>
+
+            <!-- Datasets: Dataset Pipeline Sync -->
+            <a th:href="@{/datasets}"
+               th:classappend="${currentPage == 'dataset-management' ? 'bg-surface-container text-primary font-bold shadow-xs' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors">
+                <span class="material-symbols-outlined text-[18px]">table_chart</span>
+                <span>Dataset Pipeline Sync</span>
+            </a>
+        </nav>
+
+        <!-- Department Pivot Breakdown (Direct from Stitch Reference) -->
+        <div class="mt-2 pt-2 border-t border-[#E7E9E3]">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-tertiary px-2">Department Pivot</span>
+            <div class="mt-1 flex flex-col gap-1">
+                <div class="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-surface-container-low text-on-surface text-xs font-medium">
+                    <span>Produce & Fresh</span>
+                    <span class="font-mono text-primary font-bold text-[11px]">98.2%</span>
+                </div>
+                <div class="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container text-xs transition-colors">
+                    <span>Dairy & Chilled</span>
+                    <span class="font-mono text-tertiary text-[11px]">94.1%</span>
+                </div>
+                <div class="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container text-xs transition-colors">
+                    <span>FMCG & Groceries</span>
+                    <span class="font-mono text-tertiary text-[11px]">99.4%</span>
+                </div>
+                <div class="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container text-xs transition-colors">
+                    <span>Frozen Foods</span>
+                    <span class="font-mono text-tertiary text-[11px]">91.8%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Section: Telemetry Badge + Utilities (From Stitch Reference) -->
+    <div class="px-3 flex flex-col gap-2 pt-2 border-t border-[#E7E9E3]">
+        <!-- ML Pipeline Status Card -->
+        <div class="p-2.5 rounded-xl bg-surface-container-low flex flex-col gap-1 text-[11px] border border-[#E7E9E3]">
+            <div class="flex items-center gap-1.5 text-primary font-bold">
+                <span class="material-symbols-outlined text-[15px]">model_training</span>
+                <span>Model Pipeline Ready</span>
+            </div>
+            <p class="text-[10px] text-tertiary leading-tight">
+                ML Inference latency &lt;14ms • Schema validated for multi-table ingestion.
+            </p>
+        </div>
+
+        <!-- Workspace Manager Link -->
+        <a th:href="@{/workspaces}"
+           th:classappend="${currentPage == 'workspaces' ? 'bg-surface-container text-primary font-bold shadow-xs' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}"
+           class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs transition-colors">
+            <span class="material-symbols-outlined text-[18px]">workspaces</span>
+            <span>Workspace Manager</span>
+        </a>
+
+        <!-- Settings Link -->
+        <a th:href="@{/settings}"
+           th:classappend="${currentPage == 'settings' ? 'bg-surface-container text-primary font-bold shadow-xs' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}"
+           class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs transition-colors">
+            <span class="material-symbols-outlined text-[18px]">settings</span>
+            <span>Settings</span>
+        </a>
+
+        <!-- Sign Out Button -->
+        <form th:action="@{/logout}" method="post" class="w-full">
+            <button type="submit"
+                    class="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs text-error hover:bg-error-container/60 transition-colors text-left cursor-pointer">
+                <span class="material-symbols-outlined text-[18px]">logout</span>
+                <span>Sign Out</span>
+            </button>
+        </form>
+    </div>
+</aside>
+</body>
+</html>

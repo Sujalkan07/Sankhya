@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: html}"
+      lang="en">
+<body>
+<div th:fragment="content" class="flex flex-col gap-6">
+
+    <!-- Top Summary Banner (Matching Stitch Reference) -->
+    <div class="relative overflow-hidden rounded-2xl bg-surface-container-lowest p-6 lg:p-8 border border-[#E7E9E3] shadow-xs">
+        <div class="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-primary/5 blur-2xl pointer-events-none"></div>
+
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
+            <div>
+                <div class="flex items-center gap-2 mb-1.5">
+                    <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-[#56DA33]/20 text-[#125B00] tracking-wider uppercase">
+                        Live Store Context
+                    </span>
+                    <span class="text-tertiary text-xs">
+                        • Phase 1 Foundation Active
+                    </span>
+                </div>
+                <h1 class="font-headline font-bold text-2xl lg:text-3xl text-on-surface tracking-tight">
+                    Executive Overview Dashboard
+                </h1>
+                <p class="text-xs text-tertiary mt-1">
+                    Real-time retail telemetry and operational sales performance for
+                    <strong class="text-on-surface" th:text="${activeWorkspace != null ? activeWorkspace.name : 'Supermarket'}">Green Basket Supermarket</strong>
+                </p>
+            </div>
+
+            <div class="flex items-center gap-3 flex-wrap">
+                <a th:href="@{/workspaces}"
+                   class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface text-xs font-semibold border border-[#E7E9E3] shadow-xs transition-all">
+                    <span class="material-symbols-outlined text-[18px] text-primary">workspaces</span>
+                    <span>Manage Stores</span>
+                </a>
+                <a th:href="@{/datasets}"
+                   class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-on-primary font-headline text-xs font-bold shadow-xs transition-all">
+                    <span class="material-symbols-outlined text-[18px]">table_chart</span>
+                    <span>Dataset Pipeline (Phase 2)</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2-COLUMN GRID (Matching Stitch Screen: Welcome & Store Parameters + Ingestion Pipeline) -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+        <!-- ================= LEFT COLUMN: HERO + STORE SETUP & CONFIGURATION (5 Cols) ================= -->
+        <div class="lg:col-span-5 flex flex-col gap-6">
+
+            <!-- Hero Section Description Banner -->
+            <div class="flex flex-col gap-3">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#E6F1E1] border border-[#BDCBB3]/50 text-primary w-fit shadow-xs">
+                    <span class="material-symbols-outlined text-[16px]">verified</span>
+                    <span class="text-xs font-semibold tracking-wide">Automated Retail Intelligence Pipeline</span>
+                </div>
+
+                <h2 class="font-headline text-2xl xl:text-3xl text-on-surface font-extrabold tracking-tight leading-tight">
+                    Turn Your Supermarket Data Into
+                    <span class="relative inline-block text-primary underline decoration-[#56DA33] decoration-wavy decoration-2 underline-offset-4">
+                        Smart Decisions
+                    </span>
+                </h2>
+
+                <p class="text-on-surface-variant text-xs leading-relaxed">
+                    Ingest point-of-sale logs, inventory tables, and customer history. Sankhya's automated models synthesize retail telemetry into actionable merchandising, pricing, and replenishment decisions.
+                </p>
+
+                <!-- 4 Feature Badges in 2x2 Grid (From Stitch Reference) -->
+                <div class="grid grid-cols-2 gap-2 pt-1">
+                    <div class="flex items-center gap-2 bg-surface-container-lowest border border-[#E7E9E3] px-3 py-2 rounded-lg shadow-xs">
+                        <span class="material-symbols-outlined text-primary text-[18px]">hub</span>
+                        <span class="text-xs font-semibold text-on-surface">Apriori Mining</span>
+                    </div>
+                    <div class="flex items-center gap-2 bg-surface-container-lowest border border-[#E7E9E3] px-3 py-2 rounded-lg shadow-xs">
+                        <span class="material-symbols-outlined text-secondary text-[18px]">bubble_chart</span>
+                        <span class="text-xs font-semibold text-on-surface">K-Means Clusters</span>
+                    </div>
+                    <div class="flex items-center gap-2 bg-surface-container-lowest border border-[#E7E9E3] px-3 py-2 rounded-lg shadow-xs">
+                        <span class="material-symbols-outlined text-primary text-[18px]">trending_up</span>
+                        <span class="text-xs font-semibold text-on-surface">Demand Forecasts</span>
+                    </div>
+                    <div class="flex items-center gap-2 bg-surface-container-lowest border border-[#E7E9E3] px-3 py-2 rounded-lg shadow-xs">
+                        <span class="material-symbols-outlined text-secondary text-[18px]">currency_rupee</span>
+                        <span class="text-xs font-semibold text-on-surface">Profit Margins</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Store Parameters & Configuration Card (From Stitch Reference) -->
+            <div class="bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs flex flex-col">
+                <div class="flex items-center justify-between pb-3.5 mb-4 border-b border-[#E7E9E3]">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-lg bg-surface-container-low flex items-center justify-center text-primary">
+                            <span class="material-symbols-outlined text-[20px]">storefront</span>
+                        </div>
+                        <div>
+                            <h3 class="font-headline text-sm font-bold text-on-surface">Store Parameters & Configuration</h3>
+                            <p class="text-[11px] text-on-surface-variant">Calibrate algorithmic baseline to your store format</p>
+                        </div>
+                    </div>
+                    <span class="text-[10px] bg-[#EFF9E9] text-primary border border-primary/20 font-bold px-2 py-0.5 rounded-full">
+                        Active Store
+                    </span>
+                </div>
+
+                <div class="space-y-3.5">
+                    <!-- Store Name & Location -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-on-surface-variant mb-1">Supermarket Name</label>
+                            <div class="relative">
+                                <span class="material-symbols-outlined absolute left-2.5 top-2 text-tertiary text-[16px]">store</span>
+                                <input type="text" readonly
+                                       th:value="${activeWorkspace != null ? activeWorkspace.name : 'Green Basket Supermarket'}"
+                                       class="w-full pl-8 pr-2.5 py-1.5 text-xs bg-surface-container-low rounded-lg text-on-surface font-semibold outline-none border border-transparent"/>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-on-surface-variant mb-1">Location / Hub</label>
+                            <div class="relative">
+                                <span class="material-symbols-outlined absolute left-2.5 top-2 text-tertiary text-[16px]">location_on</span>
+                                <input type="text" readonly value="Vijayawada, AP"
+                                       class="w-full pl-8 pr-2.5 py-1.5 text-xs bg-surface-container-low rounded-lg text-on-surface font-semibold outline-none border border-transparent"/>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Store Classification Pills -->
+                    <div>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="block text-[11px] font-semibold text-on-surface-variant">Store Classification</label>
+                            <span class="text-[10px] text-tertiary">Selected Format</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 text-xs">
+                            <div class="flex items-center justify-between px-3 py-2 rounded-lg bg-inverse-surface text-inverse-on-surface font-semibold">
+                                <span>General Supermarket</span>
+                                <span class="material-symbols-outlined text-[16px] text-primary-fixed">check_circle</span>
+                            </div>
+                            <div class="flex items-center justify-between px-3 py-2 rounded-lg bg-surface-container-low text-on-surface font-medium">
+                                <span>Grocery Store</span>
+                                <span class="material-symbols-outlined text-[16px] text-transparent">check_circle</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Store Footprint & POS Lanes + Operations Lead -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-on-surface-variant mb-1">POS Billing Lanes</label>
+                            <div class="relative">
+                                <span class="material-symbols-outlined absolute left-2.5 top-2 text-tertiary text-[16px]">point_of_sale</span>
+                                <input type="text" readonly value="14 Active POS Lanes"
+                                       class="w-full pl-8 pr-2.5 py-1.5 text-xs bg-surface-container-low rounded-lg text-on-surface font-semibold outline-none border border-transparent"/>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-on-surface-variant mb-1">Operations Lead</label>
+                            <div class="relative">
+                                <span class="material-symbols-outlined absolute left-2.5 top-2 text-tertiary text-[16px]">badge</span>
+                                <input type="text" readonly
+                                       th:value="${currentUser != null ? currentUser.fullName + ' (Owner)' : 'Rajesh Kumar (Owner)'}"
+                                       class="w-full pl-8 pr-2.5 py-1.5 text-xs bg-surface-container-low rounded-lg text-on-surface font-semibold outline-none border border-transparent"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-3 border-t border-[#E7E9E3] flex items-center gap-2 text-[11px] text-on-surface-variant">
+                    <span class="material-symbols-outlined text-primary text-[16px] shrink-0">tune</span>
+                    <span>K-Means cluster bounds and Apriori min-support thresholds automatically calibrated for this store format.</span>
+                </div>
+            </div>
+
+            <!-- Privacy & Compliance Assurance Badges (From Stitch Reference) -->
+            <div class="bg-surface-container-lowest border border-[#E7E9E3] rounded-xl px-4 py-3 flex items-center justify-between text-xs text-on-surface-variant shadow-xs">
+                <div class="flex items-center gap-1.5 font-medium text-on-surface">
+                    <span class="material-symbols-outlined text-primary text-[17px]">lock</span>
+                    <span>100% On-Premise Privacy</span>
+                </div>
+                <span class="text-outline-variant">•</span>
+                <div class="flex items-center gap-1.5 font-medium text-on-surface">
+                    <span class="material-symbols-outlined text-secondary text-[17px]">verified_user</span>
+                    <span>ISO 27001 Certified</span>
+                </div>
+                <span class="text-outline-variant">•</span>
+                <div class="flex items-center gap-1.5 font-medium text-on-surface">
+                    <span class="material-symbols-outlined text-primary text-[17px]">bolt</span>
+                    <span>Instant ML Inference</span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ================= RIGHT COLUMN: DATASET PIPELINE INGESTION (7 Cols) ================= -->
+        <div class="lg:col-span-7 flex flex-col gap-6">
+
+            <div class="bg-surface-container-lowest rounded-2xl p-6 lg:p-7 border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
+                <!-- Ingestion Section Header -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-5 border-b border-[#E7E9E3] gap-3">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-lg bg-[#EFF9E9] text-primary flex items-center justify-center">
+                            <span class="material-symbols-outlined text-[20px]">cloud_sync</span>
+                        </div>
+                        <div>
+                            <h3 class="font-headline text-base font-bold text-on-surface">Dataset Pipeline Ingestion</h3>
+                            <p class="text-[11px] text-on-surface-variant">Multi-table tabular ingestion engine with automated schema mapping</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-[#E6F1E1] text-[#125B00] border border-primary/20">
+                            <span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+                            Step 1 of 2: Multi-Table Import
+                        </span>
+                    </div>
+                </div>
+
+                <!-- 4 Ingestion Cards: 2x2 Grid (From Stitch Screen) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 mb-5">
+                    <!-- Card 1: Sales Transactions -->
+                    <div class="p-3.5 rounded-xl bg-surface-container-low border border-[#E7E9E3] flex flex-col justify-between relative overflow-hidden">
+                        <div class="flex items-start justify-between mb-2">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-8 h-8 rounded-lg bg-surface-container-lowest flex items-center justify-center text-primary shadow-xs border border-[#E7E9E3]">
+                                    <span class="material-symbols-outlined text-[18px]">receipt_long</span>
+                                </div>
+                                <div>
+                                    <div class="text-xs font-bold text-on-surface">Sales Transactions</div>
+                                    <div class="text-[10px] text-tertiary">CSV / Excel Format</div>
+                                </div>
+                            </div>
+                            <span class="inline-flex items-center gap-1 bg-[#EFF9E9] text-primary border border-primary/20 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                Ready for Phase 2
+                            </span>
+                        </div>
+                        <div class="text-[11px] font-mono text-on-surface truncate bg-surface-container-lowest px-2.5 py-1.5 rounded border border-[#E7E9E3]">
+                            📄 sales_transactions.csv
+                        </div>
+                        <div class="mt-2.5 pt-2 border-t border-[#E7E9E3] flex items-center justify-between text-xs">
+                            <span class="text-tertiary text-[11px]">Schema: Invoice, Date, SKU, Qty, Price</span>
+                            <span class="font-bold text-primary text-[11px]">Target: 100k+ rows</span>
+                        </div>
+                    </div>
+
+                    <!-- Card 2: Customer Registry -->
+                    <div class="p-3.5 rounded-xl bg-surface-container-low border border-[#E7E9E3] flex flex-col justify-between relative overflow-hidden">
+                        <div class="flex items-start justify-between mb-2">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-8 h-8 rounded-lg bg-surface-container-lowest flex items-center justify-center text-secondary shadow-xs border border-[#E7E9E3]">
+                                    <span class="material-symbols-outlined text-[18px]">group</span>
+                                </div>
+                                <div>
+                                    <div class="text-xs font-bold text-on-surface">Customer Registry</div>
+                                    <div class="text-[10px] text-tertiary">CSV Format</div>
+                                </div>
+                            </div>
+                            <span class="inline-flex items-center gap-1 bg-[#EFF9E9] text-primary border border-primary/20 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                Ready for Phase 2
+                            </span>
+                        </div>
+                        <div class="text-[11px] font-mono text-on-surface truncate bg-surface-container-lowest px-2.5 py-1.5 rounded border border-[#E7E9E3]">
+                            📄 customer_profiles.csv
+                        </div>
+                        <div class="mt-2.5 pt-2 border-t border-[#E7E9E3] flex items-center justify-between text-xs">
+                            <span class="text-tertiary text-[11px]">Schema: CustomerID, Segment, Joined</span>
+                            <span class="font-bold text-primary text-[11px]">Target: 15k+ profiles</span>
+                        </div>
+                    </div>
+
+                    <!-- Card 3: Product Master Catalog -->
+                    <div class="p-3.5 rounded-xl bg-surface-container-low border border-[#E7E9E3] flex flex-col justify-between relative overflow-hidden">
+                        <div class="flex items-start justify-between mb-2">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-8 h-8 rounded-lg bg-surface-container-lowest flex items-center justify-center text-primary shadow-xs border border-[#E7E9E3]">
+                                    <span class="material-symbols-outlined text-[18px]">inventory_2</span>
+                                </div>
+                                <div>
+                                    <div class="text-xs font-bold text-on-surface">Product Master Catalog</div>
+                                    <div class="text-[10px] text-tertiary">Excel Format (.xlsx)</div>
+                                </div>
+                            </div>
+                            <span class="inline-flex items-center gap-1 bg-[#EFF9E9] text-primary border border-primary/20 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                Ready for Phase 2
+                            </span>
+                        </div>
+                        <div class="text-[11px] font-mono text-on-surface truncate bg-surface-container-lowest px-2.5 py-1.5 rounded border border-[#E7E9E3]">
+                            📊 inventory_catalog.xlsx
+                        </div>
+                        <div class="mt-2.5 pt-2 border-t border-[#E7E9E3] flex items-center justify-between text-xs">
+                            <span class="text-tertiary text-[11px]">Schema: SKU, Category, Cost, Margin</span>
+                            <span class="font-bold text-primary text-[11px]">Target: 2,500+ SKUs</span>
+                        </div>
+                    </div>
+
+                    <!-- Card 4: Inventory & Warehouse Stock -->
+                    <div class="p-3.5 rounded-xl bg-surface-container-low border border-[#E7E9E3] flex flex-col justify-between relative overflow-hidden">
+                        <div class="flex items-start justify-between mb-2">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-8 h-8 rounded-lg bg-surface-container-lowest flex items-center justify-center text-secondary shadow-xs border border-[#E7E9E3]">
+                                    <span class="material-symbols-outlined text-[18px]">warehouse</span>
+                                </div>
+                                <div>
+                                    <div class="text-xs font-bold text-on-surface">Inventory & Stock Levels</div>
+                                    <div class="text-[10px] text-tertiary">Excel Format (.xlsx)</div>
+                                </div>
+                            </div>
+                            <span class="inline-flex items-center gap-1 bg-[#EFF9E9] text-primary border border-primary/20 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                Ready for Phase 2
+                            </span>
+                        </div>
+                        <div class="text-[11px] font-mono text-on-surface truncate bg-surface-container-lowest px-2.5 py-1.5 rounded border border-[#E7E9E3]">
+                            📊 stock_levels_current.xlsx
+                        </div>
+                        <div class="mt-2.5 pt-2 border-t border-[#E7E9E3] flex items-center justify-between text-xs">
+                            <span class="text-tertiary text-[11px]">Schema: SKU, ReorderPoint, LeadDays</span>
+                            <span class="font-bold text-primary text-[11px]">Real-Time Sync</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Custom Dashed Border Drag & Drop Area (From Stitch Reference) -->
+                <div class="custom-dashed-border bg-surface-container-low/60 hover:bg-surface-container-low rounded-xl p-5 flex flex-col items-center justify-center text-center transition-all mb-5">
+                    <div class="w-10 h-10 mb-2 rounded-full bg-surface-container-lowest border border-[#E7E9E3] flex items-center justify-center text-primary shadow-xs">
+                        <span class="material-symbols-outlined text-[22px]">upload_file</span>
+                    </div>
+                    <div class="text-xs font-bold text-on-surface">
+                        Multi-Table Tabular Ingestion Dropzone
+                    </div>
+                    <p class="text-[11px] text-on-surface-variant mt-0.5">
+                        Supports automated multi-sheet schema parsing for <strong class="text-on-surface">.CSV</strong> and <strong class="text-on-surface">.XLSX</strong> tables up to 100MB
+                    </p>
+                </div>
+
+                <!-- Primary Action CTA Button (Bright #56DA33 container styling from Stitch Reference) -->
+                <div class="flex flex-col gap-2">
+                    <a th:href="@{/datasets}"
+                       class="w-full py-3.5 px-6 rounded-xl bg-[#56DA33] hover:bg-[#48c529] text-[#141E14] font-headline text-sm font-extrabold tracking-tight shadow-sm hover:shadow transition-all flex items-center justify-center gap-2.5 group active:scale-[0.99] border border-primary/20">
+                        <span class="tracking-wide">PREPARE DATASET PIPELINE (PHASE 2)</span>
+                        <span class="material-symbols-outlined text-[20px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                    </a>
+                    <p class="text-[11px] text-on-surface-variant text-center font-medium">
+                        Your supermarket dataset will be validated and modeled to generate your intelligence dashboards.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Quick Stats & Pipeline Readiness Summary Bar (From Stitch Reference) -->
+            <div class="bg-surface-container-lowest border border-[#E7E9E3] rounded-2xl p-4 shadow-xs grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-[#EFF9E9] text-primary flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined text-[18px]">fact_check</span>
+                    </div>
+                    <div>
+                        <div class="text-[10px] text-on-surface-variant font-medium">Data Integrity</div>
+                        <div class="text-xs font-bold text-on-surface font-mono">100% Target</div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2.5 border-l border-[#E7E9E3] pl-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-[#EFF9E9] text-primary flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined text-[18px]">view_timeline</span>
+                    </div>
+                    <div>
+                        <div class="text-[10px] text-on-surface-variant font-medium">Transaction Span</div>
+                        <div class="text-xs font-bold text-on-surface font-mono">2-3 Yr History</div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2.5 border-l border-[#E7E9E3] pl-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-[#EFF9E9] text-secondary flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined text-[18px]">shopping_cart</span>
+                    </div>
+                    <div>
+                        <div class="text-[10px] text-on-surface-variant font-medium">Total Baskets</div>
+                        <div class="text-xs font-bold text-on-surface font-mono">Awaiting Sync</div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2.5 border-l border-[#E7E9E3] pl-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-[#EFF9E9] text-primary flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined text-[18px]">auto_graph</span>
+                    </div>
+                    <div>
+                        <div class="text-[10px] text-on-surface-variant font-medium">Pipeline Readiness</div>
+                        <div class="text-xs font-bold text-primary">Phase 1 Complete</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Central Empty Analytical Dashboard State (Strictly NO fabricated business metrics) -->
+    <div class="rounded-2xl bg-surface-container-lowest border border-[#E7E9E3] shadow-xs p-8 lg:p-12 flex flex-col items-center justify-center text-center relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-b from-surface-container-low/40 to-transparent pointer-events-none"></div>
+
+        <!-- Analytical Empty State Stylized Illustration -->
+        <div class="relative z-10 w-20 h-20 mb-4 rounded-2xl bg-[#EFF9E9] border border-primary/20 flex items-center justify-center text-primary shadow-xs">
+            <svg class="w-10 h-10" fill="none" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+                <rect x="8" y="12" width="48" height="40" rx="8" fill="currentColor" fill-opacity="0.1"></rect>
+                <path d="M16 40L24 30L34 38L48 20" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+                <circle cx="16" cy="40" r="3.5" fill="currentColor"></circle>
+                <circle cx="24" cy="30" r="3.5" fill="currentColor"></circle>
+                <circle cx="34" cy="38" r="3.5" fill="currentColor"></circle>
+                <circle cx="48" cy="20" r="3.5" fill="#ffd643"></circle>
+                <path d="M12 48H52" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 3"></path>
+                <path d="M22 18H42" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+            </svg>
+        </div>
+
+        <div class="relative z-10 max-w-2xl space-y-1.5 mb-5">
+            <h2 class="font-headline font-bold text-xl lg:text-2xl text-on-surface tracking-tight">
+                Analytical Data Pipeline Pending
+            </h2>
+            <p class="text-xs text-on-surface-variant leading-relaxed">
+                Sales trends, customer cohorts, market basket recommendations, and inventory predictions will populate here automatically once your point-of-sale dataset is uploaded in Phase 2.
+            </p>
+        </div>
+
+        <!-- Capability Badges -->
+        <div class="relative z-10 flex flex-wrap items-center justify-center gap-2 max-w-2xl mb-6">
+            <span class="px-3 py-1.5 rounded-full bg-surface-container-low text-xs font-semibold text-on-surface border border-[#E7E9E3] flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-primary"></span> Revenue & Margins
+            </span>
+            <span class="px-3 py-1.5 rounded-full bg-surface-container-low text-xs font-semibold text-on-surface border border-[#E7E9E3] flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-primary"></span> SKU Velocity
+            </span>
+            <span class="px-3 py-1.5 rounded-full bg-surface-container-low text-xs font-semibold text-on-surface border border-[#E7E9E3] flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-primary"></span> Basket Affinity Matrix
+            </span>
+            <span class="px-3 py-1.5 rounded-full bg-surface-container-low text-xs font-semibold text-on-surface border border-[#E7E9E3] flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-primary"></span> Perishables Shrinkage Forecast
+            </span>
+            <span class="px-3 py-1.5 rounded-full bg-surface-container-low text-xs font-semibold text-on-surface border border-[#E7E9E3] flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-primary"></span> Customer RFM Cohorts
+            </span>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="relative z-10 flex flex-wrap items-center justify-center gap-3">
+            <a th:href="@{/workspaces}"
+               class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-on-primary font-headline text-xs font-bold shadow-sm transition-all">
+                <span>Manage Workspaces</span>
+                <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+            </a>
+            <a th:href="@{/workspaces/create}"
+               class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-surface-container-lowest hover:bg-surface-container-low border border-[#E7E9E3] text-on-surface font-headline text-xs font-bold shadow-xs transition-all">
+                <span class="material-symbols-outlined text-[16px] text-primary">add</span>
+                <span>Create Another Store</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Platform Architecture Roadmap -->
+    <div class="rounded-2xl bg-surface-container-lowest border border-[#E7E9E3] p-6 shadow-xs flex flex-col justify-between">
+        <div>
+            <div class="flex items-center justify-between mb-4 pb-3 border-b border-[#E7E9E3]">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary text-[20px]">account_tree</span>
+                    <h2 class="font-headline font-bold text-sm text-on-surface">Platform Architecture Roadmap</h2>
+                </div>
+                <span class="text-[10px] font-mono font-bold text-primary bg-surface-container-low px-2.5 py-0.5 rounded-full border border-primary/20">
+                    PHASE 1 FOUNDATION COMPLETE
+                </span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <!-- Step 1 (Current Active) -->
+                <div class="p-3.5 rounded-xl bg-[#EFF9E9] border border-primary/30 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-on-primary text-xs">
+                                <span class="material-symbols-outlined text-[14px]">check</span>
+                            </span>
+                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-primary-fixed text-on-primary-container">Phase 1</span>
+                        </div>
+                        <h3 class="font-headline text-xs font-bold text-on-surface mb-1">Architecture & Auth</h3>
+                        <p class="text-[11px] text-tertiary leading-snug">
+                            Modular monolith, JPA entities, session security, multi-tenant workspace isolation.
+                        </p>
+                    </div>
+                    <div class="mt-2 text-[10px] font-bold text-primary">ACTIVE & VERIFIED</div>
+                </div>
+
+                <!-- Step 2 (Upcoming Active) -->
+                <div class="p-3.5 rounded-xl bg-surface-container-lowest border-2 border-[#56DA33] shadow-xs flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="w-6 h-6 rounded-full bg-secondary-container/40 flex items-center justify-center text-on-surface text-xs font-bold">
+                                <span class="material-symbols-outlined text-[14px]">upload_file</span>
+                            </span>
+                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-secondary-container/30 text-on-surface">Phase 2</span>
+                        </div>
+                        <h3 class="font-headline text-xs font-bold text-on-surface mb-1">Dataset Ingestion</h3>
+                        <p class="text-[11px] text-tertiary leading-snug">
+                            Multi-table CSV/Excel parser, schema validation, 2-3 yr synthetic supermarket datasets.
+                        </p>
+                    </div>
+                    <div class="mt-2 text-[10px] font-bold text-primary">NEXT PHASE</div>
+                </div>
+
+                <!-- Step 3 (Upcoming Phase 3) -->
+                <div class="p-3.5 rounded-xl bg-surface-container-lowest border border-[#E7E9E3] opacity-80 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="w-6 h-6 rounded-full bg-surface-container flex items-center justify-center text-outline text-xs">
+                                <span class="material-symbols-outlined text-[14px]">bar_chart</span>
+                            </span>
+                            <span class="text-[10px] font-medium px-1.5 py-0.5 rounded bg-surface-container text-tertiary">Phase 3</span>
+                        </div>
+                        <h3 class="font-headline text-xs font-bold text-on-surface mb-1">Analytics Engine</h3>
+                        <p class="text-[11px] text-tertiary leading-snug">
+                            Revenue velocity, SKU margins, market basket Apriori affinity & stockout models.
+                        </p>
+                    </div>
+                    <div class="mt-2 text-[10px] font-medium text-tertiary">UPCOMING</div>
+                </div>
+
+                <!-- Step 4 (Upcoming Phase 5) -->
+                <div class="p-3.5 rounded-xl bg-surface-container-lowest border border-[#E7E9E3] opacity-80 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="w-6 h-6 rounded-full bg-surface-container flex items-center justify-center text-outline text-xs">
+                                <span class="material-symbols-outlined text-[14px]">psychology</span>
+                            </span>
+                            <span class="text-[10px] font-medium px-1.5 py-0.5 rounded bg-surface-container text-tertiary">Phase 5</span>
+                        </div>
+                        <h3 class="font-headline text-xs font-bold text-on-surface mb-1">AI & Gemini ML</h3>
+                        <p class="text-[11px] text-tertiary leading-snug">
+                            Weka K-Means & Apriori, Gemini contextual explanation engine for supermarket owners.
+                        </p>
+                    </div>
+                    <div class="mt-2 text-[10px] font-medium text-tertiary">UPCOMING</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4 pt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 bg-surface-container-low px-4 py-2 rounded-xl text-xs border border-[#E7E9E3]">
+            <div class="flex items-center gap-2 text-on-surface-variant">
+                <span class="material-symbols-outlined text-primary text-[16px]">verified</span>
+                <span>Technology: Java 21 • Spring Boot Monolith • MySQL JPA ORM • Thymeleaf</span>
+            </div>
+            <span class="font-bold text-primary">All 8 Domain Packages Scaffolded</span>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

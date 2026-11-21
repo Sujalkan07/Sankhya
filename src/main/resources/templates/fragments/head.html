@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="head(pageTitle)">
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title th:text="${pageTitle != null ? pageTitle + ' — Sankhya Supermarket Analytics' : 'Sankhya — Supermarket Analytics'}">Sankhya — Supermarket Analytics</title>
+
+    <!-- Google Fonts: Plus Jakarta Sans & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet"/>
+
+    <!-- Google Material Symbols Outlined -->
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+
+    <!-- Tailwind CSS with Stitch SmartMart/Sankhya Reference Theme Tokens -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#186e00",
+                        "primary-hover": "#125b00",
+                        "primary-container": "#56da33",
+                        "primary-fixed": "#7aff55",
+                        "primary-fixed-dim": "#5de13a",
+                        "on-primary": "#ffffff",
+                        "on-primary-container": "#125b00",
+                        "secondary": "#725c00",
+                        "secondary-container": "#ffd643",
+                        "secondary-fixed": "#ffe07e",
+                        "secondary-fixed-dim": "#eac32e",
+                        "on-secondary": "#ffffff",
+                        "tertiary": "#526350",
+                        "tertiary-container": "#b2c5af",
+                        "background": "#EFF9E9",
+                        "surface": "#f1fdec",
+                        "surface-dim": "#d2ddce",
+                        "surface-bright": "#f1fdec",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-low": "#ebf7e7",
+                        "surface-container": "#e6f1e1",
+                        "surface-container-high": "#e0ecdc",
+                        "surface-container-highest": "#dae6d6",
+                        "on-surface": "#141e14",
+                        "on-surface-variant": "#3e4a38",
+                        "outline": "#6e7b66",
+                        "outline-variant": "#bdcbb3",
+                        "border-brand": "#E7E9E3",
+                        "error": "#ba1a1a",
+                        "error-container": "#ffdad6"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "full": "9999px"
+                    },
+                    fontFamily: {
+                        "headline": ["Plus Jakarta Sans", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "tabular": ["Inter", "monospace"]
+                    }
+                }
+            }
+        };
+    </script>
+    <style>
+        @layer base {
+            html, body {
+                margin: 0;
+                padding: 0;
+            }
+        }
+        /* Sleek minimalist scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #bdcbb3;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6e7b66;
+        }
+        .custom-dashed-border {
+            background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' stroke='%23BDCBB3' stroke-width='2' stroke-dasharray='8%2c 8' stroke-dashoffset='0' stroke-linecap='square' rx='12'/%3e%3c/svg%3e");
+        }
+        .custom-dashed-border:hover {
+            background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' stroke='%2356DA33' stroke-width='2' stroke-dasharray='8%2c 8' stroke-dashoffset='0' stroke-linecap='square' rx='12'/%3e%3c/svg%3e");
+        }
+    </style>
+</head>
+<body>
+</body>
+</html>

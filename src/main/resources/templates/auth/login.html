@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/head :: head('Sign In')}"></head>
+<body class="bg-background text-on-surface font-body antialiased min-h-screen flex items-center justify-center p-4 selection:bg-primary-fixed selection:text-on-surface">
+
+    <!-- Ambient Decorative Glows (Matching Stitch Screen Reference) -->
+    <div class="fixed top-0 left-1/4 w-[500px] h-[300px] bg-primary/5 rounded-full blur-[120px] pointer-events-none -z-10"></div>
+    <div class="fixed bottom-10 right-10 w-[400px] h-[300px] bg-secondary-container/15 rounded-full blur-[140px] pointer-events-none -z-10"></div>
+
+    <div class="w-full max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-12 bg-surface-container-lowest rounded-2xl border border-[#E7E9E3] shadow-[0_20px_40px_-15px_rgba(24,110,0,0.08)] overflow-hidden">
+
+        <!-- Left Column: Authentication Form Card (7 Cols) -->
+        <div class="lg:col-span-7 p-8 sm:p-12 flex flex-col justify-between">
+            <div>
+                <!-- Brand Header -->
+                <div class="flex items-center justify-between mb-8">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-surface-container-low border border-[#E7E9E3] flex items-center justify-center text-primary shadow-xs">
+                            <span class="material-symbols-outlined text-[22px]">storefront</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="font-headline font-bold text-xl text-on-surface tracking-tight leading-none">Sankhya</span>
+                            <span class="text-xs text-tertiary font-medium">Supermarket Analytics</span>
+                        </div>
+                    </div>
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#EFF9E9] border border-primary/20 text-xs font-semibold text-primary">
+                        <span class="w-1.5 h-1.5 rounded-full bg-secondary-container"></span>
+                        AI-Powered BI
+                    </span>
+                </div>
+
+                <!-- Welcome Text -->
+                <div class="mb-6">
+                    <h1 class="font-headline font-bold text-2xl sm:text-3xl text-on-surface tracking-tight mb-2">
+                        Welcome back to Sankhya
+                    </h1>
+                    <p class="text-xs sm:text-sm text-tertiary leading-relaxed">
+                        Sign in to access your supermarket analytics, active store workspaces, and predictive business intelligence.
+                    </p>
+                </div>
+
+                <!-- Alerts -->
+                <div th:replace="~{fragments/alerts :: alerts}"></div>
+
+                <!-- Login Form -->
+                <form th:action="@{/login}" method="post" class="space-y-4">
+                    <!-- Email Field -->
+                    <div>
+                        <label for="email" class="block text-xs font-semibold text-on-surface mb-1.5">
+                            Work Email Address
+                        </label>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-3.5 top-2.5 text-tertiary text-[18px]">mail</span>
+                            <input type="email" id="email" name="email" required
+                                   placeholder="manager@supermarket.com"
+                                   class="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm bg-surface-container-lowest border border-[#E7E9E3] focus:border-primary focus:ring-2 focus:ring-primary/10 rounded-xl text-on-surface placeholder:text-tertiary outline-none transition-all"/>
+                        </div>
+                    </div>
+
+                    <!-- Password Field -->
+                    <div>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label for="password" class="block text-xs font-semibold text-on-surface">
+                                Password
+                            </label>
+                            <a href="#" onclick="alert('Password reset link will be enabled in Phase 6 integration.')"
+                               class="text-xs font-medium text-primary hover:underline">
+                                Forgot password?
+                            </a>
+                        </div>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-3.5 top-2.5 text-tertiary text-[18px]">lock</span>
+                            <input type="password" id="password" name="password" required
+                                   placeholder="••••••••••••"
+                                   class="w-full pl-10 pr-10 py-2.5 text-xs sm:text-sm bg-surface-container-lowest border border-[#E7E9E3] focus:border-primary focus:ring-2 focus:ring-primary/10 rounded-xl text-on-surface placeholder:text-tertiary outline-none transition-all"/>
+                            <button type="button" onclick="togglePasswordVisibility()"
+                                    class="absolute right-3.5 top-2.5 text-tertiary hover:text-on-surface focus:outline-none">
+                                <span class="material-symbols-outlined text-[18px]" id="eyeIcon">visibility</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Remember Me Option -->
+                    <div class="flex items-center justify-between pt-1">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" name="remember-me"
+                                   class="w-4 h-4 rounded border-[#E7E9E3] text-primary focus:ring-primary/20 accent-primary cursor-pointer"/>
+                            <span class="text-xs text-on-surface-variant font-medium">Remember me for 30 days</span>
+                        </label>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="pt-2">
+                        <button type="submit"
+                                class="w-full py-3 px-6 rounded-xl bg-primary hover:bg-primary-hover text-on-primary font-headline text-xs sm:text-sm font-bold tracking-wide shadow-sm hover:shadow transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]">
+                            <span>Sign In to Workspace</span>
+                            <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Registration Navigation -->
+                <div class="mt-6 text-center text-xs text-on-surface-variant">
+                    Don't have an account yet?
+                    <a th:href="@{/register}" class="font-bold text-primary hover:underline ml-1">
+                        Create an account
+                    </a>
+                </div>
+            </div>
+
+            <!-- Security Footnote -->
+            <div class="mt-8 pt-4 border-t border-[#E7E9E3] flex items-center justify-center gap-2 text-[11px] text-tertiary">
+                <span class="material-symbols-outlined text-[14px] text-primary">verified_user</span>
+                <span>Enterprise Grade Security • 256-bit AES Encryption</span>
+            </div>
+        </div>
+
+        <!-- Right Column: Visual Feature Companion (5 Cols) -->
+        <div class="hidden lg:flex lg:col-span-5 bg-surface-container-low p-8 flex-col justify-between border-l border-[#E7E9E3] relative overflow-hidden">
+            <!-- Background Decorative Pattern -->
+            <div class="absolute -right-10 -bottom-10 w-60 h-60 rounded-full bg-primary/10 blur-2xl pointer-events-none"></div>
+
+            <div class="relative z-10 space-y-6">
+                <!-- Tag -->
+                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-lowest text-primary text-xs font-semibold border border-primary/20">
+                    <span class="material-symbols-outlined text-[15px]">analytics</span>
+                    <span>Retail Intelligence Platform</span>
+                </div>
+
+                <div class="space-y-2">
+                    <h2 class="font-headline font-bold text-xl text-on-surface leading-snug">
+                        Transform Supermarket POS Telemetry into Actionable Profit
+                    </h2>
+                    <p class="text-xs text-on-surface-variant leading-relaxed">
+                        Sankhya isolates and analyzes grocery transactions, SKU velocity, basket associations, and inventory turnover per store location.
+                    </p>
+                </div>
+
+                <!-- 3 Feature Highlights (From Stitch Reference) -->
+                <div class="space-y-3 pt-2">
+                    <div class="p-3.5 rounded-xl bg-surface-container-lowest border border-[#E7E9E3] shadow-xs flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-surface-container-low text-primary flex items-center justify-center shrink-0 border border-[#E7E9E3]">
+                            <span class="material-symbols-outlined text-[18px]">receipt_long</span>
+                        </div>
+                        <div>
+                            <div class="text-xs font-bold text-on-surface">Market Basket Analysis</div>
+                            <div class="text-[11px] text-tertiary">Uncover product affinity & bundles</div>
+                        </div>
+                    </div>
+
+                    <div class="p-3.5 rounded-xl bg-surface-container-lowest border border-[#E7E9E3] shadow-xs flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-surface-container-low text-primary flex items-center justify-center shrink-0 border border-[#E7E9E3]">
+                            <span class="material-symbols-outlined text-[18px]">inventory_2</span>
+                        </div>
+                        <div>
+                            <div class="text-xs font-bold text-on-surface">Inventory Stockout Forecasts</div>
+                            <div class="text-[11px] text-tertiary">Prevent spoilage & optimize buffer stock</div>
+                        </div>
+                    </div>
+
+                    <div class="p-3.5 rounded-xl bg-surface-container-lowest border border-[#E7E9E3] shadow-xs flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-surface-container-low text-primary flex items-center justify-center shrink-0 border border-[#E7E9E3]">
+                            <span class="material-symbols-outlined text-[18px]">group</span>
+                        </div>
+                        <div>
+                            <div class="text-xs font-bold text-on-surface">Customer RFM Cohorts</div>
+                            <div class="text-[11px] text-tertiary">Identify loyal shoppers & churn indicators</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Quote / Trust -->
+            <div class="relative z-10 pt-6 border-t border-[#E7E9E3]">
+                <div class="text-[11px] text-tertiary font-medium">
+                    "Built specifically for Indian supermarket chains, hypermarkets, and independent grocers."
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Password visibility toggle script -->
+    <script>
+        function togglePasswordVisibility() {
+            const passwordInput = document.getElementById('password');
+            const eyeIcon = document.getElementById('eyeIcon');
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                eyeIcon.textContent = 'visibility_off';
+            } else {
+                passwordInput.type = 'password';
+                eyeIcon.textContent = 'visibility';
+            }
+        }
+    </script>
+</body>
+</html>

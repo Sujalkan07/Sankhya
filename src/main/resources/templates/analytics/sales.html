@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: html}"
+      lang="en">
+<body>
+<div th:fragment="content" class="flex flex-col gap-6">
+
+    <!-- Top Summary Banner & Date Filter -->
+    <div class="relative overflow-hidden rounded-2xl bg-surface-container-lowest p-6 lg:p-8 border border-[#E7E9E3] shadow-xs">
+        <div class="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-primary/5 blur-2xl pointer-events-none"></div>
+
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
+            <div>
+                <div class="flex items-center gap-2 mb-1.5">
+                    <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary tracking-wider uppercase">
+                        Module 2 • Core Engine
+                    </span>
+                    <span class="text-tertiary text-xs">• POS Transaction Telemetry</span>
+                </div>
+                <h1 class="font-headline font-bold text-2xl lg:text-3xl text-on-surface tracking-tight">
+                    Sales Analytics &amp; Basket Dynamics
+                </h1>
+                <p class="text-xs text-tertiary mt-1">
+                    Revenue dynamics, hourly transaction velocity, tender payment mix, and basket-level inspection.
+                </p>
+            </div>
+
+            <!-- Date Range Filter Form -->
+            <form th:action="@{/analytics/sales}" method="get" class="flex items-center gap-2.5 flex-wrap">
+                <div class="relative">
+                    <select name="preset" onchange="this.form.submit()"
+                            class="px-3.5 py-2 pr-8 rounded-xl bg-surface-container-low text-on-surface text-xs font-semibold border border-[#E7E9E3] shadow-xs outline-none cursor-pointer">
+                        <option th:each="p : ${allPresets}"
+                                th:value="${p.name()}"
+                                th:text="${p.label}"
+                                th:selected="${p == currentPreset}">Past 30 Days</option>
+                    </select>
+                </div>
+
+                <a th:href="@{/analytics/reports/sales(preset=${currentPreset})}"
+                   class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface text-xs font-semibold border border-[#E7E9E3] shadow-xs transition-all">
+                    <span class="material-symbols-outlined text-[16px] text-primary">download</span>
+                    <span>Download CSV</span>
+                </a>
+            </form>
+        </div>
+    </div>
+
+    <!-- Empty State Alert if No Sales Data -->
+    <div th:if="${readiness != null and !readiness.salesReady}"
+         class="rounded-2xl border border-amber-200 bg-amber-50/70 p-8 text-center flex flex-col items-center justify-center gap-3">
+        <span class="material-symbols-outlined text-amber-600 text-[48px]">receipt_long</span>
+        <h2 class="text-lg font-bold text-amber-900">No Sales Transactions Ingested</h2>
+        <p class="text-xs text-amber-800 max-w-md">
+            The sales analytics module requires completed POS transactions to calculate revenues, basket sizes, and hourly velocities.
+        </p>
+        <div class="flex items-center gap-3 mt-2">
+            <a th:href="@{/datasets/generate}"
+               class="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs transition-colors">
+                Generate Synthetic Data
+            </a>
+            <a th:href="@{/datasets/upload}"
+               class="px-4 py-2 rounded-xl bg-white border border-amber-300 text-amber-800 hover:bg-amber-100 font-semibold text-xs transition-colors">
+                Upload Transactions CSV
+            </a>
+        </div>
+    </div>
+
+    <!-- SALES CONTENT WHEN DATA READY -->
+    <div th:if="${analytics != null and analytics.kpis != null}" class="flex flex-col gap-6">
+
+        <!-- 6 SALES KPI CARDS -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+            <!-- Total Revenue -->
+            <div class="bg-surface-container-lowest rounded-2xl p-5 border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
+                <span class="text-xs font-semibold text-on-surface-variant">Gross Revenue</span>
+                <div class="mt-2">
+                    <div class="text-xl font-bold font-headline text-on-surface"
+                         th:text="${'₹' + analytics.kpis.totalRevenue.formattedCurrent}">₹0.00</div>
+                    <div class="flex items-center gap-1.5 mt-1 text-[11px]">
+                        <span th:classappend="${analytics.kpis.totalRevenue.direction.name() == 'UP' ? 'text-emerald-600' : (analytics.kpis.totalRevenue.direction.name() == 'DOWN' ? 'text-rose-600' : 'text-slate-500')}"
+                              class="font-bold inline-flex items-center">
+                            <span class="material-symbols-outlined text-[14px]"
+                                  th:text="${analytics.kpis.totalRevenue.direction.name() == 'UP' ? 'arrow_upward' : (analytics.kpis.totalRevenue.direction.name() == 'DOWN' ? 'arrow_downward' : 'remove')}"></span>
+                            <span th:text="${analytics.kpis.totalRevenue.percentageChange + '%'}">0%</span>
+                        </span>
+                        <span class="text-tertiary">vs prior</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Invoices / Transactions -->
+            <div class="bg-surface-container-lowest rounded-2xl p-5 border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
+                <span class="text-xs font-semibold text-on-surface-variant">Total Invoices</span>
+                <div class="mt-2">
+                    <div class="text-xl font-bold font-headline text-on-surface"
+                         th:text="${analytics.kpis.totalTransactions.formattedCurrent}">0</div>
+                    <div class="flex items-center gap-1.5 mt-1 text-[11px]">
+                        <span th:classappend="${analytics.kpis.totalTransactions.direction.name() == 'UP' ? 'text-emerald-600' : (analytics.kpis.totalTransactions.direction.name() == 'DOWN' ? 'text-rose-600' : 'text-slate-500')}"
+                              class="font-bold inline-flex items-center">
+                            <span class="material-symbols-outlined text-[14px]"
+                                  th:text="${analytics.kpis.totalTransactions.direction.name() == 'UP' ? 'arrow_upward' : (analytics.kpis.totalTransactions.direction.name() == 'DOWN' ? 'arrow_downward' : 'remove')}"></span>
+                            <span th:text="${analytics.kpis.totalTransactions.percentageChange + '%'}">0%</span>
+                        </span>
+                        <span class="text-tertiary">vs prior</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Average Transaction Value (ATV) -->
+            <div class="bg-surface-container-lowest rounded-2xl p-5 border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
+                <span class="text-xs font-semibold text-on-surface-variant">Avg Ticket (ATV)</span>
+                <div class="mt-2">
+                    <div class="text-xl font-bold font-headline text-on-surface"
+                         th:text="${'₹' + analytics.kpis.averageTransactionValue.formattedCurrent}">₹0.00</div>
+                    <div class="flex items-center gap-1.5 mt-1 text-[11px]">
+                        <span th:classappend="${analytics.kpis.averageTransactionValue.direction.name() == 'UP' ? 'text-emerald-600' : (analytics.kpis.averageTransactionValue.direction.name() == 'DOWN' ? 'text-rose-600' : 'text-slate-500')}"
+                              class="font-bold inline-flex items-center">
+                            <span class="material-symbols-outlined text-[14px]"
+                                  th:text="${analytics.kpis.averageTransactionValue.direction.name() == 'UP' ? 'arrow_upward' : (analytics.kpis.averageTransactionValue.direction.name() == 'DOWN' ? 'arrow_downward' : 'remove')}"></span>
+                            <span th:text="${analytics.kpis.averageTransactionValue.percentageChange + '%'}">0%</span>
+                        </span>
+                        <span class="text-tertiary">vs prior</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Units Sold -->
+            <div class="bg-surface-container-lowest rounded-2xl p-5 border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
+                <span class="text-xs font-semibold text-on-surface-variant">Units Sold</span>
+                <div class="mt-2">
+                    <div class="text-xl font-bold font-headline text-on-surface"
+                         th:text="${analytics.kpis.totalQuantitySold.formattedCurrent}">0</div>
+                    <div class="flex items-center gap-1.5 mt-1 text-[11px]">
+                        <span th:classappend="${analytics.kpis.totalQuantitySold.direction.name() == 'UP' ? 'text-emerald-600' : (analytics.kpis.totalQuantitySold.direction.name() == 'DOWN' ? 'text-rose-600' : 'text-slate-500')}"
+                              class="font-bold inline-flex items-center">
+                            <span class="material-symbols-outlined text-[14px]"
+                                  th:text="${analytics.kpis.totalQuantitySold.direction.name() == 'UP' ? 'arrow_upward' : (analytics.kpis.totalQuantitySold.direction.name() == 'DOWN' ? 'arrow_downward' : 'remove')}"></span>
+                            <span th:text="${analytics.kpis.totalQuantitySold.percentageChange + '%'}">0%</span>
+                        </span>
+                        <span class="text-tertiary">vs prior</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Items Per Basket (IPB) -->
+            <div class="bg-surface-container-lowest rounded-2xl p-5 border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
+                <span class="text-xs font-semibold text-on-surface-variant">Items per Basket</span>
+                <div class="mt-2">
+                    <div class="text-xl font-bold font-headline text-primary"
+                         th:text="${analytics.kpis.averageUnitsPerTransaction}">0.0</div>
+                    <span class="text-[11px] text-tertiary">Items / invoice</span>
+                </div>
+            </div>
+
+            <!-- Discounts Given -->
+            <div class="bg-surface-container-lowest rounded-2xl p-5 border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
+                <span class="text-xs font-semibold text-on-surface-variant">Discounts Conceded</span>
+                <div class="mt-2">
+                    <div class="text-xl font-bold font-headline text-amber-700"
+                         th:text="${'₹' + analytics.kpis.totalDiscounts}">₹0.00</div>
+                    <span class="text-[11px] text-tertiary">Promotional markdowns</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2-COLUMN SECTION: Sales Trend & Peak Hourly Velocity Curve -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- Revenue Trend Chart (8 cols) -->
+            <div class="lg:col-span-8 bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs">
+                <div class="flex items-center justify-between pb-3.5 mb-4 border-b border-[#E7E9E3]">
+                    <div>
+                        <h3 class="font-headline text-sm font-bold text-on-surface">Revenue Time Series Trajectory</h3>
+                        <p class="text-[11px] text-on-surface-variant">Daily gross revenue trajectory across analytical window</p>
+                    </div>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-surface-container-low text-tertiary">POS Stream</span>
+                </div>
+                <div class="relative h-64 w-full">
+                    <canvas id="salesTrendChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Hourly Sales Velocity Curve (4 cols) -->
+            <div class="lg:col-span-4 bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs">
+                <div class="flex items-center justify-between pb-3.5 mb-4 border-b border-[#E7E9E3]">
+                    <div>
+                        <h3 class="font-headline text-sm font-bold text-on-surface">Hourly Velocity Curve</h3>
+                        <p class="text-[11px] text-on-surface-variant">24-hour retail trading pattern</p>
+                    </div>
+                </div>
+                <div class="relative h-64 w-full">
+                    <canvas id="hourlySalesChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAYMENT METHOD DISTRIBUTION & CATEGORY BREAKDOWN -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- Tender Payment Mix (4 cols) -->
+            <div class="lg:col-span-4 bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between pb-3.5 mb-4 border-b border-[#E7E9E3]">
+                        <h3 class="font-headline text-sm font-bold text-on-surface">Payment Tender Mix</h3>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-surface-container-low text-tertiary">Split</span>
+                    </div>
+                    <div class="relative h-56 w-full flex items-center justify-center">
+                        <canvas id="paymentMethodChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Category Performance Table (8 cols) -->
+            <div class="lg:col-span-8 bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs">
+                <div class="flex items-center justify-between pb-3.5 mb-4 border-b border-[#E7E9E3]">
+                    <div>
+                        <h3 class="font-headline text-sm font-bold text-on-surface">Departmental Revenue &amp; Margins</h3>
+                        <p class="text-[11px] text-on-surface-variant">Category volume, gross turnover, and margin percentages</p>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead>
+                            <tr class="border-b border-[#E7E9E3] text-tertiary font-semibold">
+                                <th class="pb-2">Category</th>
+                                <th class="pb-2 text-right">Units</th>
+                                <th class="pb-2 text-right">Revenue</th>
+                                <th class="pb-2 text-right">Gross Profit</th>
+                                <th class="pb-2 text-right">Margin %</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-[#F1F3EE]">
+                            <tr th:each="cat : ${analytics.categoryPerformance}">
+                                <td class="py-2.5 font-bold text-on-surface" th:text="${cat.category}">Category</td>
+                                <td class="py-2.5 text-right font-mono" th:text="${cat.unitsSold}">0</td>
+                                <td class="py-2.5 text-right font-mono font-bold" th:text="${'₹' + cat.revenue}">₹0.00</td>
+                                <td class="py-2.5 text-right font-mono text-emerald-700" th:text="${'₹' + cat.grossProfit}">₹0.00</td>
+                                <td class="py-2.5 text-right font-mono font-bold"
+                                    th:classappend="${cat.grossMarginPercentage >= 25 ? 'text-emerald-700' : 'text-amber-700'}"
+                                    th:text="${cat.grossMarginPercentage + '%'}">0%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TOP 10 SELLING PRODUCTS TABLE WITH CLIENT-SIDE SEARCH -->
+        <div class="bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 mb-4 border-b border-[#E7E9E3]">
+                <div>
+                    <h3 class="font-headline text-sm font-bold text-on-surface">Top Selling Products in Period</h3>
+                    <p class="text-[11px] text-on-surface-variant">Ranked by gross sales volume and revenue generation</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="relative">
+                        <input type="text" id="top-product-search" placeholder="Search product or SKU..."
+                               class="pl-8 pr-3 py-1.5 rounded-lg bg-surface-container-low text-on-surface text-xs border border-[#E7E9E3] outline-none focus:ring-1 focus:ring-primary w-48 sm:w-60">
+                        <span class="material-symbols-outlined absolute left-2 top-2 text-tertiary text-[16px]">search</span>
+                    </div>
+                    <a th:href="@{/analytics/products}" class="text-xs font-bold text-primary hover:underline shrink-0">
+                        Detailed SKU Profitability &rarr;
+                    </a>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs" id="top-products-table">
+                    <thead>
+                        <tr class="border-b border-[#E7E9E3] text-tertiary font-semibold">
+                            <th class="pb-2">SKU ID</th>
+                            <th class="pb-2">Product Name</th>
+                            <th class="pb-2">Category</th>
+                            <th class="pb-2 text-right">Units Sold</th>
+                            <th class="pb-2 text-right">Total Revenue</th>
+                            <th class="pb-2 text-right">Gross Profit</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#F1F3EE]">
+                        <tr th:each="p : ${analytics.topProducts}" class="product-row">
+                            <td class="py-2.5 font-mono text-tertiary" th:text="${p.productId}">SKU-001</td>
+                            <td class="py-2.5 font-bold text-on-surface" th:text="${p.productName}">Product Name</td>
+                            <td class="py-2.5 text-on-surface-variant" th:text="${p.category}">Category</td>
+                            <td class="py-2.5 text-right font-mono" th:text="${p.unitsSold}">0</td>
+                            <td class="py-2.5 text-right font-mono font-bold" th:text="${'₹' + p.revenue}">₹0.00</td>
+                            <td class="py-2.5 text-right font-mono font-bold text-emerald-700" th:text="${'₹' + p.grossProfit}">₹0.00</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- RECENT SALES TRANSACTIONS & BASKET LINE-ITEMS DRILL-DOWN -->
+        <div class="bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs" th:if="${recentTransactions != null and !recentTransactions.isEmpty()}">
+            <div class="flex items-center justify-between pb-3.5 mb-4 border-b border-[#E7E9E3]">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary text-[20px]">shopping_cart_checkout</span>
+                        <h3 class="font-headline text-sm font-bold text-on-surface">Recent POS Invoices &amp; Basket Line-Item Inspection</h3>
+                    </div>
+                    <p class="text-[11px] text-on-surface-variant mt-0.5">Click any transaction to inspect cashier lane, tender details, and multi-item line breakdown</p>
+                </div>
+                <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-surface-container text-primary">
+                    Live Stream
+                </span>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead>
+                        <tr class="border-b border-[#E7E9E3] text-tertiary font-semibold">
+                            <th class="pb-2">Invoice / Receipt #</th>
+                            <th class="pb-2">Date &amp; Time</th>
+                            <th class="pb-2">Customer ID</th>
+                            <th class="pb-2">SKU ID</th>
+                            <th class="pb-2 text-right">Quantity</th>
+                            <th class="pb-2 text-right">Unit Price</th>
+                            <th class="pb-2 text-right">Discount</th>
+                            <th class="pb-2 text-right">Line Revenue</th>
+                            <th class="pb-2">Payment Method</th>
+                            <th class="pb-2 text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#F1F3EE]">
+                        <tr th:each="tx : ${recentTransactions}">
+                            <td class="py-2.5 font-mono font-bold text-primary" th:text="${tx.transactionId}">TX-1001</td>
+                            <td class="py-2.5 text-tertiary font-mono" th:text="${#temporals.format(tx.transactionDate, 'dd MMM yyyy HH:mm')}">24 Oct 2024 14:30</td>
+                            <td class="py-2.5 font-mono text-on-surface" th:text="${tx.customerId != null ? tx.customerId : 'Walk-in'}">CUST-101</td>
+                            <td class="py-2.5 font-mono text-tertiary" th:text="${tx.productId}">SKU-1001</td>
+                            <td class="py-2.5 text-right font-mono" th:text="${tx.quantity}">2</td>
+                            <td class="py-2.5 text-right font-mono" th:text="${'₹' + tx.unitPrice}">₹150.00</td>
+                            <td class="py-2.5 text-right font-mono text-tertiary" th:text="${'₹' + tx.discount}">₹0.00</td>
+                            <td class="py-2.5 text-right font-mono font-bold text-on-surface" th:text="${'₹' + tx.revenue}">₹300.00</td>
+                            <td class="py-2.5">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-surface-container text-on-surface"
+                                      th:text="${tx.paymentMethod != null ? tx.paymentMethod : 'Cash'}">Cash</span>
+                            </td>
+                            <td class="py-2.5 text-center">
+                                <button type="button"
+                                        th:data-txid="${tx.transactionId}"
+                                        class="inspect-basket-btn px-2.5 py-1 rounded bg-surface-container-low hover:bg-surface-container text-primary font-bold text-[11px] border border-[#E7E9E3] transition-colors cursor-pointer">
+                                    Inspect Basket
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        <!-- Phase 5 ML Section: Forward Sales Revenue Forecasting -->
+        <div class="bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs">
+            <div class="flex items-center justify-between mb-4 pb-3 border-b border-[#E7E9E3]">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary text-[22px]">show_chart</span>
+                    <div>
+                        <h3 class="font-headline font-bold text-base text-on-surface">Linear Regression 14-Day Sales Trajectory</h3>
+                        <p class="text-xs text-tertiary">Autoregressive multi-step forward revenue projection with 95% confidence bounds.</p>
+                    </div>
+                </div>
+                <form th:action="@{/analytics/ai-insights/train/LINEAR_REGRESSION}" method="post">
+                    <button type="submit"
+                            class="px-3.5 py-1.5 rounded-xl bg-primary hover:bg-primary-hover text-on-primary font-headline text-xs font-bold flex items-center gap-1 shadow-xs transition-all cursor-pointer">
+                        <span class="material-symbols-outlined text-[16px]">refresh</span>
+                        <span>Project Forecast</span>
+                    </button>
+                </form>
+            </div>
+
+            <div class="overflow-x-auto" th:if="${forecastResults != null and !forecastResults.isEmpty()}">
+                <table class="w-full text-left text-xs">
+                    <thead>
+                        <tr class="border-b border-[#E7E9E3] text-[10px] text-tertiary uppercase font-bold">
+                            <th class="pb-2">Forecast Date</th>
+                            <th class="pb-2">Horizon</th>
+                            <th class="pb-2 text-right">Predicted Revenue</th>
+                            <th class="pb-2 text-right">Baseline Daily Avg</th>
+                            <th class="pb-2 text-right">95% Confidence Interval</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#E7E9E3]/60">
+                        <tr th:each="fc, iter : ${forecastResults}" th:if="${iter.index < 14}">
+                            <td class="py-2.5 font-mono font-bold text-on-surface" th:text="${fc.forecastDate}">2026-11-23</td>
+                            <td class="py-2.5 text-tertiary" th:text="${'+' + fc.horizonDay + ' days'}">+1 days</td>
+                            <td class="py-2.5 text-right font-mono font-bold text-primary" th:text="${'₹' + #numbers.formatDecimal(fc.predictedRevenue, 1, 'COMMA', 0, 'POINT')}">₹1,45,000</td>
+                            <td class="py-2.5 text-right font-mono text-tertiary" th:text="${'₹' + #numbers.formatDecimal(fc.baselineRevenue, 1, 'COMMA', 0, 'POINT')}">₹1,32,000</td>
+                            <td class="py-2.5 text-right font-mono text-tertiary text-[11px]" th:text="${'₹' + #numbers.formatDecimal(fc.lowerBound, 1, 'COMMA', 0, 'POINT') + ' - ₹' + #numbers.formatDecimal(fc.upperBound, 1, 'COMMA', 0, 'POINT')}">₹1.2L - ₹1.6L</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div th:unless="${forecastResults != null and !forecastResults.isEmpty()}" class="text-center py-6 text-tertiary text-xs">
+                No revenue projections generated yet. Click "Project Forecast" to compute the forward sales curve.
+            </div>
+        </div>
+
+    </div>
+
+    <!-- BASKET INSPECTION MODAL DIALOG -->
+    <div id="basket-modal" class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-surface-container-lowest rounded-2xl max-w-2xl w-full border border-[#E7E9E3] shadow-2xl p-6 flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between pb-3 border-b border-[#E7E9E3]">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary text-[22px]">receipt</span>
+                    <div>
+                        <h3 class="font-headline font-bold text-base text-on-surface" id="modal-tx-title">Transaction Receipt</h3>
+                        <p class="text-[11px] text-tertiary" id="modal-tx-subtitle">Basket Line Items &amp; Checkout Telemetry</p>
+                    </div>
+                </div>
+                <button type="button" id="modal-close-btn" class="p-1 rounded-lg text-tertiary hover:text-on-surface hover:bg-surface-container">
+                    <span class="material-symbols-outlined text-[20px]">close</span>
+                </button>
+            </div>
+
+            <!-- Receipt Meta -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3 rounded-xl bg-surface-container-low text-xs">
+                <div>
+                    <span class="text-[10px] text-tertiary block">Payment Method</span>
+                    <strong class="text-on-surface font-semibold" id="modal-pmt">UPI / Digital</strong>
+                </div>
+                <div>
+                    <span class="text-[10px] text-tertiary block">Cashier / Lane</span>
+                    <strong class="text-on-surface font-semibold" id="modal-cashier">Lane 02 (POS-1)</strong>
+                </div>
+                <div>
+                    <span class="text-[10px] text-tertiary block">Store ID</span>
+                    <strong class="text-on-surface font-semibold" id="modal-store">Vijayawada Hub</strong>
+                </div>
+                <div>
+                    <span class="text-[10px] text-tertiary block">Customer</span>
+                    <strong class="text-primary font-mono" id="modal-cust">CUST-101</strong>
+                </div>
+            </div>
+
+            <!-- Items Table -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead>
+                        <tr class="border-b border-[#E7E9E3] text-tertiary font-semibold">
+                            <th class="pb-2">SKU</th>
+                            <th class="pb-2 text-right">Qty</th>
+                            <th class="pb-2 text-right">Unit Price</th>
+                            <th class="pb-2 text-right">Discount</th>
+                            <th class="pb-2 text-right">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modal-items-tbody" class="divide-y divide-[#F1F3EE]">
+                        <!-- Populated dynamically via JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Basket Total -->
+            <div class="pt-3 border-t border-[#E7E9E3] flex items-center justify-between">
+                <span class="text-xs font-bold text-tertiary uppercase tracking-wider">Basket Gross Total</span>
+                <span class="font-headline font-bold text-lg text-primary" id="modal-total-amt">₹0.00</span>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Chart.js & Interactivity Scripts -->
+<th:block th:fragment="scripts">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        const trendData = /*[[${analytics != null ? analytics.salesTrendChart : null}]]*/ null;
+        const hourlyData = /*[[${analytics != null ? analytics.hourlySalesChart : null}]]*/ null;
+        const pmtData = /*[[${analytics != null ? analytics.paymentMethodChart : null}]]*/ null;
+
+        if (trendData && document.getElementById('salesTrendChart')) {
+            const ctx = document.getElementById('salesTrendChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: trendData.labels || [],
+                    datasets: [
+                        {
+                            label: 'Revenue (₹)',
+                            data: (trendData.datasets && trendData.datasets[0]) ? trendData.datasets[0].data : [],
+                            borderColor: '#1C6B00',
+                            backgroundColor: 'rgba(28, 107, 0, 0.08)',
+                            fill: true,
+                            tension: 0.35
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#F1F3EE' }, ticks: { font: { size: 10 } } },
+                        x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                    }
+                }
+            });
+        }
+
+        if (hourlyData && document.getElementById('hourlySalesChart')) {
+            const ctx = document.getElementById('hourlySalesChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: hourlyData.labels || [],
+                    datasets: [{
+                        label: 'Hourly Revenue (₹)',
+                        data: (hourlyData.datasets && hourlyData.datasets[0]) ? hourlyData.datasets[0].data : [],
+                        backgroundColor: '#56DA33',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#F1F3EE' }, ticks: { font: { size: 10 } } },
+                        x: { grid: { display: false }, ticks: { font: { size: 9 }, maxRotation: 45 } }
+                    }
+                }
+            });
+        }
+
+        if (pmtData && document.getElementById('paymentMethodChart')) {
+            const ctx = document.getElementById('paymentMethodChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: pmtData.labels || [],
+                    datasets: [{
+                        data: (pmtData.datasets && pmtData.datasets[0]) ? pmtData.datasets[0].data : [],
+                        backgroundColor: ['#1C6B00', '#3B82F6', '#8B5CF6', '#F59E0B', '#10B981'],
+                        borderWidth: 2,
+                        borderColor: '#FFFFFF'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } },
+                    cutout: '65%'
+                }
+            });
+        }
+
+        // Search Filter for Top Products Table
+        const searchInput = document.getElementById('top-product-search');
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                const term = this.value.toLowerCase().trim();
+                const rows = document.querySelectorAll('#top-products-table .product-row');
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    row.style.display = text.includes(term) ? '' : 'none';
+                });
+            });
+        }
+
+        // Basket Modal Drill-Down Interactivity
+        const modal = document.getElementById('basket-modal');
+        const modalCloseBtn = document.getElementById('modal-close-btn');
+        const inspectBtns = document.querySelectorAll('.inspect-basket-btn');
+
+        function openModal() {
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            if (modal) modal.classList.add('hidden');
+        }
+
+        if (modalCloseBtn) modalCloseBtn.addEventListener('click', closeModal);
+        if (modal) {
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) closeModal();
+            });
+        }
+
+        inspectBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const txId = this.getAttribute('data-txid');
+                if (!txId) return;
+
+                document.getElementById('modal-tx-title').textContent = 'Receipt: ' + txId;
+                document.getElementById('modal-items-tbody').innerHTML = '<tr><td colspan="5" class="py-4 text-center text-tertiary">Loading basket items...</td></tr>';
+                openModal();
+
+                fetch('/analytics/sales/api/transactions/' + encodeURIComponent(txId))
+                    .then(res => res.json())
+                    .then(items => {
+                        const tbody = document.getElementById('modal-items-tbody');
+                        tbody.innerHTML = '';
+                        let grandTotal = 0;
+                        let pmt = 'Cash';
+                        let cust = 'Walk-in';
+
+                        if (items && items.length > 0) {
+                            pmt = items[0].paymentMethod || 'Cash';
+                            cust = items[0].customerId || 'Walk-in';
+
+                            items.forEach(item => {
+                                grandTotal += (item.revenue || 0);
+                                const tr = document.createElement('tr');
+                                tr.innerHTML = `
+                                    <td class="py-2 font-mono text-tertiary">${item.productId}</td>
+                                    <td class="py-2 text-right font-mono">${item.quantity}</td>
+                                    <td class="py-2 text-right font-mono">₹${item.unitPrice ? item.unitPrice.toFixed(2) : '0.00'}</td>
+                                    <td class="py-2 text-right font-mono text-tertiary">₹${item.discount ? item.discount.toFixed(2) : '0.00'}</td>
+                                    <td class="py-2 text-right font-mono font-bold text-on-surface">₹${item.revenue ? item.revenue.toFixed(2) : '0.00'}</td>
+                                `;
+                                tbody.appendChild(tr);
+                            });
+                        } else {
+                            tbody.innerHTML = '<tr><td colspan="5" class="py-4 text-center text-tertiary">No line items returned.</td></tr>';
+                        }
+
+                        document.getElementById('modal-pmt').textContent = pmt;
+                        document.getElementById('modal-cust').textContent = cust;
+                        document.getElementById('modal-total-amt').textContent = '₹' + grandTotal.toLocaleString('en-IN', {minimumFractionDigits: 2});
+                    })
+                    .catch(err => {
+                        document.getElementById('modal-items-tbody').innerHTML = '<tr><td colspan="5" class="py-4 text-center text-error">Failed to load basket details.</td></tr>';
+                    });
+            });
+        });
+        /*]]>*/
+    </script>
+</th:block>
+</body>
+</html>

@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: html}"
+      lang="en">
+<body>
+<div th:fragment="content" class="flex flex-col gap-6">
+
+    <!-- Flash Alerts -->
+    <div th:if="${successMessage}" class="p-4 rounded-xl bg-green-50 border border-green-200 text-green-800 flex items-center justify-between shadow-xs">
+        <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-green-600">check_circle</span>
+            <span class="text-sm font-medium" th:text="${successMessage}">Operation successful</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-green-600 hover:text-green-800 text-xs">Dismiss</button>
+    </div>
+    <div th:if="${errorMessage}" class="p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 flex items-center justify-between shadow-xs">
+        <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-red-600">error</span>
+            <span class="text-sm font-medium" th:text="${errorMessage}">Error occurred</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-red-600 hover:text-red-800 text-xs">Dismiss</button>
+    </div>
+    <div th:if="${infoMessage}" class="p-4 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 flex items-center justify-between shadow-xs">
+        <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-blue-600">info</span>
+            <span class="text-sm font-medium" th:text="${infoMessage}">Information</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-blue-600 hover:text-blue-800 text-xs">Dismiss</button>
+    </div>
+
+    <!-- Header Banner -->
+    <div class="relative overflow-hidden rounded-2xl bg-surface-container-lowest p-6 lg:p-8 border border-[#E7E9E3] shadow-xs">
+        <div class="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-primary/5 blur-2xl pointer-events-none"></div>
+
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
+            <div>
+                <div class="flex items-center gap-2 mb-1.5">
+                    <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-[#56DA33]/20 text-[#125B00] tracking-wider uppercase">
+                        Phase 2 Pipeline Active
+                    </span>
+                    <span class="text-tertiary text-xs">
+                        • Multi-Tenant Dataset Ingestion
+                    </span>
+                </div>
+                <h1 class="font-headline font-bold text-2xl lg:text-3xl text-on-surface tracking-tight">
+                    Dataset Management & Ingestion Pipeline
+                </h1>
+                <p class="text-xs text-tertiary mt-1">
+                    Manage CSV and Excel data streams, validate data quality, and prepare retail records for
+                    <strong class="text-on-surface" th:text="${activeWorkspace != null ? activeWorkspace.name : 'Supermarket'}">Supermarket</strong>
+                </p>
+            </div>
+
+            <div class="flex items-center gap-3 flex-wrap">
+                <a th:href="@{/datasets/sample-generator}"
+                   class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-secondary hover:bg-secondary/90 text-on-secondary text-xs font-bold shadow-xs transition-all">
+                    <span class="material-symbols-outlined text-[18px]">auto_awesome</span>
+                    <span>Generate Synthetic Data</span>
+                </a>
+                <a th:href="@{/datasets/upload}"
+                   class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-on-primary font-headline text-xs font-bold shadow-xs transition-all">
+                    <span class="material-symbols-outlined text-[18px]">upload_file</span>
+                    <span>Upload Dataset</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Metric KPI Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Sales Items KPI -->
+        <div class="rounded-xl bg-surface-container-lowest p-5 border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-tertiary">Sales Transactions</span>
+                <span class="p-2 rounded-lg bg-green-50 text-primary material-symbols-outlined text-[20px]">receipt_long</span>
+            </div>
+            <div class="mt-4">
+                <div class="text-2xl font-bold font-headline text-on-surface" th:text="${#numbers.formatInteger(salesCount, 1, 'COMMA')}">0</div>
+                <span class="text-[11px] text-tertiary">Line items processed</span>
+            </div>
+        </div>
+
+        <!-- Products KPI -->
+        <div class="rounded-xl bg-surface-container-lowest p-5 border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-tertiary">Product Catalog</span>
+                <span class="p-2 rounded-lg bg-amber-50 text-amber-600 material-symbols-outlined text-[20px]">inventory_2</span>
+            </div>
+            <div class="mt-4">
+                <div class="text-2xl font-bold font-headline text-on-surface" th:text="${#numbers.formatInteger(productCount, 1, 'COMMA')}">0</div>
+                <span class="text-[11px] text-tertiary">Active product SKUs</span>
+            </div>
+        </div>
+
+        <!-- Customers KPI -->
+        <div class="rounded-xl bg-surface-container-lowest p-5 border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-tertiary">Customer Registry</span>
+                <span class="p-2 rounded-lg bg-blue-50 text-blue-600 material-symbols-outlined text-[20px]">groups</span>
+            </div>
+            <div class="mt-4">
+                <div class="text-2xl font-bold font-headline text-on-surface" th:text="${#numbers.formatInteger(customerCount, 1, 'COMMA')}">0</div>
+                <span class="text-[11px] text-tertiary">Customer profiles</span>
+            </div>
+        </div>
+
+        <!-- Inventory KPI -->
+        <div class="rounded-xl bg-surface-container-lowest p-5 border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-tertiary">Inventory Snapshots</span>
+                <span class="p-2 rounded-lg bg-purple-50 text-purple-600 material-symbols-outlined text-[20px]">warehouse</span>
+            </div>
+            <div class="mt-4">
+                <div class="text-2xl font-bold font-headline text-on-surface" th:text="${#numbers.formatInteger(inventoryCount, 1, 'COMMA')}">0</div>
+                <span class="text-[11px] text-tertiary">Stock observation records</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4 Dataset Category Cards -->
+    <div>
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-bold font-headline text-on-surface">Core Retail Dataset Streams</h2>
+            <a th:href="@{/datasets/history}" class="text-xs font-semibold text-primary hover:underline flex items-center gap-1">
+                <span>View Full Ingestion History</span>
+                <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+            </a>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
+            <!-- 1. SALES TRANSACTIONS -->
+            <div class="rounded-2xl bg-surface-container-lowest border border-[#E7E9E3] p-5 shadow-xs flex flex-col justify-between hover:border-primary/40 transition-all">
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-green-100 text-green-800">MANDATORY</span>
+                        <span class="text-[11px] text-tertiary">CSV / XLSX</span>
+                    </div>
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="p-2.5 rounded-xl bg-primary/10 text-primary material-symbols-outlined text-[22px]">point_of_sale</span>
+                        <div>
+                            <h3 class="font-bold text-sm text-on-surface">Sales Transactions</h3>
+                            <span class="text-[11px] text-tertiary">Transactions & Baskets</span>
+                        </div>
+                    </div>
+                    <p class="text-xs text-tertiary line-clamp-2 mt-2">
+                        Basket line-items with transaction IDs, product SKUs, quantities, prices, discounts, and payment tenders.
+                    </p>
+                </div>
+
+                <div class="mt-5 pt-4 border-t border-[#E7E9E3] flex flex-col gap-2">
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-tertiary">Ingested Rows:</span>
+                        <span class="font-bold text-on-surface" th:text="${#numbers.formatInteger(salesCount, 1, 'COMMA')}">0</span>
+                    </div>
+                    <div class="flex items-center gap-2 mt-2">
+                        <a th:href="@{/datasets/upload(type='SALES_TRANSACTIONS')}"
+                           class="flex-1 text-center py-2 rounded-lg bg-primary hover:bg-primary-hover text-on-primary text-xs font-bold transition-colors">
+                            Upload
+                        </a>
+                        <a th:href="@{/datasets/templates/SALES_TRANSACTIONS}"
+                           class="p-2 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface border border-[#E7E9E3] transition-colors"
+                           title="Download Template CSV">
+                            <span class="material-symbols-outlined text-[16px] block">download</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. PRODUCT CATALOG -->
+            <div class="rounded-2xl bg-surface-container-lowest border border-[#E7E9E3] p-5 shadow-xs flex flex-col justify-between hover:border-primary/40 transition-all">
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-green-100 text-green-800">MANDATORY</span>
+                        <span class="text-[11px] text-tertiary">CSV / XLSX</span>
+                    </div>
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="p-2.5 rounded-xl bg-amber-500/10 text-amber-600 material-symbols-outlined text-[22px]">category</span>
+                        <div>
+                            <h3 class="font-bold text-sm text-on-surface">Product Catalog</h3>
+                            <span class="text-[11px] text-tertiary">SKUs & Pricing</span>
+                        </div>
+                    </div>
+                    <p class="text-xs text-tertiary line-clamp-2 mt-2">
+                        Retail master catalog with unique SKUs, brand, category, subcategory, unit cost, and selling price.
+                    </p>
+                </div>
+
+                <div class="mt-5 pt-4 border-t border-[#E7E9E3] flex flex-col gap-2">
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-tertiary">Ingested Rows:</span>
+                        <span class="font-bold text-on-surface" th:text="${#numbers.formatInteger(productCount, 1, 'COMMA')}">0</span>
+                    </div>
+                    <div class="flex items-center gap-2 mt-2">
+                        <a th:href="@{/datasets/upload(type='PRODUCT_CATALOG')}"
+                           class="flex-1 text-center py-2 rounded-lg bg-primary hover:bg-primary-hover text-on-primary text-xs font-bold transition-colors">
+                            Upload
+                        </a>
+                        <a th:href="@{/datasets/templates/PRODUCT_CATALOG}"
+                           class="p-2 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface border border-[#E7E9E3] transition-colors"
+                           title="Download Template CSV">
+                            <span class="material-symbols-outlined text-[16px] block">download</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. CUSTOMER REGISTRY -->
+            <div class="rounded-2xl bg-surface-container-lowest border border-[#E7E9E3] p-5 shadow-xs flex flex-col justify-between hover:border-primary/40 transition-all">
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800">CORE</span>
+                        <span class="text-[11px] text-tertiary">CSV / XLSX</span>
+                    </div>
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="p-2.5 rounded-xl bg-blue-500/10 text-blue-600 material-symbols-outlined text-[22px]">badge</span>
+                        <div>
+                            <h3 class="font-bold text-sm text-on-surface">Customer Registry</h3>
+                            <span class="text-[11px] text-tertiary">Profiles & Demographics</span>
+                        </div>
+                    </div>
+                    <p class="text-xs text-tertiary line-clamp-2 mt-2">
+                        Customer demographic master file with unique customer IDs, names, segments, cities, and join dates.
+                    </p>
+                </div>
+
+                <div class="mt-5 pt-4 border-t border-[#E7E9E3] flex flex-col gap-2">
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-tertiary">Ingested Rows:</span>
+                        <span class="font-bold text-on-surface" th:text="${#numbers.formatInteger(customerCount, 1, 'COMMA')}">0</span>
+                    </div>
+                    <div class="flex items-center gap-2 mt-2">
+                        <a th:href="@{/datasets/upload(type='CUSTOMER_REGISTRY')}"
+                           class="flex-1 text-center py-2 rounded-lg bg-primary hover:bg-primary-hover text-on-primary text-xs font-bold transition-colors">
+                            Upload
+                        </a>
+                        <a th:href="@{/datasets/templates/CUSTOMER_REGISTRY}"
+                           class="p-2 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface border border-[#E7E9E3] transition-colors"
+                           title="Download Template CSV">
+                            <span class="material-symbols-outlined text-[16px] block">download</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. INVENTORY STOCK -->
+            <div class="rounded-2xl bg-surface-container-lowest border border-[#E7E9E3] p-5 shadow-xs flex flex-col justify-between hover:border-primary/40 transition-all">
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-800">CORE</span>
+                        <span class="text-[11px] text-tertiary">CSV / XLSX</span>
+                    </div>
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="p-2.5 rounded-xl bg-purple-500/10 text-purple-600 material-symbols-outlined text-[22px]">inventory</span>
+                        <div>
+                            <h3 class="font-bold text-sm text-on-surface">Inventory Stock</h3>
+                            <span class="text-[11px] text-tertiary">Snapshots & Balance</span>
+                        </div>
+                    </div>
+                    <p class="text-xs text-tertiary line-clamp-2 mt-2">
+                        Periodic stock balance observations validating opening + received - sold = closing stock consistency.
+                    </p>
+                </div>
+
+                <div class="mt-5 pt-4 border-t border-[#E7E9E3] flex flex-col gap-2">
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-tertiary">Ingested Rows:</span>
+                        <span class="font-bold text-on-surface" th:text="${#numbers.formatInteger(inventoryCount, 1, 'COMMA')}">0</span>
+                    </div>
+                    <div class="flex items-center gap-2 mt-2">
+                        <a th:href="@{/datasets/upload(type='INVENTORY_STOCK')}"
+                           class="flex-1 text-center py-2 rounded-lg bg-primary hover:bg-primary-hover text-on-primary text-xs font-bold transition-colors">
+                            Upload
+                        </a>
+                        <a th:href="@{/datasets/templates/INVENTORY_STOCK}"
+                           class="p-2 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface border border-[#E7E9E3] transition-colors"
+                           title="Download Template CSV">
+                            <span class="material-symbols-outlined text-[16px] block">download</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Import Jobs Table -->
+    <div class="rounded-2xl bg-surface-container-lowest p-6 border border-[#E7E9E3] shadow-xs">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <h2 class="text-base font-bold font-headline text-on-surface">Recent Ingestion Jobs</h2>
+                <p class="text-xs text-tertiary">Latest file uploads, validation runs, and confirmation states</p>
+            </div>
+            <a th:href="@{/datasets/history}" class="text-xs font-semibold text-primary hover:underline">View All</a>
+        </div>
+
+        <div th:if="${#lists.isEmpty(recentImports)}" class="py-12 text-center">
+            <span class="material-symbols-outlined text-4xl text-tertiary/40 mb-2">upload_file</span>
+            <p class="text-sm font-semibold text-on-surface">No dataset imports yet</p>
+            <p class="text-xs text-tertiary max-w-sm mx-auto mt-1">Upload your supermarket sales, products, customers, or inventory files to start analyzing.</p>
+            <div class="mt-4 flex items-center justify-center gap-3">
+                <a th:href="@{/datasets/upload}" class="px-4 py-2 rounded-xl bg-primary text-on-primary text-xs font-bold shadow-xs">Upload File</a>
+                <a th:href="@{/datasets/sample-generator}" class="px-4 py-2 rounded-xl bg-secondary text-on-secondary text-xs font-bold shadow-xs">Generate Sample Data</a>
+            </div>
+        </div>
+
+        <div th:unless="${#lists.isEmpty(recentImports)}" class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                <tr class="border-b border-[#E7E9E3] text-tertiary uppercase tracking-wider text-[10px]">
+                    <th class="py-3 px-3">Job ID</th>
+                    <th class="py-3 px-3">Category</th>
+                    <th class="py-3 px-3">Filename</th>
+                    <th class="py-3 px-3">Rows</th>
+                    <th class="py-3 px-3">Quality Score</th>
+                    <th class="py-3 px-3">Status</th>
+                    <th class="py-3 px-3">Created</th>
+                    <th class="py-3 px-3 text-right">Actions</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-[#E7E9E3]">
+                <tr th:each="imp : ${recentImports}" class="hover:bg-surface-container-low transition-colors">
+                    <td class="py-3 px-3 font-mono text-[11px] font-bold text-on-surface" th:text="'#' + ${imp.id}">#1</td>
+                    <td class="py-3 px-3 font-semibold text-on-surface" th:text="${imp.datasetType.displayName}">Sales</td>
+                    <td class="py-3 px-3 max-w-[180px] truncate" th:text="${imp.originalFilename}">sales_jan.csv</td>
+                    <td class="py-3 px-3 font-mono" th:text="${imp.totalRows > 0 ? imp.totalRows : '-'}">500</td>
+                    <td class="py-3 px-3">
+                        <span th:if="${imp.qualityScore != null}"
+                              th:class="'px-2 py-0.5 rounded font-bold ' + (${imp.qualityScore >= 80} ? 'bg-green-100 text-green-800' : (${imp.qualityScore >= 50} ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800'))"
+                              th:text="${imp.qualityScore} + '%'">
+                            95%
+                        </span>
+                        <span th:unless="${imp.qualityScore != null}" class="text-tertiary">-</span>
+                    </td>
+                    <td class="py-3 px-3">
+                        <span th:class="'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ' +
+                            (${imp.status.name() == 'COMPLETED'} ? 'bg-green-100 text-green-800' :
+                            (${imp.status.name() == 'COMPLETED_WITH_ERRORS'} ? 'bg-amber-100 text-amber-800' :
+                            (${imp.status.name() == 'READY_FOR_CONFIRMATION'} ? 'bg-blue-100 text-blue-800' :
+                            (${imp.status.name() == 'VALIDATING' or imp.status.name() == 'PROCESSING'} ? 'bg-purple-100 text-purple-800' :
+                            (${imp.status.name() == 'PENDING'} ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800')))))"
+                              th:text="${imp.status.displayName}">
+                            Completed
+                        </span>
+                    </td>
+                    <td class="py-3 px-3 text-tertiary" th:text="${#temporals.format(imp.createdAt, 'dd MMM yyyy, HH:mm')}">22 Nov 2026</td>
+                    <td class="py-3 px-3 text-right">
+                        <div class="flex items-center justify-end gap-2">
+                            <a th:if="${imp.status.name() == 'PENDING'}"
+                               th:href="@{'/datasets/imports/' + ${imp.id} + '/mapping'}"
+                               class="px-2 py-1 rounded bg-primary text-on-primary text-[11px] font-semibold">Map</a>
+                            <a th:if="${imp.status.name() == 'READY_FOR_CONFIRMATION'}"
+                               th:href="@{'/datasets/imports/' + ${imp.id} + '/quality-report'}"
+                               class="px-2 py-1 rounded bg-blue-600 text-white text-[11px] font-semibold">Review</a>
+                            <a th:if="${imp.status.name() == 'COMPLETED' or imp.status.name() == 'COMPLETED_WITH_ERRORS'}"
+                               th:href="@{'/datasets/imports/' + ${imp.id} + '/status'}"
+                               class="px-2 py-1 rounded bg-surface-container-low hover:bg-surface-container text-on-surface text-[11px] font-semibold border border-[#E7E9E3]">Summary</a>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

@@ -8,8 +8,15 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @EnableTransactionManagement
 @EnableJpaRepositories(basePackages = {
         "com.sankhya.user.repository",
-        "com.sankhya.workspace.repository"
+        "com.sankhya.workspace.repository",
+        "com.sankhya.dataset.repository",
+        "com.sankhya.products.repository",
+        "com.sankhya.customers.repository",
+        "com.sankhya.sales.repository",
+        "com.sankhya.inventory.repository",
+        "com.sankhya.analytics.recommendations.repository",
+        "com.sankhya.ml.repository"
 })
 public class DatabaseConfig {
-    // Phase 1 JPA Repository and transaction configuration
+    // JPA Repository and transaction configuration for all Sankhya modules
 }

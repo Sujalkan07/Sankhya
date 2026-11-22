@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: html}"
+      lang="en">
+<body>
+<div th:fragment="content" class="flex flex-col gap-6">
+
+    <!-- Top Summary Banner & Date Filter -->
+    <div class="relative overflow-hidden rounded-2xl bg-surface-container-lowest p-6 lg:p-8 border border-[#E7E9E3] shadow-xs">
+        <div class="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-primary/5 blur-2xl pointer-events-none"></div>
+
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
+            <div>
+                <div class="flex items-center gap-2 mb-1.5">
+                    <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800 tracking-wider uppercase">
+                        Module 4 • Product Intelligence
+                    </span>
+                    <span class="text-tertiary text-xs">• SKU Economics &amp; Margin Analysis</span>
+                </div>
+                <h1 class="font-headline font-bold text-2xl lg:text-3xl text-on-surface tracking-tight">
+                    Product Intelligence &amp; Margin Quadrants
+                </h1>
+                <p class="text-xs text-tertiary mt-1">
+                    Cost of Goods Sold (COGS), gross margins, category profitability, and BCG performance matrix.
+                </p>
+            </div>
+
+            <!-- Date Range Filter Form -->
+            <form th:action="@{/analytics/products}" method="get" class="flex items-center gap-2.5 flex-wrap">
+                <div class="relative">
+                    <select name="preset" onchange="this.form.submit()"
+                            class="px-3.5 py-2 pr-8 rounded-xl bg-surface-container-low text-on-surface text-xs font-semibold border border-[#E7E9E3] shadow-xs outline-none cursor-pointer">
+                        <option th:each="p : ${allPresets}"
+                                th:value="${p.name()}"
+                                th:text="${p.label}"
+                                th:selected="${p == currentPreset}">Past 30 Days</option>
+                    </select>
+                </div>
+
+                <a th:href="@{/analytics/reports/products(preset=${currentPreset})}"
+                   class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface text-xs font-semibold border border-[#E7E9E3] shadow-xs transition-all">
+                    <span class="material-symbols-outlined text-[16px] text-primary">download</span>
+                    <span>Download CSV</span>
+                </a>
+            </form>
+        </div>
+    </div>
+
+    <!-- Empty State Alert if No Data -->
+    <div th:if="${readiness != null and (!readiness.productReady and !readiness.salesReady)}"
+         class="rounded-2xl border border-amber-200 bg-amber-50/70 p-8 text-center flex flex-col items-center justify-center gap-3">
+        <span class="material-symbols-outlined text-amber-600 text-[48px]">category</span>
+        <h2 class="text-lg font-bold text-amber-900">Product &amp; Sales Data Required</h2>
+        <p class="text-xs text-amber-800 max-w-md">
+            Product intelligence links product catalog costs and selling prices with transactional sales volumes to calculate unit economics and gross margins.
+        </p>
+        <div class="flex items-center gap-3 mt-2">
+            <a th:href="@{/datasets/generate}"
+               class="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs transition-colors">
+                Generate Synthetic Data
+            </a>
+            <a th:href="@{/datasets/upload}"
+               class="px-4 py-2 rounded-xl bg-white border border-amber-300 text-amber-800 hover:bg-amber-100 font-semibold text-xs transition-colors">
+                Upload Product Catalog
+            </a>
+        </div>
+    </div>
+
+    <!-- PRODUCT CONTENT WHEN DATA READY -->
+    <div th:if="${analytics != null and analytics.kpis != null}" class="flex flex-col gap-6">
+
+        <!-- 5 PRODUCT KPI CARDS -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <!-- Total Catalog SKUs -->
+            <div class="bg-surface-container-lowest rounded-2xl p-5 border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
+                <span class="text-xs font-semibold text-on-surface-variant">Catalog SKUs</span>
+                <div class="mt-2">
+                    <div class="text-xl font-bold font-headline text-on-surface"
+                         th:text="${analytics.kpis.totalCatalogProducts}">0</div>
+                    <span class="text-[11px] text-tertiary">Total catalog items</span>
+                </div>
+            </div>
+
+            <!-- Active Selling SKUs -->
+            <div class="bg-surface-container-lowest rounded-2xl p-5 border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
+                <span class="text-xs font-semibold text-on-surface-variant">Active Selling SKUs</span>
+                <div class="mt-2">
+                    <div class="text-xl font-bold font-headline text-on-surface"
+                         th:text="${analytics.kpis.activeSellingProducts}">0</div>
+                    <span class="text-[11px] text-tertiary">Sold in period</span>
+                </div>
+            </div>
+
+            <!-- Units Sold -->
+            <div class="bg-surface-container-lowest rounded-2xl p-5 border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
+                <span class="text-xs font-semibold text-on-surface-variant">Total Units Sold</span>
+                <div class="mt-2">
+                    <div class="text-xl font-bold font-headline text-on-surface"
+                         th:text="${analytics.kpis.totalUnitsSold}">0</div>
+                    <span class="text-[11px] text-tertiary">Cumulative volume</span>
+                </div>
+            </div>
+
+            <!-- Overall Gross Margin % -->
+            <div class="bg-surface-container-lowest rounded-2xl p-5 border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
+                <span class="text-xs font-semibold text-on-surface-variant">Overall Gross Margin</span>
+                <div class="mt-2">
+                    <div class="text-xl font-bold font-headline text-emerald-700"
+                         th:text="${analytics.kpis.overallGrossMarginPercentage + '%'}">0%</div>
+                    <span class="text-[11px] text-tertiary">Revenue vs COGS</span>
+                </div>
+            </div>
+
+            <!-- Top Category -->
+            <div class="bg-surface-container-lowest rounded-2xl p-5 border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
+                <span class="text-xs font-semibold text-on-surface-variant">Lead Category</span>
+                <div class="mt-2">
+                    <div class="text-base font-bold font-headline text-on-surface truncate"
+                         th:text="${analytics.kpis.topPerformingCategory}">None</div>
+                    <span class="text-[11px] text-tertiary">Top sales volume</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4 PERFORMANCE QUADRANT SUMMARY TILES (BCG-Style) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Stars -->
+            <div class="bg-surface-container-lowest rounded-2xl p-5 border border-emerald-200 shadow-xs flex items-center justify-between">
+                <div>
+                    <span class="text-xs font-bold text-emerald-800">Stars</span>
+                    <p class="text-[11px] text-tertiary">High Margin • High Volume</p>
+                    <div class="text-2xl font-bold font-headline text-emerald-700 mt-1" th:text="${analytics.starCount}">0</div>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-[22px]">star</span>
+                </div>
+            </div>
+
+            <!-- Cash Cows -->
+            <div class="bg-surface-container-lowest rounded-2xl p-5 border border-blue-200 shadow-xs flex items-center justify-between">
+                <div>
+                    <span class="text-xs font-bold text-blue-800">Cash Cows</span>
+                    <p class="text-[11px] text-tertiary">Low Margin • High Volume</p>
+                    <div class="text-2xl font-bold font-headline text-blue-700 mt-1" th:text="${analytics.cashCowCount}">0</div>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-[22px]">savings</span>
+                </div>
+            </div>
+
+            <!-- Opportunities -->
+            <div class="bg-surface-container-lowest rounded-2xl p-5 border border-purple-200 shadow-xs flex items-center justify-between">
+                <div>
+                    <span class="text-xs font-bold text-purple-800">Opportunities</span>
+                    <p class="text-[11px] text-tertiary">High Margin • Low Volume</p>
+                    <div class="text-2xl font-bold font-headline text-purple-700 mt-1" th:text="${analytics.opportunityCount}">0</div>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-[22px]">trending_up</span>
+                </div>
+            </div>
+
+            <!-- Underperformers -->
+            <div class="bg-surface-container-lowest rounded-2xl p-5 border border-slate-200 shadow-xs flex items-center justify-between">
+                <div>
+                    <span class="text-xs font-bold text-slate-800">Underperformers</span>
+                    <p class="text-[11px] text-tertiary">Low Margin • Low Volume</p>
+                    <div class="text-2xl font-bold font-headline text-slate-700 mt-1" th:text="${analytics.underperformerCount}">0</div>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-[22px]">report_problem</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- CATEGORY PROFITABILITY BREAKDOWN -->
+        <div class="bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs">
+            <div class="flex items-center justify-between pb-3.5 mb-4 border-b border-[#E7E9E3]">
+                <div>
+                    <h3 class="font-headline text-sm font-bold text-on-surface">Category Profitability &amp; Unit Economics</h3>
+                    <p class="text-[11px] text-on-surface-variant">Departmental margin performance and COGS analysis</p>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead>
+                        <tr class="border-b border-[#E7E9E3] text-tertiary font-semibold">
+                            <th class="pb-2">Department / Category</th>
+                            <th class="pb-2 text-right">Catalog SKUs</th>
+                            <th class="pb-2 text-right">Units Sold</th>
+                            <th class="pb-2 text-right">Gross Revenue</th>
+                            <th class="pb-2 text-right">Estimated COGS</th>
+                            <th class="pb-2 text-right">Gross Profit</th>
+                            <th class="pb-2 text-right">Gross Margin %</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#F1F3EE]">
+                        <tr th:each="c : ${analytics.categoryProfitability}">
+                            <td class="py-2.5 font-bold text-on-surface" th:text="${c.category}">Beverages</td>
+                            <td class="py-2.5 text-right font-mono" th:text="${c.skuCount}">0</td>
+                            <td class="py-2.5 text-right font-mono" th:text="${c.quantitySold}">0</td>
+                            <td class="py-2.5 text-right font-mono font-bold" th:text="${'₹' + c.revenue}">₹0.00</td>
+                            <td class="py-2.5 text-right font-mono text-tertiary" th:text="${'₹' + c.cogs}">₹0.00</td>
+                            <td class="py-2.5 text-right font-mono font-bold text-emerald-700" th:text="${'₹' + c.grossProfit}">₹0.00</td>
+                            <td class="py-2.5 text-right font-mono font-bold"
+                                th:classappend="${c.grossMarginPercentage >= 25 ? 'text-emerald-700' : 'text-amber-700'}"
+                                th:text="${c.grossMarginPercentage + '%'}">0%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- DETAILED PRODUCT PERFORMANCE RANKINGS TABLE WITH SEARCH & DETAIL MODAL -->
+        <div class="bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 mb-4 border-b border-[#E7E9E3]">
+                <div>
+                    <h3 class="font-headline text-sm font-bold text-on-surface">SKU Performance &amp; Profitability Matrix</h3>
+                    <p class="text-[11px] text-on-surface-variant">Click any SKU to inspect unit economics and BCG classification</p>
+                </div>
+                <div class="flex items-center gap-2.5 flex-wrap">
+                    <div class="relative">
+                        <input type="text" id="sku-search" placeholder="Search SKU or name..."
+                               class="pl-8 pr-3 py-1.5 rounded-lg bg-surface-container-low text-on-surface text-xs border border-[#E7E9E3] outline-none focus:ring-1 focus:ring-primary w-48 sm:w-56">
+                        <span class="material-symbols-outlined absolute left-2 top-2 text-tertiary text-[16px]">search</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto max-h-96">
+                <table class="w-full text-left text-xs" id="sku-table">
+                    <thead class="sticky top-0 bg-surface-container-lowest border-b border-[#E7E9E3]">
+                        <tr class="text-tertiary font-semibold">
+                            <th class="pb-2">SKU ID</th>
+                            <th class="pb-2">Product Name</th>
+                            <th class="pb-2">Category</th>
+                            <th class="pb-2 text-right">Units Sold</th>
+                            <th class="pb-2 text-right">Revenue (₹)</th>
+                            <th class="pb-2 text-right">COGS (₹)</th>
+                            <th class="pb-2 text-right">Gross Profit (₹)</th>
+                            <th class="pb-2 text-right">Margin %</th>
+                            <th class="pb-2 text-center">Quadrant</th>
+                            <th class="pb-2 text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#F1F3EE]">
+                        <tr th:each="p : ${analytics.allProducts}" class="sku-row"
+                            th:data-sku="${p.productId}"
+                            th:data-name="${p.productName}"
+                            th:data-cat="${p.category}"
+                            th:data-units="${p.quantitySold}"
+                            th:data-revenue="${p.revenue}"
+                            th:data-cogs="${p.cogs}"
+                            th:data-profit="${p.grossProfit}"
+                            th:data-margin="${p.grossMarginPercentage}"
+                            th:data-quadrant="${p.quadrant}">
+                            <td class="py-2.5 font-mono text-primary font-bold sku-id" th:text="${p.productId}">SKU-001</td>
+                            <td class="py-2.5 font-bold text-on-surface sku-name" th:text="${p.productName}">Product Name</td>
+                            <td class="py-2.5 text-on-surface-variant" th:text="${p.category}">Category</td>
+                            <td class="py-2.5 text-right font-mono" th:text="${p.quantitySold}">0</td>
+                            <td class="py-2.5 text-right font-mono font-bold" th:text="${'₹' + p.revenue}">₹0.00</td>
+                            <td class="py-2.5 text-right font-mono text-tertiary" th:text="${'₹' + p.cogs}">₹0.00</td>
+                            <td class="py-2.5 text-right font-mono font-bold text-emerald-700" th:text="${'₹' + p.grossProfit}">₹0.00</td>
+                            <td class="py-2.5 text-right font-mono font-bold"
+                                th:classappend="${p.grossMarginPercentage >= 25 ? 'text-emerald-700' : 'text-amber-700'}"
+                                th:text="${p.grossMarginPercentage + '%'}">0%</td>
+                            <td class="py-2.5 text-center">
+                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold"
+                                      th:classappend="${p.quadrant == 'Star' ? 'bg-emerald-100 text-emerald-800' : (p.quadrant == 'Cash Cow' ? 'bg-blue-100 text-blue-800' : (p.quadrant == 'Opportunity' ? 'bg-purple-100 text-purple-800' : 'bg-slate-100 text-slate-800'))}"
+                                      th:text="${p.quadrant}">Star</span>
+                            </td>
+                            <td class="py-2.5 text-center">
+                                <button type="button"
+                                        class="sku-detail-btn px-2.5 py-1 rounded bg-surface-container-low hover:bg-surface-container text-primary font-bold text-[11px] border border-[#E7E9E3] transition-colors cursor-pointer">
+                                    Economics
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        <!-- Phase 5 ML Section: Apriori Market Basket Association Rules -->
+        <div class="bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs">
+            <div class="flex items-center justify-between mb-4 pb-3 border-b border-[#E7E9E3]">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary text-[22px]">shopping_basket</span>
+                    <div>
+                        <h3 class="font-headline font-bold text-base text-on-surface">Apriori Market Basket Association Rules</h3>
+                        <p class="text-xs text-tertiary">Mined co-occurrence patterns across multi-item customer checkout baskets.</p>
+                    </div>
+                </div>
+                <form th:action="@{/analytics/ai-insights/train/APRIORI}" method="post">
+                    <button type="submit"
+                            class="px-3.5 py-1.5 rounded-xl bg-primary hover:bg-primary-hover text-on-primary font-headline text-xs font-bold flex items-center gap-1 shadow-xs transition-all cursor-pointer">
+                        <span class="material-symbols-outlined text-[16px]">refresh</span>
+                        <span>Mine Rules</span>
+                    </button>
+                </form>
+            </div>
+
+            <div class="overflow-x-auto" th:if="${associationRules != null and !associationRules.isEmpty()}">
+                <table class="w-full text-left text-xs">
+                    <thead>
+                        <tr class="border-b border-[#E7E9E3] text-[10px] text-tertiary uppercase font-bold">
+                            <th class="pb-2">Primary Item (Antecedent)</th>
+                            <th class="pb-2">Associated Item (Consequent)</th>
+                            <th class="pb-2 text-right">Support</th>
+                            <th class="pb-2 text-right">Confidence</th>
+                            <th class="pb-2 text-right">Lift</th>
+                            <th class="pb-2">Merchandising Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#E7E9E3]/60">
+                        <tr th:each="rule, iter : ${associationRules}" th:if="${iter.index < 10}">
+                            <td class="py-2.5 font-semibold text-on-surface" th:text="${rule.antecedent}">Item A</td>
+                            <td class="py-2.5 text-on-surface" th:text="${rule.consequent}">Item B</td>
+                            <td class="py-2.5 text-right font-mono text-tertiary" th:text="${#numbers.formatDecimal(rule.support * 100, 1, 1) + '%'}">4.2%</td>
+                            <td class="py-2.5 text-right font-mono text-tertiary" th:text="${#numbers.formatDecimal(rule.confidence * 100, 1, 1) + '%'}">45.0%</td>
+                            <td class="py-2.5 text-right font-mono font-bold text-primary" th:text="${#numbers.formatDecimal(rule.lift, 1, 2) + 'x'}">2.4x</td>
+                            <td class="py-2.5 text-[11px] text-tertiary max-w-xs truncate" th:text="${rule.actionableRecommendation}">Place adjacent or bundle.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div th:unless="${associationRules != null and !associationRules.isEmpty()}" class="text-center py-6 text-tertiary text-xs">
+                No association rules mined yet. Click "Mine Rules" to discover cross-sell affinities.
+            </div>
+        </div>
+
+        <!-- Phase 5 ML Section: Random Forest Product Demand Classification -->
+        <div class="bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs">
+            <div class="flex items-center justify-between mb-4 pb-3 border-b border-[#E7E9E3]">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary text-[22px]">forest</span>
+                    <div>
+                        <h3 class="font-headline font-bold text-base text-on-surface">Random Forest SKU Demand Predictions</h3>
+                        <p class="text-xs text-tertiary">Ensemble classification predicting SKU velocity and stockout risk.</p>
+                    </div>
+                </div>
+                <form th:action="@{/analytics/ai-insights/train/RANDOM_FOREST}" method="post">
+                    <button type="submit"
+                            class="px-3.5 py-1.5 rounded-xl bg-primary hover:bg-primary-hover text-on-primary font-headline text-xs font-bold flex items-center gap-1 shadow-xs transition-all cursor-pointer">
+                        <span class="material-symbols-outlined text-[16px]">refresh</span>
+                        <span>Retrain Demand</span>
+                    </button>
+                </form>
+            </div>
+
+            <div class="overflow-x-auto" th:if="${demandPredictions != null and !demandPredictions.isEmpty()}">
+                <table class="w-full text-left text-xs">
+                    <thead>
+                        <tr class="border-b border-[#E7E9E3] text-[10px] text-tertiary uppercase font-bold">
+                            <th class="pb-2">SKU</th>
+                            <th class="pb-2">Product Name</th>
+                            <th class="pb-2">Category</th>
+                            <th class="pb-2">Predicted Demand</th>
+                            <th class="pb-2 text-right">Confidence</th>
+                            <th class="pb-2 text-right">7-Day Units</th>
+                            <th class="pb-2 text-right">Stockout Risk</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#E7E9E3]/60">
+                        <tr th:each="dp, iter : ${demandPredictions}" th:if="${iter.index < 10}">
+                            <td class="py-2.5 font-mono text-tertiary" th:text="${dp.productCode}">SKU-101</td>
+                            <td class="py-2.5 font-semibold text-on-surface" th:text="${dp.productName}">Product</td>
+                            <td class="py-2.5 text-tertiary" th:text="${dp.category}">Category</td>
+                            <td class="py-2.5">
+                                <span class="px-2 py-0.5 rounded-full font-bold text-[10px]"
+                                      th:classappend="${dp.predictedDemandClass.name() == 'HIGH' ? 'bg-emerald-100 text-emerald-800' : (dp.predictedDemandClass.name() == 'MEDIUM' ? 'bg-blue-100 text-blue-800' : 'bg-slate-100 text-slate-800')}"
+                                      th:text="${dp.predictedDemandClass}">HIGH</span>
+                            </td>
+                            <td class="py-2.5 text-right font-mono text-tertiary" th:text="${#numbers.formatDecimal(dp.confidence * 100, 1, 0) + '%'}">88%</td>
+                            <td class="py-2.5 text-right font-mono font-bold text-on-surface" th:text="${#numbers.formatDecimal(dp.predictedUnitsNext7d, 1, 0)}">45</td>
+                            <td class="py-2.5 text-right">
+                                <span class="px-2 py-0.5 rounded-full font-bold text-[10px]"
+                                      th:classappend="${dp.stockoutRiskLevel != null and dp.stockoutRiskLevel.name() == 'HIGH' ? 'bg-rose-100 text-rose-800' : 'bg-slate-100 text-slate-700'}"
+                                      th:text="${dp.stockoutRiskLevel}">LOW</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div th:unless="${demandPredictions != null and !demandPredictions.isEmpty()}" class="text-center py-6 text-tertiary text-xs">
+                No demand predictions generated yet. Click "Retrain Demand" to classify SKUs.
+            </div>
+        </div>
+
+    </div>
+
+    <!-- SKU DETAIL MODAL DIALOG -->
+    <div id="sku-modal" class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-surface-container-lowest rounded-2xl max-w-xl w-full border border-[#E7E9E3] shadow-2xl p-6 flex flex-col gap-4">
+            <div class="flex items-center justify-between pb-3 border-b border-[#E7E9E3]">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary text-[22px]">analytics</span>
+                    <div>
+                        <h3 class="font-headline font-bold text-base text-on-surface" id="modal-sku-title">SKU Economics Inspection</h3>
+                        <p class="text-[11px] text-tertiary" id="modal-sku-subtitle">Product Margin &amp; BCG Strategic Classification</p>
+                    </div>
+                </div>
+                <button type="button" id="sku-modal-close" class="p-1 rounded-lg text-tertiary hover:text-on-surface hover:bg-surface-container">
+                    <span class="material-symbols-outlined text-[20px]">close</span>
+                </button>
+            </div>
+
+            <!-- SKU Meta -->
+            <div class="p-3.5 rounded-xl bg-surface-container-low border border-[#E7E9E3] flex items-center justify-between">
+                <div>
+                    <span class="font-mono text-xs font-bold text-primary block" id="modal-sku-id">SKU-001</span>
+                    <h4 class="font-headline font-bold text-sm text-on-surface" id="modal-sku-name">Product Name</h4>
+                    <span class="text-[11px] text-tertiary" id="modal-sku-cat">Category</span>
+                </div>
+                <span class="px-3 py-1 rounded-full text-xs font-bold" id="modal-sku-quadrant-badge">Star</span>
+            </div>
+
+            <!-- Financial Breakdown Grid -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                <div class="p-3 rounded-xl bg-surface-container-lowest border border-[#E7E9E3]">
+                    <span class="text-[10px] text-tertiary block">Units Sold</span>
+                    <strong class="font-mono text-sm text-on-surface" id="modal-sku-units">0</strong>
+                </div>
+                <div class="p-3 rounded-xl bg-surface-container-lowest border border-[#E7E9E3]">
+                    <span class="text-[10px] text-tertiary block">Gross Revenue</span>
+                    <strong class="font-mono text-sm text-on-surface" id="modal-sku-revenue">₹0.00</strong>
+                </div>
+                <div class="p-3 rounded-xl bg-surface-container-lowest border border-[#E7E9E3]">
+                    <span class="text-[10px] text-tertiary block">Estimated COGS</span>
+                    <strong class="font-mono text-sm text-tertiary" id="modal-sku-cogs">₹0.00</strong>
+                </div>
+                <div class="p-3 rounded-xl bg-surface-container-lowest border border-[#E7E9E3]">
+                    <span class="text-[10px] text-tertiary block">Gross Profit</span>
+                    <strong class="font-mono text-sm text-emerald-700 font-bold" id="modal-sku-profit">₹0.00</strong>
+                </div>
+            </div>
+
+            <!-- Strategic Advice Box based on BCG Quadrant -->
+            <div class="p-3.5 rounded-xl bg-surface-container border border-[#E7E9E3] text-xs">
+                <span class="font-bold text-primary block mb-1">BCG Strategic Recommendation</span>
+                <p class="text-on-surface leading-relaxed text-[11px]" id="modal-sku-advice">
+                    High margin and high volume SKU. Maintain continuous safety stock and prime shelf allocation.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Client-Side Search & Modal Scripts -->
+    <script>
+        // SKU Table Search
+        const skuSearch = document.getElementById('sku-search');
+        if (skuSearch) {
+            skuSearch.addEventListener('input', function() {
+                const term = this.value.toLowerCase().trim();
+                const rows = document.querySelectorAll('#sku-table .sku-row');
+                rows.forEach(row => {
+                    const id = row.querySelector('.sku-id') ? row.querySelector('.sku-id').textContent.toLowerCase() : '';
+                    const name = row.querySelector('.sku-name') ? row.querySelector('.sku-name').textContent.toLowerCase() : '';
+                    row.style.display = (!term || id.includes(term) || name.includes(term)) ? '' : 'none';
+                });
+            });
+        }
+
+        // SKU Modal Interactivity
+        const skuModal = document.getElementById('sku-modal');
+        const skuCloseBtn = document.getElementById('sku-modal-close');
+        const detailBtns = document.querySelectorAll('.sku-detail-btn');
+
+        function openSkuModal() {
+            if (skuModal) skuModal.classList.remove('hidden');
+        }
+
+        function closeSkuModal() {
+            if (skuModal) skuModal.classList.add('hidden');
+        }
+
+        if (skuCloseBtn) skuCloseBtn.addEventListener('click', closeSkuModal);
+        if (skuModal) {
+            skuModal.addEventListener('click', function(e) {
+                if (e.target === skuModal) closeSkuModal();
+            });
+        }
+
+        detailBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const row = this.closest('.sku-row');
+                if (!row) return;
+
+                const sku = row.getAttribute('data-sku');
+                const name = row.getAttribute('data-name');
+                const cat = row.getAttribute('data-cat');
+                const units = row.getAttribute('data-units');
+                const revenue = parseFloat(row.getAttribute('data-revenue') || 0);
+                const cogs = parseFloat(row.getAttribute('data-cogs') || 0);
+                const profit = parseFloat(row.getAttribute('data-profit') || 0);
+                const margin = parseFloat(row.getAttribute('data-margin') || 0);
+                const quadrant = row.getAttribute('data-quadrant');
+
+                document.getElementById('modal-sku-id').textContent = sku;
+                document.getElementById('modal-sku-name').textContent = name;
+                document.getElementById('modal-sku-cat').textContent = cat + ' • ' + margin.toFixed(1) + '% Margin';
+                document.getElementById('modal-sku-units').textContent = units;
+                document.getElementById('modal-sku-revenue').textContent = '₹' + revenue.toFixed(2);
+                document.getElementById('modal-sku-cogs').textContent = '₹' + cogs.toFixed(2);
+                document.getElementById('modal-sku-profit').textContent = '₹' + profit.toFixed(2);
+
+                const badge = document.getElementById('modal-sku-quadrant-badge');
+                badge.textContent = quadrant;
+                badge.className = 'px-3 py-1 rounded-full text-xs font-bold';
+
+                const adviceEl = document.getElementById('modal-sku-advice');
+
+                if (quadrant === 'Star') {
+                    badge.classList.add('bg-emerald-100', 'text-emerald-800');
+                    adviceEl.textContent = 'High Margin • High Volume. Core business driver. Protect supplier terms, maintain 100% shelf in-stock rate, and highlight in endcap displays.';
+                } else if (quadrant === 'Cash Cow') {
+                    badge.classList.add('bg-blue-100', 'text-blue-800');
+                    adviceEl.textContent = 'Low Margin • High Volume. Reliable footfall generator. Avoid deep discounting; cross-sell with higher-margin impulse items like snacks and beverages.';
+                } else if (quadrant === 'Opportunity') {
+                    badge.classList.add('bg-purple-100', 'text-purple-800');
+                    adviceEl.textContent = 'High Margin • Low Volume. Premium margin opportunity. Shift to eye-level shelf placement, test temporary 5-10% introductory discounts, and bundle with basket staples.';
+                } else {
+                    badge.classList.add('bg-slate-100', 'text-slate-800');
+                    adviceEl.textContent = 'Low Margin • Low Volume. Poor performer consuming warehouse working capital. Review minimum order quantities, mark down to clear excess inventory, or consider SKU rationalization.';
+                }
+
+                openSkuModal();
+            });
+        });
+    </script>
+
+</div>
+</body>
+</html>

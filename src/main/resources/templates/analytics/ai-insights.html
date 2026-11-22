@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: html}"
+      lang="en">
+<body>
+<div th:fragment="content" class="flex flex-col gap-6">
+
+    <!-- Header Title Strip & Live Telemetry Pill -->
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+            <div class="flex items-center gap-2 text-primary font-semibold text-xs mb-1.5">
+                <span class="material-symbols-outlined text-[16px]">psychology</span>
+                <span class="tracking-wide uppercase font-headline">Cognitive Retail Engine v5.0</span>
+                <span class="text-tertiary">|</span>
+                <span class="text-on-surface-variant" th:text="${activeWorkspace != null ? activeWorkspace.name : 'Store Workspace'}">Green Basket Supermarket</span>
+            </div>
+            <h1 class="font-headline font-bold text-2xl lg:text-3xl text-on-surface tracking-tight">
+                AI Insights, ML Engine &amp; Gemini Intelligence
+            </h1>
+            <p class="text-xs text-tertiary mt-1">
+                Grounded machine learning algorithms (K-Means, Apriori, Random Forest, Linear Regression) paired with Google Gemini AI for executive strategic intelligence.
+            </p>
+        </div>
+
+        <!-- Master ML Train All Action & Status -->
+        <div class="flex items-center gap-3">
+            <form th:action="@{/analytics/ai-insights/train/ALL}" method="post">
+                <button type="submit"
+                        class="px-4 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-on-primary font-headline text-xs font-bold flex items-center gap-2 shadow-sm transition-all cursor-pointer">
+                    <span class="material-symbols-outlined text-[18px]">smart_toy</span>
+                    <span>Retrain All ML Models</span>
+                </button>
+            </form>
+            <div class="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-container border border-[#E7E9E3] text-xs">
+                <div class="h-2.5 w-2.5 rounded-full bg-primary-container animate-pulse"></div>
+                <span class="text-tertiary font-mono" th:text="${'Engine: ' + activeJobStatus}">Engine: IDLE</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Flash Notifications -->
+    <div th:if="${successMessage}" class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 text-xs font-semibold flex items-center gap-2">
+        <span class="material-symbols-outlined text-[18px]">check_circle</span>
+        <span th:text="${successMessage}">Model trained successfully.</span>
+    </div>
+    <div th:if="${errorMessage}" class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-800 text-xs font-semibold flex items-center gap-2">
+        <span class="material-symbols-outlined text-[18px]">error</span>
+        <span th:text="${errorMessage}">Error occurred.</span>
+    </div>
+
+    <!-- SECTION 1: Machine Learning Model Registry & Control Center -->
+    <section class="flex flex-col gap-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-[20px]">hub</span>
+                <h2 class="font-headline font-bold text-lg text-on-surface">Machine Learning Engine &amp; Model Registry</h2>
+                <span class="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary font-bold text-[10px] uppercase tracking-wider">
+                    Pure Java 21
+                </span>
+            </div>
+            <span class="text-xs text-tertiary font-mono">Zero Python Dependency • Workspace Scoped</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Model 1: K-Means -->
+            <div class="p-5 rounded-2xl bg-surface-container-lowest border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="px-2.5 py-0.5 rounded-full bg-primary-container/20 text-primary font-semibold text-[11px]">Unsupervised</span>
+                        <span class="material-symbols-outlined text-primary text-[20px]">group_work</span>
+                    </div>
+                    <h3 class="font-headline font-bold text-sm text-on-surface mb-1">K-Means Customer Clusters</h3>
+                    <p class="text-xs text-tertiary mb-3">Segment customers by Recency, Frequency, Monetary &amp; ATV with K-Means++.</p>
+
+                    <div class="p-3 rounded-xl bg-surface-container-low mb-3 space-y-1 font-mono text-[11px]">
+                        <div class="flex justify-between">
+                            <span class="text-tertiary">Status:</span>
+                            <span class="text-primary font-semibold">ACTIVE</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-tertiary">Algorithm:</span>
+                            <span class="text-on-surface">K-Means (k=4)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <form th:action="@{/analytics/ai-insights/train/K_MEANS}" method="post">
+                    <button type="submit"
+                            class="w-full py-2 rounded-xl bg-surface-container-low hover:bg-surface-container text-primary font-headline text-xs font-bold border border-[#E7E9E3] transition-colors flex items-center justify-center gap-1.5 cursor-pointer">
+                        <span class="material-symbols-outlined text-[16px]">play_arrow</span>
+                        <span>Train Clusters</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Model 2: Apriori -->
+            <div class="p-5 rounded-2xl bg-surface-container-lowest border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="px-2.5 py-0.5 rounded-full bg-primary-container/20 text-primary font-semibold text-[11px]">Association</span>
+                        <span class="material-symbols-outlined text-primary text-[20px]">shopping_basket</span>
+                    </div>
+                    <h3 class="font-headline font-bold text-sm text-on-surface mb-1">Apriori Market Basket</h3>
+                    <p class="text-xs text-tertiary mb-3">Mines frequent co-occurring itemsets and calculates support, confidence &amp; lift.</p>
+
+                    <div class="p-3 rounded-xl bg-surface-container-low mb-3 space-y-1 font-mono text-[11px]">
+                        <div class="flex justify-between">
+                            <span class="text-tertiary">Status:</span>
+                            <span class="text-primary font-semibold">ACTIVE</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-tertiary">Rules Persisted:</span>
+                            <span class="text-on-surface" th:text="${topAssociationRules != null ? topAssociationRules.size() : 0}">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <form th:action="@{/analytics/ai-insights/train/APRIORI}" method="post">
+                    <button type="submit"
+                            class="w-full py-2 rounded-xl bg-surface-container-low hover:bg-surface-container text-primary font-headline text-xs font-bold border border-[#E7E9E3] transition-colors flex items-center justify-center gap-1.5 cursor-pointer">
+                        <span class="material-symbols-outlined text-[16px]">play_arrow</span>
+                        <span>Mine Basket Rules</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Model 3: Random Forest -->
+            <div class="p-5 rounded-2xl bg-surface-container-lowest border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="px-2.5 py-0.5 rounded-full bg-primary-container/20 text-primary font-semibold text-[11px]">Classification</span>
+                        <span class="material-symbols-outlined text-primary text-[20px]">forest</span>
+                    </div>
+                    <h3 class="font-headline font-bold text-sm text-on-surface mb-1">Random Forest Demand</h3>
+                    <p class="text-xs text-tertiary mb-3">Ensemble tree classifier predicting SKU velocity surge and stockout risk.</p>
+
+                    <div class="p-3 rounded-xl bg-surface-container-low mb-3 space-y-1 font-mono text-[11px]">
+                        <div class="flex justify-between">
+                            <span class="text-tertiary">Status:</span>
+                            <span class="text-primary font-semibold">ACTIVE</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-tertiary">Ensemble:</span>
+                            <span class="text-on-surface">30 Trees (Depth 5)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <form th:action="@{/analytics/ai-insights/train/RANDOM_FOREST}" method="post">
+                    <button type="submit"
+                            class="w-full py-2 rounded-xl bg-surface-container-low hover:bg-surface-container text-primary font-headline text-xs font-bold border border-[#E7E9E3] transition-colors flex items-center justify-center gap-1.5 cursor-pointer">
+                        <span class="material-symbols-outlined text-[16px]">play_arrow</span>
+                        <span>Train Classifier</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Model 4: Linear Regression -->
+            <div class="p-5 rounded-2xl bg-surface-container-lowest border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="px-2.5 py-0.5 rounded-full bg-primary-container/20 text-primary font-semibold text-[11px]">Forecasting</span>
+                        <span class="material-symbols-outlined text-primary text-[20px]">show_chart</span>
+                    </div>
+                    <h3 class="font-headline font-bold text-sm text-on-surface mb-1">Linear Regression Sales</h3>
+                    <p class="text-xs text-tertiary mb-3">Autoregressive OLS with trend and day-of-week seasonality forecasting.</p>
+
+                    <div class="p-3 rounded-xl bg-surface-container-low mb-3 space-y-1 font-mono text-[11px]">
+                        <div class="flex justify-between">
+                            <span class="text-tertiary">Status:</span>
+                            <span class="text-primary font-semibold">ACTIVE</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-tertiary">Horizon:</span>
+                            <span class="text-on-surface">14-Day Trajectory</span>
+                        </div>
+                    </div>
+                </div>
+
+                <form th:action="@{/analytics/ai-insights/train/LINEAR_REGRESSION}" method="post">
+                    <button type="submit"
+                            class="w-full py-2 rounded-xl bg-surface-container-low hover:bg-surface-container text-primary font-headline text-xs font-bold border border-[#E7E9E3] transition-colors flex items-center justify-center gap-1.5 cursor-pointer">
+                        <span class="material-symbols-outlined text-[16px]">play_arrow</span>
+                        <span>Project Revenue</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 2: Google Gemini AI Executive Strategic Intelligence -->
+    <section class="flex flex-col gap-4">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div>
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary text-[22px]">auto_awesome</span>
+                    <h2 class="font-headline font-bold text-xl text-on-surface">Google Gemini Strategic Intelligence</h2>
+                    <span class="px-2.5 py-0.5 rounded-full bg-primary-container text-on-primary-container font-semibold text-xs">
+                        gemini-2.5-flash
+                    </span>
+                </div>
+                <p class="text-xs text-tertiary mt-0.5">
+                    Grounded AI analysis synthesizing real store metrics, ML forecasts, customer clusters, and market basket rules.
+                </p>
+            </div>
+
+            <!-- Gemini Generation Action Buttons -->
+            <div class="flex flex-wrap items-center gap-2">
+                <form th:action="@{/analytics/ai-insights/generate/EXECUTIVE_SUMMARY}" method="post">
+                    <button type="submit"
+                            class="px-3.5 py-2 rounded-xl bg-primary hover:bg-primary-hover text-on-primary font-headline text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer">
+                        <span class="material-symbols-outlined text-[16px]">summarize</span>
+                        <span>Generate Executive Brief</span>
+                    </button>
+                </form>
+                <form th:action="@{/analytics/ai-insights/generate/SALES_FORECAST}" method="post">
+                    <button type="submit"
+                            class="px-3 py-2 rounded-xl bg-surface-container-lowest hover:bg-surface-container text-on-surface font-semibold text-xs border border-[#E7E9E3] transition-colors flex items-center gap-1 cursor-pointer">
+                        <span>Sales Forecast Brief</span>
+                    </button>
+                </form>
+                <form th:action="@{/analytics/ai-insights/generate/PRODUCT_AFFINITY}" method="post">
+                    <button type="submit"
+                            class="px-3 py-2 rounded-xl bg-surface-container-lowest hover:bg-surface-container text-on-surface font-semibold text-xs border border-[#E7E9E3] transition-colors flex items-center gap-1 cursor-pointer">
+                        <span>Basket Affinity Brief</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Latest Executive Summary Presentation Card -->
+        <div class="p-6 rounded-2xl bg-surface-container-lowest border border-[#E7E9E3] shadow-xs">
+            <div class="flex items-center justify-between pb-4 mb-4 border-b border-[#E7E9E3]">
+                <div class="flex items-center gap-2">
+                    <span class="p-2 rounded-xl bg-primary/10 text-primary">
+                        <span class="material-symbols-outlined text-[20px]">psychology</span>
+                    </span>
+                    <div>
+                        <h3 class="font-headline font-bold text-base text-on-surface"
+                            th:text="${executiveSummary != null ? executiveSummary.title : 'Executive Business Intelligence Summary'}">
+                            Executive Business Intelligence Summary
+                        </h3>
+                        <span class="text-[11px] text-tertiary">
+                            Grounded in 30-day verified store telemetry • Zero PII transmitted
+                        </span>
+                    </div>
+                </div>
+                <div class="text-right text-[11px] text-tertiary font-mono" th:if="${executiveSummary != null}">
+                    <span th:text="${'Model: ' + executiveSummary.geminiModelVersion}">Model: gemini-2.5-flash</span>
+                    <span class="mx-1">•</span>
+                    <span th:text="${#temporals.format(executiveSummary.createdAt, 'dd MMM yyyy HH:mm')}">22 Nov 2026</span>
+                </div>
+            </div>
+
+            <!-- Narrative Body -->
+            <div class="prose prose-sm max-w-none text-on-surface-variant text-xs leading-relaxed space-y-3"
+                 th:if="${executiveSummary != null}">
+                <div class="whitespace-pre-line font-sans" th:text="${executiveSummary.fullNarrative}">
+                    Executive strategic analysis will appear here.
+                </div>
+            </div>
+
+            <!-- Empty State if no summary yet -->
+            <div th:unless="${executiveSummary != null}" class="text-center py-8">
+                <span class="material-symbols-outlined text-tertiary text-[48px] mb-2">auto_awesome</span>
+                <h4 class="font-headline font-bold text-sm text-on-surface mb-1">No AI Executive Brief Generated Yet</h4>
+                <p class="text-xs text-tertiary max-w-md mx-auto mb-4">
+                    Click "Generate Executive Brief" above to have Google Gemini evaluate your current sales trajectory, customer cohorts, and merchandise opportunities.
+                </p>
+                <form th:action="@{/analytics/ai-insights/generate/EXECUTIVE_SUMMARY}" method="post">
+                    <button type="submit"
+                            class="px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-on-primary font-headline text-xs font-bold inline-flex items-center gap-1.5 shadow-sm transition-all cursor-pointer">
+                        <span class="material-symbols-outlined text-[16px]">summarize</span>
+                        <span>Generate First Brief</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 3: Interactive Gemini Retail BI Copilot Chat Panel -->
+    <section class="p-6 rounded-2xl bg-surface-container-lowest border border-[#E7E9E3] shadow-xs flex flex-col gap-4">
+        <div class="flex items-center justify-between pb-3 border-b border-[#E7E9E3]">
+            <div class="flex items-center gap-2">
+                <div class="h-3 w-3 rounded-full bg-emerald-500 animate-pulse"></div>
+                <h3 class="font-headline font-bold text-base text-on-surface">Interactive Supermarket BI Copilot</h3>
+                <span class="px-2 py-0.5 rounded bg-surface-container text-tertiary text-[10px] font-mono">Grounded Read-Only Assistant</span>
+            </div>
+            <span class="text-xs text-tertiary">Ask questions regarding your actual store sales, customer retention, or inventory risks.</span>
+        </div>
+
+        <!-- Chat History Container -->
+        <div id="copilot-chat-history" class="flex flex-col gap-3 min-h-[160px] max-h-[360px] overflow-y-auto p-4 rounded-xl bg-surface-container-low border border-[#E7E9E3]/60 text-xs">
+            <div class="flex items-start gap-2.5">
+                <div class="w-7 h-7 rounded-lg bg-primary text-on-primary flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-[16px]">smart_toy</span>
+                </div>
+                <div class="bg-surface-container-lowest p-3 rounded-2xl rounded-tl-none border border-[#E7E9E3] max-w-[85%] text-on-surface">
+                    <p class="font-semibold text-primary mb-1">Sankhya AI Copilot</p>
+                    <p>Hello! I am your retail intelligence assistant, grounded directly in your supermarket's verified sales records, K-Means customer clusters, and inventory telemetry. How can I assist your business decisions today?</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pre-canned Question Chips -->
+        <div class="flex flex-wrap items-center gap-2">
+            <button type="button" class="copilot-chip px-3 py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface text-[11px] font-semibold border border-[#E7E9E3] transition-colors cursor-pointer">
+                Which customer cohort has the highest spend?
+            </button>
+            <button type="button" class="copilot-chip px-3 py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface text-[11px] font-semibold border border-[#E7E9E3] transition-colors cursor-pointer">
+                What are our top cross-sell product bundles?
+            </button>
+            <button type="button" class="copilot-chip px-3 py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface text-[11px] font-semibold border border-[#E7E9E3] transition-colors cursor-pointer">
+                What is our 14-day revenue forecast?
+            </button>
+            <button type="button" class="copilot-chip px-3 py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface text-[11px] font-semibold border border-[#E7E9E3] transition-colors cursor-pointer">
+                Are any high-demand products at risk of stocking out?
+            </button>
+        </div>
+
+        <!-- Chat Input Form -->
+        <form id="copilot-chat-form" class="flex items-center gap-2">
+            <input type="text" id="copilot-input"
+                   placeholder="Ask anything about your supermarket data (e.g. 'How can we improve dairy category margin?')..."
+                   class="flex-1 h-11 px-4 rounded-xl bg-surface-container-low text-on-surface text-xs font-semibold border border-[#E7E9E3] outline-none focus:ring-2 focus:ring-primary/20">
+            <button type="submit" id="copilot-send-btn"
+                    class="h-11 px-5 rounded-xl bg-primary hover:bg-primary-hover text-on-primary font-headline text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer">
+                <span>Send</span>
+                <span class="material-symbols-outlined text-[16px]">send</span>
+            </button>
+        </form>
+    </section>
+
+    <!-- SECTION 4: ML Output Tables (Association Rules & Revenue Forecast) -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <!-- Table 1: Apriori Association Rules -->
+        <div class="p-5 rounded-2xl bg-surface-container-lowest border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary text-[20px]">shopping_cart_checkout</span>
+                        <h3 class="font-headline font-bold text-sm text-on-surface">Mined Market Basket Rules</h3>
+                    </div>
+                    <a th:href="@{/analytics/products}" class="text-xs text-primary font-semibold hover:underline">View in Products →</a>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead>
+                            <tr class="border-b border-[#E7E9E3] text-[10px] text-tertiary uppercase font-bold">
+                                <th class="pb-2">Antecedent (If Bought)</th>
+                                <th class="pb-2">Consequent (Also Bought)</th>
+                                <th class="pb-2 text-right">Support</th>
+                                <th class="pb-2 text-right">Confidence</th>
+                                <th class="pb-2 text-right">Lift</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-[#E7E9E3]/60">
+                            <tr th:each="rule : ${topAssociationRules}">
+                                <td class="py-2.5 font-semibold text-on-surface" th:text="${rule.antecedent}">Bread</td>
+                                <td class="py-2.5 text-on-surface" th:text="${rule.consequent}">Butter</td>
+                                <td class="py-2.5 text-right font-mono text-tertiary" th:text="${#numbers.formatDecimal(rule.support * 100, 1, 1) + '%'}">4.2%</td>
+                                <td class="py-2.5 text-right font-mono text-tertiary" th:text="${#numbers.formatDecimal(rule.confidence * 100, 1, 1) + '%'}">42.0%</td>
+                                <td class="py-2.5 text-right font-mono font-bold text-primary" th:text="${#numbers.formatDecimal(rule.lift, 1, 2) + 'x'}">2.45x</td>
+                            </tr>
+                            <tr th:if="${topAssociationRules == null or topAssociationRules.isEmpty()}">
+                                <td colspan="5" class="py-4 text-center text-tertiary">
+                                    No rules mined yet. Click "Mine Basket Rules" above.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table 2: 14-Day Forward Revenue Forecast -->
+        <div class="p-5 rounded-2xl bg-surface-container-lowest border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary text-[20px]">trending_up</span>
+                        <h3 class="font-headline font-bold text-sm text-on-surface">14-Day Forward Revenue Forecast</h3>
+                    </div>
+                    <a th:href="@{/analytics/sales}" class="text-xs text-primary font-semibold hover:underline">View in Sales →</a>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead>
+                            <tr class="border-b border-[#E7E9E3] text-[10px] text-tertiary uppercase font-bold">
+                                <th class="pb-2">Date</th>
+                                <th class="pb-2">Horizon</th>
+                                <th class="pb-2 text-right">Projected Revenue</th>
+                                <th class="pb-2 text-right">Baseline</th>
+                                <th class="pb-2 text-right">95% Range</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-[#E7E9E3]/60">
+                            <tr th:each="fc : ${forecastResults}">
+                                <td class="py-2 font-mono text-on-surface" th:text="${fc.forecastDate}">2026-11-23</td>
+                                <td class="py-2 text-tertiary" th:text="${'+' + fc.horizonDay + 'd'}">+1d</td>
+                                <td class="py-2 text-right font-mono font-bold text-primary" th:text="${'₹' + #numbers.formatDecimal(fc.predictedRevenue, 1, 'COMMA', 0, 'POINT')}">₹1,45,000</td>
+                                <td class="py-2 text-right font-mono text-tertiary" th:text="${'₹' + #numbers.formatDecimal(fc.baselineRevenue, 1, 'COMMA', 0, 'POINT')}">₹1,32,000</td>
+                                <td class="py-2 text-right font-mono text-tertiary text-[11px]" th:text="${'₹' + #numbers.formatDecimal(fc.lowerBound, 1, 'COMMA', 0, 'POINT') + ' - ₹' + #numbers.formatDecimal(fc.upperBound, 1, 'COMMA', 0, 'POINT')}">₹1.2L - ₹1.6L</td>
+                            </tr>
+                            <tr th:if="${forecastResults == null or forecastResults.isEmpty()}">
+                                <td colspan="5" class="py-4 text-center text-tertiary">
+                                    No forecasts available. Click "Project Revenue" above.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 5: Client-Side Interactive Scripts for Copilot -->
+    <script th:inline="javascript">
+        (function () {
+            const chatForm = document.getElementById('copilot-chat-form');
+            const chatInput = document.getElementById('copilot-input');
+            const chatHistory = document.getElementById('copilot-chat-history');
+            const chips = document.querySelectorAll('.copilot-chip');
+
+            chips.forEach(chip => {
+                chip.addEventListener('click', function () {
+                    if (chatInput) {
+                        chatInput.value = this.textContent.trim();
+                        chatForm.dispatchEvent(new Event('submit'));
+                    }
+                });
+            });
+
+            if (chatForm && chatInput && chatHistory) {
+                chatForm.addEventListener('submit', async function (e) {
+                    e.preventDefault();
+                    const msg = chatInput.value.trim();
+                    if (!msg) return;
+
+                    // Append User Message
+                    appendMessage('You', msg, true);
+                    chatInput.value = '';
+
+                    // Append Loading indicator
+                    const loadingId = 'loading-' + Date.now();
+                    appendMessage('Sankhya AI Copilot', 'Analyzing verified store telemetry...', false, loadingId);
+
+                    try {
+                        const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+                        const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+
+                        const headers = { 'Content-Type': 'application/json' };
+                        if (csrfToken && csrfHeader) {
+                            headers[csrfHeader] = csrfToken;
+                        }
+
+                        const resp = await fetch('/analytics/ai-insights/chat', {
+                            method: 'POST',
+                            headers: headers,
+                            body: JSON.stringify({ message: msg })
+                        });
+
+                        const data = await resp.json();
+                        const loadingElem = document.getElementById(loadingId);
+                        if (loadingElem) loadingElem.remove();
+
+                        if (data.success) {
+                            appendMessage('Sankhya AI Copilot (' + data.modelVersion + ')', data.reply, false);
+                        } else {
+                            appendMessage('Sankhya AI Copilot', data.reply || data.error, false, null, true);
+                        }
+                    } catch (err) {
+                        const loadingElem = document.getElementById(loadingId);
+                        if (loadingElem) loadingElem.remove();
+                        appendMessage('Sankhya AI Copilot', 'Error contacting AI assistant: ' + err.message, false, null, true);
+                    }
+                });
+            }
+
+            function appendMessage(sender, text, isUser, id, isError) {
+                const row = document.createElement('div');
+                row.className = 'flex items-start gap-2.5 ' + (isUser ? 'justify-end' : '');
+                if (id) row.id = id;
+
+                const avatar = isUser
+                    ? `<div class="w-7 h-7 rounded-lg bg-surface-container text-on-surface flex items-center justify-center shrink-0 order-2"><span class="material-symbols-outlined text-[16px]">person</span></div>`
+                    : `<div class="w-7 h-7 rounded-lg bg-primary text-on-primary flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-[16px]">smart_toy</span></div>`;
+
+                const bubbleColor = isUser
+                    ? 'bg-primary text-on-primary rounded-tr-none'
+                    : (isError ? 'bg-rose-500/10 border-rose-500/20 text-rose-800' : 'bg-surface-container-lowest border border-[#E7E9E3] text-on-surface');
+
+                row.innerHTML = `
+                    ${avatar}
+                    <div class="${bubbleColor} p-3 rounded-2xl ${isUser ? 'order-1' : 'rounded-tl-none'} max-w-[85%]">
+                        <p class="font-semibold text-[11px] mb-1 ${isUser ? 'text-on-primary/80' : 'text-primary'}">${sender}</p>
+                        <p class="whitespace-pre-line leading-relaxed">${escapeHtml(text)}</p>
+                    </div>
+                `;
+
+                chatHistory.appendChild(row);
+                chatHistory.scrollTop = chatHistory.scrollHeight;
+            }
+
+            function escapeHtml(str) {
+                return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            }
+        })();
+    </script>
+</div>
+</body>
+</html>

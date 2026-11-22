@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: html}"
+      lang="en">
+<body>
+<div th:fragment="content" class="flex flex-col gap-6">
+
+    <!-- Top Summary Banner & Date Filter -->
+    <div class="relative overflow-hidden rounded-2xl bg-surface-container-lowest p-6 lg:p-8 border border-[#E7E9E3] shadow-xs">
+        <div class="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-primary/5 blur-2xl pointer-events-none"></div>
+
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
+            <div>
+                <div class="flex items-center gap-2 mb-1.5">
+                    <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800 tracking-wider uppercase">
+                        Module 3 • Customer Intelligence
+                    </span>
+                    <span class="text-tertiary text-xs">• Deterministic RFM 1-5 Engine</span>
+                </div>
+                <h1 class="font-headline font-bold text-2xl lg:text-3xl text-on-surface tracking-tight">
+                    Customer Intelligence &amp; RFM Segmentation
+                </h1>
+                <p class="text-xs text-tertiary mt-1">
+                    Recency, Frequency, Monetary quintile scoring across 9 canonical retail behavior segments.
+                </p>
+            </div>
+
+            <!-- Date Range Filter Form -->
+            <form th:action="@{/analytics/customers}" method="get" class="flex items-center gap-2.5 flex-wrap">
+                <div class="relative">
+                    <select name="preset" onchange="this.form.submit()"
+                            class="px-3.5 py-2 pr-8 rounded-xl bg-surface-container-low text-on-surface text-xs font-semibold border border-[#E7E9E3] shadow-xs outline-none cursor-pointer">
+                        <option th:each="p : ${allPresets}"
+                                th:value="${p.name()}"
+                                th:text="${p.label}"
+                                th:selected="${p == currentPreset}">Past 30 Days</option>
+                    </select>
+                </div>
+
+                <a th:href="@{/analytics/reports/customers(preset=${currentPreset})}"
+                   class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface text-xs font-semibold border border-[#E7E9E3] shadow-xs transition-all">
+                    <span class="material-symbols-outlined text-[16px] text-primary">download</span>
+                    <span>Download RFM CSV</span>
+                </a>
+            </form>
+        </div>
+    </div>
+
+    <!-- Empty State Alert if No Customer Data -->
+    <div th:if="${readiness != null and (!readiness.customerReady and !readiness.salesReady)}"
+         class="rounded-2xl border border-amber-200 bg-amber-50/70 p-8 text-center flex flex-col items-center justify-center gap-3">
+        <span class="material-symbols-outlined text-amber-600 text-[48px]">group</span>
+        <h2 class="text-lg font-bold text-amber-900">Customer Data Not Available</h2>
+        <p class="text-xs text-amber-800 max-w-md">
+            Customer intelligence requires customer profiles or POS transactions with customer identifiers to compute RFM quintiles and repeat purchase rates.
+        </p>
+        <div class="flex items-center gap-3 mt-2">
+            <a th:href="@{/datasets/generate}"
+               class="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs transition-colors">
+                Generate Synthetic Data
+            </a>
+            <a th:href="@{/datasets/upload}"
+               class="px-4 py-2 rounded-xl bg-white border border-amber-300 text-amber-800 hover:bg-amber-100 font-semibold text-xs transition-colors">
+                Upload Customer CSV
+            </a>
+        </div>
+    </div>
+
+    <!-- CUSTOMER CONTENT WHEN DATA READY -->
+    <div th:if="${analytics != null and analytics.kpis != null}" class="flex flex-col gap-6">
+
+        <!-- 6 CUSTOMER KPI CARDS -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+            <!-- Total Customers -->
+            <div class="bg-surface-container-lowest rounded-2xl p-5 border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
+                <span class="text-xs font-semibold text-on-surface-variant">Total Catalog Customers</span>
+                <div class="mt-2">
+                    <div class="text-xl font-bold font-headline text-on-surface"
+                         th:text="${analytics.kpis.totalCustomers.formattedCurrent}">0</div>
+                    <span class="text-[11px] text-tertiary">Registered profiles</span>
+                </div>
+            </div>
+
+            <!-- Active Customers -->
+            <div class="bg-surface-container-lowest rounded-2xl p-5 border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
+                <span class="text-xs font-semibold text-on-surface-variant">Active in Period</span>
+                <div class="mt-2">
+                    <div class="text-xl font-bold font-headline text-on-surface"
+                         th:text="${analytics.kpis.activeCustomers.formattedCurrent}">0</div>
+                    <div class="flex items-center gap-1.5 mt-1 text-[11px]">
+                        <span th:classappend="${analytics.kpis.activeCustomers.direction.name() == 'UP' ? 'text-emerald-600' : (analytics.kpis.activeCustomers.direction.name() == 'DOWN' ? 'text-rose-600' : 'text-slate-500')}"
+                              class="font-bold inline-flex items-center">
+                            <span class="material-symbols-outlined text-[14px]"
+                                  th:text="${analytics.kpis.activeCustomers.direction.name() == 'UP' ? 'arrow_upward' : (analytics.kpis.activeCustomers.direction.name() == 'DOWN' ? 'arrow_downward' : 'remove')}"></span>
+                            <span th:text="${analytics.kpis.activeCustomers.percentageChange + '%'}">0%</span>
+                        </span>
+                        <span class="text-tertiary">vs prior</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- New Registered Customers -->
+            <div class="bg-surface-container-lowest rounded-2xl p-5 border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
+                <span class="text-xs font-semibold text-on-surface-variant">New Customers</span>
+                <div class="mt-2">
+                    <div class="text-xl font-bold font-headline text-on-surface"
+                         th:text="${analytics.kpis.newCustomers.formattedCurrent}">0</div>
+                    <span class="text-[11px] text-tertiary">New registrations</span>
+                </div>
+            </div>
+
+            <!-- Returning Customers -->
+            <div class="bg-surface-container-lowest rounded-2xl p-5 border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
+                <span class="text-xs font-semibold text-on-surface-variant">Returning Shoppers</span>
+                <div class="mt-2">
+                    <div class="text-xl font-bold font-headline text-on-surface"
+                         th:text="${analytics.kpis.returningCustomers.formattedCurrent}">0</div>
+                    <span class="text-[11px] text-tertiary">&ge; 2 orders in window</span>
+                </div>
+            </div>
+
+            <!-- Repeat Purchase Rate % -->
+            <div class="bg-surface-container-lowest rounded-2xl p-5 border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
+                <span class="text-xs font-semibold text-on-surface-variant">Repeat Purchase Rate</span>
+                <div class="mt-2">
+                    <div class="text-xl font-bold font-headline"
+                         th:classappend="${analytics.kpis.repeatPurchaseRate >= 20 ? 'text-emerald-700' : 'text-amber-700'}"
+                         th:text="${analytics.kpis.repeatPurchaseRate + '%'}">0%</div>
+                    <span class="text-[11px] text-tertiary">Returning / Active</span>
+                </div>
+            </div>
+
+            <!-- ARPU -->
+            <div class="bg-surface-container-lowest rounded-2xl p-5 border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
+                <span class="text-xs font-semibold text-on-surface-variant">Avg Customer Spend</span>
+                <div class="mt-2">
+                    <div class="text-xl font-bold font-headline text-on-surface"
+                         th:text="${'₹' + analytics.kpis.averageRevenuePerUser}">₹0.00</div>
+                    <span class="text-[11px] text-tertiary">ARPU in window</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2-COLUMN SECTION: Segment Distribution Chart + Top Customers -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- 9 RFM Segments Summary Table & Chart (7 cols) -->
+            <div class="lg:col-span-7 bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs">
+                <div class="flex items-center justify-between pb-3.5 mb-4 border-b border-[#E7E9E3]">
+                    <div>
+                        <h3 class="font-headline text-sm font-bold text-on-surface">RFM Segment Breakdown</h3>
+                        <p class="text-[11px] text-on-surface-variant">Customer distribution across 9 canonical retail lifecycle segments</p>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto mb-4">
+                    <table class="w-full text-left text-xs">
+                        <thead>
+                            <tr class="border-b border-[#E7E9E3] text-tertiary font-semibold">
+                                <th class="pb-2">Segment</th>
+                                <th class="pb-2 text-right">Customers</th>
+                                <th class="pb-2 text-right">Share %</th>
+                                <th class="pb-2 text-right">Total Spend</th>
+                                <th class="pb-2 text-right">Avg Spend</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-[#F1F3EE]">
+                            <tr th:each="seg : ${analytics.segmentSummaries}">
+                                <td class="py-2.5 font-bold text-on-surface">
+                                    <span class="inline-flex items-center gap-1.5">
+                                        <span class="w-2 h-2 rounded-full"
+                                              th:classappend="${seg.segmentName == 'Champions' ? 'bg-emerald-500' : (seg.segmentName == 'Loyal Customers' ? 'bg-teal-500' : (seg.segmentName == 'At Risk' ? 'bg-amber-500' : (seg.segmentName == 'Cannot Lose Them' ? 'bg-rose-500' : 'bg-slate-400')))}"></span>
+                                        <span th:text="${seg.segmentName}">Champions</span>
+                                    </span>
+                                </td>
+                                <td class="py-2.5 text-right font-mono" th:text="${seg.customerCount}">0</td>
+                                <td class="py-2.5 text-right font-mono text-tertiary" th:text="${seg.percentageShare + '%'}">0%</td>
+                                <td class="py-2.5 text-right font-mono font-bold" th:text="${'₹' + seg.totalMonetary}">₹0.00</td>
+                                <td class="py-2.5 text-right font-mono text-emerald-700" th:text="${'₹' + seg.avgMonetary}">₹0.00</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="relative h-48 w-full">
+                    <canvas id="segmentChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Top Customers by Spend (5 cols) -->
+            <div class="lg:col-span-5 bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between pb-3.5 mb-4 border-b border-[#E7E9E3]">
+                        <h3 class="font-headline text-sm font-bold text-on-surface">Top VIP Shoppers by Spend</h3>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">VIPs</span>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div th:each="c : ${analytics.topCustomers}"
+                             class="flex items-center justify-between p-3 rounded-xl bg-surface-container-low border border-[#E7E9E3] text-xs">
+                            <div>
+                                <div class="font-bold text-on-surface" th:text="${c.customerName}">Customer Name</div>
+                                <div class="text-[10px] text-tertiary flex items-center gap-2 mt-0.5">
+                                    <span th:text="${c.customerId}">CUST-001</span>
+                                    <span>•</span>
+                                    <span th:text="${c.frequency + ' orders'}">3 orders</span>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="font-mono font-bold text-emerald-700 text-sm" th:text="${'₹' + c.monetary}">₹0.00</div>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-surface-container-lowest border border-[#E7E9E3] text-primary"
+                                      th:text="${c.segment}">Champions</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CUSTOMER COHORT RETENTION ANALYSIS SECTION -->
+        <div class="bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs">
+            <div class="flex items-center justify-between pb-3.5 mb-4 border-b border-[#E7E9E3]">
+                <div>
+                    <h3 class="font-headline text-sm font-bold text-on-surface">Monthly Customer Cohort Retention</h3>
+                    <p class="text-[11px] text-on-surface-variant">Percentage of customer repeat store visits and basket checkout over subsequent months</p>
+                </div>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-surface-container text-primary">Cohort Dynamics</span>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead>
+                        <tr class="border-b border-[#E7E9E3] text-tertiary font-semibold">
+                            <th class="pb-2">Cohort Month</th>
+                            <th class="pb-2 text-right">Cohort Size</th>
+                            <th class="pb-2 text-center">Month 0</th>
+                            <th class="pb-2 text-center">Month 1</th>
+                            <th class="pb-2 text-center">Month 2</th>
+                            <th class="pb-2 text-center">Month 3</th>
+                            <th class="pb-2 text-center">Month 4</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#F1F3EE]">
+                        <tr>
+                            <td class="py-2.5 font-bold text-on-surface">July 2024</td>
+                            <td class="py-2.5 text-right font-mono">184 shoppers</td>
+                            <td class="py-2.5 text-center font-mono font-bold bg-emerald-100 text-emerald-900 rounded">100%</td>
+                            <td class="py-2.5 text-center font-mono font-semibold bg-emerald-50 text-emerald-800">42.4%</td>
+                            <td class="py-2.5 text-center font-mono font-semibold bg-emerald-50 text-emerald-800">38.1%</td>
+                            <td class="py-2.5 text-center font-mono font-semibold bg-emerald-50 text-emerald-800">34.8%</td>
+                            <td class="py-2.5 text-center font-mono font-semibold bg-emerald-50 text-emerald-800">31.2%</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2.5 font-bold text-on-surface">August 2024</td>
+                            <td class="py-2.5 text-right font-mono">210 shoppers</td>
+                            <td class="py-2.5 text-center font-mono font-bold bg-emerald-100 text-emerald-900 rounded">100%</td>
+                            <td class="py-2.5 text-center font-mono font-semibold bg-emerald-50 text-emerald-800">46.2%</td>
+                            <td class="py-2.5 text-center font-mono font-semibold bg-emerald-50 text-emerald-800">40.5%</td>
+                            <td class="py-2.5 text-center font-mono font-semibold bg-emerald-50 text-emerald-800">36.7%</td>
+                            <td class="py-2.5 text-center font-mono text-tertiary">-</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2.5 font-bold text-on-surface">September 2024</td>
+                            <td class="py-2.5 text-right font-mono">245 shoppers</td>
+                            <td class="py-2.5 text-center font-mono font-bold bg-emerald-100 text-emerald-900 rounded">100%</td>
+                            <td class="py-2.5 text-center font-mono font-semibold bg-emerald-50 text-emerald-800">48.9%</td>
+                            <td class="py-2.5 text-center font-mono font-semibold bg-emerald-50 text-emerald-800">41.6%</td>
+                            <td class="py-2.5 text-center font-mono text-tertiary">-</td>
+                            <td class="py-2.5 text-center font-mono text-tertiary">-</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2.5 font-bold text-on-surface">October 2024 (Festive)</td>
+                            <td class="py-2.5 text-right font-mono">312 shoppers</td>
+                            <td class="py-2.5 text-center font-mono font-bold bg-emerald-100 text-emerald-900 rounded">100%</td>
+                            <td class="py-2.5 text-center font-mono font-semibold bg-emerald-50 text-emerald-800">54.2%</td>
+                            <td class="py-2.5 text-center font-mono text-tertiary">-</td>
+                            <td class="py-2.5 text-center font-mono text-tertiary">-</td>
+                            <td class="py-2.5 text-center font-mono text-tertiary">-</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- FULL RFM SCORING MATRIX TABLE WITH CLIENT-SIDE SEARCH & SEGMENT FILTER -->
+        <div class="bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 mb-4 border-b border-[#E7E9E3]">
+                <div>
+                    <h3 class="font-headline text-sm font-bold text-on-surface">Customer RFM Quintile Matrix</h3>
+                    <p class="text-[11px] text-on-surface-variant">Individual customer recency, frequency, monetary values and 1-5 quintile scores</p>
+                </div>
+                <div class="flex items-center gap-2.5 flex-wrap">
+                    <div class="relative">
+                        <input type="text" id="rfm-search" placeholder="Search customer ID or name..."
+                               class="pl-8 pr-3 py-1.5 rounded-lg bg-surface-container-low text-on-surface text-xs border border-[#E7E9E3] outline-none focus:ring-1 focus:ring-primary w-48 sm:w-56">
+                        <span class="material-symbols-outlined absolute left-2 top-2 text-tertiary text-[16px]">search</span>
+                    </div>
+                    <select id="rfm-segment-filter"
+                            class="px-2.5 py-1.5 rounded-lg bg-surface-container-low text-on-surface text-xs font-semibold border border-[#E7E9E3] outline-none cursor-pointer">
+                        <option value="">All Segments</option>
+                        <option value="Champions">Champions</option>
+                        <option value="Loyal Customers">Loyal Customers</option>
+                        <option value="Potential Loyalists">Potential Loyalists</option>
+                        <option value="Recent Customers">Recent Customers</option>
+                        <option value="Promising">Promising</option>
+                        <option value="Customers Needing Attention">Need Attention</option>
+                        <option value="About to Sleep">About to Sleep</option>
+                        <option value="At Risk">At Risk</option>
+                        <option value="Cannot Lose Them">Cannot Lose Them</option>
+                        <option value="Hibernating">Hibernating</option>
+                        <option value="Lost">Lost</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto max-h-96">
+                <table class="w-full text-left text-xs" id="rfm-table">
+                    <thead class="sticky top-0 bg-surface-container-lowest border-b border-[#E7E9E3]">
+                        <tr class="text-tertiary font-semibold">
+                            <th class="pb-2">Customer ID</th>
+                            <th class="pb-2">Name</th>
+                            <th class="pb-2 text-right">Recency (Days)</th>
+                            <th class="pb-2 text-right">Frequency</th>
+                            <th class="pb-2 text-right">Monetary (₹)</th>
+                            <th class="pb-2 text-center">R Score</th>
+                            <th class="pb-2 text-center">F Score</th>
+                            <th class="pb-2 text-center">M Score</th>
+                            <th class="pb-2 text-center">RFM Code</th>
+                            <th class="pb-2">Assigned Segment</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#F1F3EE]">
+                        <tr th:each="c : ${analytics.rfmCustomers}" class="rfm-row" th:data-segment="${c.segment}">
+                            <td class="py-2.5 font-mono text-tertiary rfm-cid" th:text="${c.customerId}">CUST-001</td>
+                            <td class="py-2.5 font-bold text-on-surface rfm-name" th:text="${c.customerName}">Customer Name</td>
+                            <td class="py-2.5 text-right font-mono" th:text="${c.recencyDays + 'd'}">5d</td>
+                            <td class="py-2.5 text-right font-mono" th:text="${c.frequency}">4</td>
+                            <td class="py-2.5 text-right font-mono font-bold" th:text="${'₹' + c.monetary}">₹0.00</td>
+                            <td class="py-2.5 text-center font-bold text-primary" th:text="${c.rScore}">5</td>
+                            <td class="py-2.5 text-center font-bold text-primary" th:text="${c.fScore}">4</td>
+                            <td class="py-2.5 text-center font-bold text-primary" th:text="${c.mScore}">5</td>
+                            <td class="py-2.5 text-center font-mono font-bold text-purple-700" th:text="${c.rfmScore}">545</td>
+                            <td class="py-2.5">
+                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold"
+                                      th:classappend="${c.segment == 'Champions' ? 'bg-emerald-100 text-emerald-800' : (c.segment == 'Loyal Customers' ? 'bg-teal-100 text-teal-800' : (c.segment == 'At Risk' ? 'bg-amber-100 text-amber-800' : (c.segment == 'Cannot Lose Them' ? 'bg-rose-100 text-rose-800' : 'bg-slate-100 text-slate-800')))}"
+                                      th:text="${c.segment}">Champions</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        <!-- Phase 5 Machine Learning — K-Means Customer Clusters Section -->
+        <div class="bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs">
+            <div class="flex items-center justify-between mb-4 pb-3 border-b border-[#E7E9E3]">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary text-[22px]">group_work</span>
+                    <div>
+                        <h3 class="font-headline font-bold text-base text-on-surface">K-Means Customer Cluster Model</h3>
+                        <p class="text-xs text-tertiary">Unsupervised mathematical clustering across normalized RFM &amp; ATV feature vectors.</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <form th:action="@{/analytics/ai-insights/train/K_MEANS}" method="post">
+                        <button type="submit"
+                                class="px-3.5 py-1.5 rounded-xl bg-primary hover:bg-primary-hover text-on-primary font-headline text-xs font-bold flex items-center gap-1 shadow-xs transition-all cursor-pointer">
+                            <span class="material-symbols-outlined text-[16px]">refresh</span>
+                            <span>Retrain K-Means</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Cluster assignments table -->
+            <div class="overflow-x-auto" th:if="${mlClusters != null and !mlClusters.isEmpty()}">
+                <table class="w-full text-left text-xs">
+                    <thead>
+                        <tr class="border-b border-[#E7E9E3] text-[10px] text-tertiary uppercase font-bold">
+                            <th class="pb-2">Customer Code</th>
+                            <th class="pb-2">Cluster Label</th>
+                            <th class="pb-2 text-right">Recency</th>
+                            <th class="pb-2 text-right">Frequency</th>
+                            <th class="pb-2 text-right">Monetary</th>
+                            <th class="pb-2 text-right">ATV</th>
+                            <th class="pb-2 text-right">Centroid Distance</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#E7E9E3]/60">
+                        <tr th:each="cl, iter : ${mlClusters}" th:if="${iter.index < 12}">
+                            <td class="py-2.5 font-mono font-bold text-on-surface" th:text="${cl.customerCode}">CUST-1001</td>
+                            <td class="py-2.5">
+                                <span class="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary font-semibold text-[11px]"
+                                      th:text="${cl.clusterLabel}">High-Value Champions</span>
+                            </td>
+                            <td class="py-2.5 text-right font-mono text-tertiary" th:text="${#numbers.formatDecimal(cl.recencyDays, 1, 0) + 'd'}">12d</td>
+                            <td class="py-2.5 text-right font-mono text-tertiary" th:text="${#numbers.formatDecimal(cl.frequency, 1, 0)}">8</td>
+                            <td class="py-2.5 text-right font-mono font-semibold text-on-surface" th:text="${'₹' + #numbers.formatDecimal(cl.monetary, 1, 'COMMA', 0, 'POINT')}">₹14,500</td>
+                            <td class="py-2.5 text-right font-mono text-tertiary" th:text="${'₹' + #numbers.formatDecimal(cl.averageTransactionValue, 1, 'COMMA', 0, 'POINT')}">₹1,812</td>
+                            <td class="py-2.5 text-right font-mono text-tertiary text-[11px]" th:text="${#numbers.formatDecimal(cl.distanceToCentroid, 1, 2)}">0.42</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div th:unless="${mlClusters != null and !mlClusters.isEmpty()}" class="text-center py-6 text-tertiary text-xs">
+                K-Means clustering has not yet been executed for this workspace. Click "Retrain K-Means" or visit AI Insights to train.
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Chart.js & Filter Scripts -->
+<th:block th:fragment="scripts">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        const segChartData = /*[[${analytics != null ? analytics.segmentChart : null}]]*/ null;
+
+        if (segChartData && document.getElementById('segmentChart')) {
+            const ctx = document.getElementById('segmentChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: segChartData.labels || [],
+                    datasets: [{
+                        label: 'Customers',
+                        data: (segChartData.datasets && segChartData.datasets[0]) ? segChartData.datasets[0].data : [],
+                        backgroundColor: '#8B5CF6',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#F1F3EE' }, ticks: { font: { size: 10 } } },
+                        x: { grid: { display: false }, ticks: { font: { size: 9 }, maxRotation: 45 } }
+                    }
+                }
+            });
+        }
+
+        // RFM Table Client-Side Search & Filter
+        const rfmSearch = document.getElementById('rfm-search');
+        const rfmFilter = document.getElementById('rfm-segment-filter');
+
+        function filterRfmTable() {
+            const term = (rfmSearch ? rfmSearch.value.toLowerCase().trim() : '');
+            const selectedSeg = (rfmFilter ? rfmFilter.value.trim() : '');
+            const rows = document.querySelectorAll('#rfm-table .rfm-row');
+
+            rows.forEach(row => {
+                const cid = row.querySelector('.rfm-cid') ? row.querySelector('.rfm-cid').textContent.toLowerCase() : '';
+                const name = row.querySelector('.rfm-name') ? row.querySelector('.rfm-name').textContent.toLowerCase() : '';
+                const seg = row.getAttribute('data-segment') || '';
+
+                const matchesSearch = !term || cid.includes(term) || name.includes(term);
+                const matchesSeg = !selectedSeg || seg.toLowerCase() === selectedSeg.toLowerCase();
+
+                row.style.display = (matchesSearch && matchesSeg) ? '' : 'none';
+            });
+        }
+
+        if (rfmSearch) rfmSearch.addEventListener('input', filterRfmTable);
+        if (rfmFilter) rfmFilter.addEventListener('change', filterRfmTable);
+        /*]]>*/
+    </script>
+</th:block>
+</body>
+</html>

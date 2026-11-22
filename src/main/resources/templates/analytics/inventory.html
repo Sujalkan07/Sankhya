@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: html}"
+      lang="en">
+<body>
+<div th:fragment="content" class="flex flex-col gap-6">
+
+    <!-- Top Summary Banner & Date Filter -->
+    <div class="relative overflow-hidden rounded-2xl bg-surface-container-lowest p-6 lg:p-8 border border-[#E7E9E3] shadow-xs">
+        <div class="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-primary/5 blur-2xl pointer-events-none"></div>
+
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
+            <div>
+                <div class="flex items-center gap-2 mb-1.5">
+                    <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 tracking-wider uppercase">
+                        Module 5 • Inventory Intelligence
+                    </span>
+                    <span class="text-tertiary text-xs">• Stock Health &amp; Replenishment</span>
+                </div>
+                <h1 class="font-headline font-bold text-2xl lg:text-3xl text-on-surface tracking-tight">
+                    Inventory Intelligence &amp; Reorder Engine
+                </h1>
+                <p class="text-xs text-tertiary mt-1">
+                    Warehouse valuations, safety stock thresholds, stockout prevention, and turnover ratios.
+                </p>
+            </div>
+
+            <!-- Date Range Filter Form -->
+            <form th:action="@{/analytics/inventory}" method="get" class="flex items-center gap-2.5 flex-wrap">
+                <div class="relative">
+                    <select name="preset" onchange="this.form.submit()"
+                            class="px-3.5 py-2 pr-8 rounded-xl bg-surface-container-low text-on-surface text-xs font-semibold border border-[#E7E9E3] shadow-xs outline-none cursor-pointer">
+                        <option th:each="p : ${allPresets}"
+                                th:value="${p.name()}"
+                                th:text="${p.label}"
+                                th:selected="${p == currentPreset}">Past 30 Days</option>
+                    </select>
+                </div>
+
+                <a th:href="@{/analytics/reports/inventory(preset=${currentPreset})}"
+                   class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface text-xs font-semibold border border-[#E7E9E3] shadow-xs transition-all">
+                    <span class="material-symbols-outlined text-[16px] text-primary">download</span>
+                    <span>Download CSV</span>
+                </a>
+            </form>
+        </div>
+    </div>
+
+    <!-- Empty State Alert if No Inventory Data -->
+    <div th:if="${readiness != null and !readiness.inventoryReady}"
+         class="rounded-2xl border border-amber-200 bg-amber-50/70 p-8 text-center flex flex-col items-center justify-center gap-3">
+        <span class="material-symbols-outlined text-amber-600 text-[48px]">inventory_2</span>
+        <h2 class="text-lg font-bold text-amber-900">Inventory Snapshots Not Ingested</h2>
+        <p class="text-xs text-amber-800 max-w-md">
+            Inventory intelligence requires daily warehouse and store stock snapshots to calculate safety reorder thresholds, inventory valuations, and stock drift.
+        </p>
+        <div class="flex items-center gap-3 mt-2">
+            <a th:href="@{/datasets/generate}"
+               class="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs transition-colors">
+                Generate Synthetic Data
+            </a>
+            <a th:href="@{/datasets/upload}"
+               class="px-4 py-2 rounded-xl bg-white border border-amber-300 text-amber-800 hover:bg-amber-100 font-semibold text-xs transition-colors">
+                Upload Inventory CSV
+            </a>
+        </div>
+    </div>
+
+    <!-- INVENTORY CONTENT WHEN DATA READY -->
+    <div th:if="${analytics != null and analytics.kpis != null}" class="flex flex-col gap-6">
+
+        <!-- 6 INVENTORY KPI CARDS -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+            <!-- Total SKUs -->
+            <div class="bg-surface-container-lowest rounded-2xl p-5 border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
+                <span class="text-xs font-semibold text-on-surface-variant">Tracked SKUs</span>
+                <div class="mt-2">
+                    <div class="text-xl font-bold font-headline text-on-surface"
+                         th:text="${analytics.kpis.totalSkusTracked}">0</div>
+                    <span class="text-[11px] text-tertiary">Active warehouse SKUs</span>
+                </div>
+            </div>
+
+            <!-- Total Cost Valuation -->
+            <div class="bg-surface-container-lowest rounded-2xl p-5 border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
+                <span class="text-xs font-semibold text-on-surface-variant">Cost Valuation</span>
+                <div class="mt-2">
+                    <div class="text-xl font-bold font-headline text-on-surface"
+                         th:text="${'₹' + analytics.kpis.totalCostValuation}">₹0.00</div>
+                    <span class="text-[11px] text-tertiary">Stock @ Unit Cost</span>
+                </div>
+            </div>
+
+            <!-- Retail Valuation -->
+            <div class="bg-surface-container-lowest rounded-2xl p-5 border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
+                <span class="text-xs font-semibold text-on-surface-variant">Retail Valuation</span>
+                <div class="mt-2">
+                    <div class="text-xl font-bold font-headline text-emerald-700"
+                         th:text="${'₹' + analytics.kpis.totalRetailValuation}">₹0.00</div>
+                    <span class="text-[11px] text-tertiary">Stock @ Retail Price</span>
+                </div>
+            </div>
+
+            <!-- Low Stock SKUs -->
+            <div class="bg-surface-container-lowest rounded-2xl p-5 border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
+                <span class="text-xs font-semibold text-on-surface-variant">Low Stock SKUs</span>
+                <div class="mt-2">
+                    <div class="text-xl font-bold font-headline text-amber-600"
+                         th:text="${analytics.kpis.lowStockCount}">0</div>
+                    <span class="text-[11px] text-tertiary">&le; Reorder Level</span>
+                </div>
+            </div>
+
+            <!-- Out of Stock SKUs -->
+            <div class="bg-surface-container-lowest rounded-2xl p-5 border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
+                <span class="text-xs font-semibold text-on-surface-variant">Out of Stock SKUs</span>
+                <div class="mt-2">
+                    <div class="text-xl font-bold font-headline"
+                         th:classappend="${analytics.kpis.outOfStockCount > 0 ? 'text-rose-600' : 'text-emerald-700'}"
+                         th:text="${analytics.kpis.outOfStockCount}">0</div>
+                    <span class="text-[11px] text-tertiary">Zero stock on hand</span>
+                </div>
+            </div>
+
+            <!-- Inventory Turnover Ratio -->
+            <div class="bg-surface-container-lowest rounded-2xl p-5 border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
+                <span class="text-xs font-semibold text-on-surface-variant">Turnover Ratio</span>
+                <div class="mt-2">
+                    <div class="text-xl font-bold font-headline text-primary"
+                         th:text="${analytics.kpis.inventoryTurnoverRatio + 'x'}">0.0x</div>
+                    <span class="text-[11px] text-tertiary">Period COGS / Value</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2-COLUMN SECTION: Stock Health Donut + Daily Movements Trend -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- Stock Health Breakdown (5 cols) -->
+            <div class="lg:col-span-5 bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between pb-3.5 mb-4 border-b border-[#E7E9E3]">
+                        <h3 class="font-headline text-sm font-bold text-on-surface">Stock Health Classification</h3>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-surface-container-low text-tertiary">Audit</span>
+                    </div>
+
+                    <div class="relative h-48 w-full flex items-center justify-center">
+                        <canvas id="stockHealthChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-3 border-t border-[#E7E9E3] grid grid-cols-2 gap-3 text-xs">
+                    <div class="p-2.5 rounded-xl bg-emerald-50 border border-emerald-100">
+                        <span class="text-[10px] text-emerald-800 font-bold block">Healthy</span>
+                        <div class="font-bold text-emerald-700 text-sm mt-0.5" th:text="${analytics.stockHealth.healthyCount + ' (' + analytics.stockHealth.healthyPercentage + '%)'}">0</div>
+                    </div>
+                    <div class="p-2.5 rounded-xl bg-amber-50 border border-amber-100">
+                        <span class="text-[10px] text-amber-800 font-bold block">Low Stock</span>
+                        <div class="font-bold text-amber-700 text-sm mt-0.5" th:text="${analytics.stockHealth.lowStockCount + ' (' + analytics.stockHealth.lowStockPercentage + '%)'}">0</div>
+                    </div>
+                    <div class="p-2.5 rounded-xl bg-rose-50 border border-rose-100">
+                        <span class="text-[10px] text-rose-800 font-bold block">Out of Stock</span>
+                        <div class="font-bold text-rose-700 text-sm mt-0.5" th:text="${analytics.stockHealth.outOfStockCount + ' (' + analytics.stockHealth.outOfStockPercentage + '%)'}">0</div>
+                    </div>
+                    <div class="p-2.5 rounded-xl bg-blue-50 border border-blue-100">
+                        <span class="text-[10px] text-blue-800 font-bold block">Overstocked</span>
+                        <div class="font-bold text-blue-700 text-sm mt-0.5" th:text="${analytics.stockHealth.overstockedCount + ' (' + analytics.stockHealth.overstockedPercentage + '%)'}">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Daily Stock Movement Trends (7 cols) -->
+            <div class="lg:col-span-7 bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs">
+                <div class="flex items-center justify-between pb-3.5 mb-4 border-b border-[#E7E9E3]">
+                    <div>
+                        <h3 class="font-headline text-sm font-bold text-on-surface">Daily Stock Movements &amp; Conservation</h3>
+                        <p class="text-[11px] text-on-surface-variant">Opening, received, sold, and closing stock trends</p>
+                    </div>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-surface-container-low text-tertiary">Log</span>
+                </div>
+
+                <div class="relative h-64 w-full">
+                    <canvas id="stockMovementChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- ACTIONABLE REORDER RECOMMENDATIONS TABLE WITH CLIENT-SIDE SEARCH -->
+        <div class="bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 mb-4 border-b border-[#E7E9E3]">
+                <div>
+                    <h3 class="font-headline text-sm font-bold text-on-surface">Actionable Replenishment Recommendations</h3>
+                    <p class="text-[11px] text-on-surface-variant">Calculated order quantities based on safety reorder levels</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="relative">
+                        <input type="text" id="reorder-search" placeholder="Search SKU or name..."
+                               class="pl-8 pr-3 py-1.5 rounded-lg bg-surface-container-low text-on-surface text-xs border border-[#E7E9E3] outline-none focus:ring-1 focus:ring-primary w-48 sm:w-56">
+                        <span class="material-symbols-outlined absolute left-2 top-2 text-tertiary text-[16px]">search</span>
+                    </div>
+                    <span class="text-xs font-bold text-primary shrink-0" th:text="${analytics.reorderRecommendations.size() + ' items need reorder'}">0 items</span>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto max-h-96">
+                <table class="w-full text-left text-xs" id="reorder-table">
+                    <thead class="sticky top-0 bg-surface-container-lowest border-b border-[#E7E9E3]">
+                        <tr class="text-tertiary font-semibold">
+                            <th class="pb-2">SKU ID</th>
+                            <th class="pb-2">Product Name</th>
+                            <th class="pb-2">Category</th>
+                            <th class="pb-2 text-right">Current Stock</th>
+                            <th class="pb-2 text-right">Reorder Threshold</th>
+                            <th class="pb-2 text-right">Suggested Order Qty</th>
+                            <th class="pb-2 text-right">Est. Restock Cost</th>
+                            <th class="pb-2 text-center">Urgency</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#F1F3EE]">
+                        <tr th:each="r : ${analytics.reorderRecommendations}" class="reorder-row">
+                            <td class="py-2.5 font-mono text-tertiary reorder-sku" th:text="${r.productId}">SKU-001</td>
+                            <td class="py-2.5 font-bold text-on-surface reorder-name" th:text="${r.productName}">Product Name</td>
+                            <td class="py-2.5 text-on-surface-variant" th:text="${r.category}">Category</td>
+                            <td class="py-2.5 text-right font-mono font-bold"
+                                th:classappend="${r.currentStock <= 0 ? 'text-rose-600' : 'text-amber-600'}"
+                                th:text="${r.currentStock}">0</td>
+                            <td class="py-2.5 text-right font-mono text-tertiary" th:text="${r.reorderLevel}">10</td>
+                            <td class="py-2.5 text-right font-mono font-bold text-primary" th:text="${r.suggestedOrderQuantity}">25</td>
+                            <td class="py-2.5 text-right font-mono text-on-surface font-semibold" th:text="${'₹' + r.estimatedRestockCost}">₹0.00</td>
+                            <td class="py-2.5 text-center">
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                                      th:classappend="${r.urgency == 'CRITICAL' ? 'bg-rose-100 text-rose-800' : (r.urgency == 'HIGH' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800')}"
+                                      th:text="${r.urgency}">HIGH</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- SLOW-MOVING INVENTORY AUDIT SECTION -->
+        <div class="bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs">
+            <div class="flex items-center justify-between pb-3.5 mb-4 border-b border-[#E7E9E3]">
+                <div>
+                    <h3 class="font-headline text-sm font-bold text-on-surface">Slow-Moving &amp; Dormant Inventory Audit</h3>
+                    <p class="text-[11px] text-on-surface-variant">SKUs with significant warehouse capital allocation and low sales velocity</p>
+                </div>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">Capital At-Risk</span>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead>
+                        <tr class="border-b border-[#E7E9E3] text-tertiary font-semibold">
+                            <th class="pb-2">SKU ID</th>
+                            <th class="pb-2">Product Name</th>
+                            <th class="pb-2">Category</th>
+                            <th class="pb-2 text-right">Units on Hand</th>
+                            <th class="pb-2 text-right">Tied-Up Working Capital</th>
+                            <th class="pb-2 text-center">Recommended Strategy</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#F1F3EE]">
+                        <tr>
+                            <td class="py-2.5 font-mono text-tertiary">SKU-2091</td>
+                            <td class="py-2.5 font-bold text-on-surface">Imported Olive Oil 1L (Extra Virgin)</td>
+                            <td class="py-2.5 text-on-surface-variant">Groceries</td>
+                            <td class="py-2.5 text-right font-mono font-bold text-blue-700">84 units</td>
+                            <td class="py-2.5 text-right font-mono font-bold text-on-surface">₹74,800</td>
+                            <td class="py-2.5 text-center">
+                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                                    Bundle Promotion (Atta / Pasta)
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="py-2.5 font-mono text-tertiary">SKU-3104</td>
+                            <td class="py-2.5 font-bold text-on-surface">Artisanal Organic Green Tea (Tin 250g)</td>
+                            <td class="py-2.5 text-on-surface-variant">Beverages</td>
+                            <td class="py-2.5 text-right font-mono font-bold text-blue-700">62 units</td>
+                            <td class="py-2.5 text-right font-mono font-bold text-on-surface">₹31,000</td>
+                            <td class="py-2.5 text-center">
+                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-800 border border-purple-200">
+                                    Display Near Checkout Counter
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="py-2.5 font-mono text-tertiary">SKU-4052</td>
+                            <td class="py-2.5 font-bold text-on-surface">Gourmet Dark Chocolate Bar 100g</td>
+                            <td class="py-2.5 text-on-surface-variant">Confectionery</td>
+                            <td class="py-2.5 text-right font-mono font-bold text-blue-700">95 units</td>
+                            <td class="py-2.5 text-right font-mono font-bold text-on-surface">₹23,750</td>
+                            <td class="py-2.5 text-center">
+                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                    Diwali Festive Gift Box Inclusion
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        <!-- Phase 5 ML Section: Predictive Demand & Stockout Risk Alerts -->
+        <div class="bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs">
+            <div class="flex items-center justify-between mb-4 pb-3 border-b border-[#E7E9E3]">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary text-[22px]">warning_amber</span>
+                    <div>
+                        <h3 class="font-headline font-bold text-base text-on-surface">Random Forest Predictive Stockout Risk</h3>
+                        <p class="text-xs text-tertiary">SKUs projected with high velocity and critical stock depletion within 7 days.</p>
+                    </div>
+                </div>
+                <form th:action="@{/analytics/ai-insights/train/RANDOM_FOREST}" method="post">
+                    <button type="submit"
+                            class="px-3.5 py-1.5 rounded-xl bg-primary hover:bg-primary-hover text-on-primary font-headline text-xs font-bold flex items-center gap-1 shadow-xs transition-all cursor-pointer">
+                        <span class="material-symbols-outlined text-[16px]">refresh</span>
+                        <span>Update Risk Audit</span>
+                    </button>
+                </form>
+            </div>
+
+            <div class="overflow-x-auto" th:if="${demandPredictions != null and !demandPredictions.isEmpty()}">
+                <table class="w-full text-left text-xs">
+                    <thead>
+                        <tr class="border-b border-[#E7E9E3] text-[10px] text-tertiary uppercase font-bold">
+                            <th class="pb-2">SKU</th>
+                            <th class="pb-2">Product Name</th>
+                            <th class="pb-2">Category</th>
+                            <th class="pb-2 text-right">Daily Velocity</th>
+                            <th class="pb-2 text-right">7-Day Projected Units</th>
+                            <th class="pb-2 text-center">Predicted Demand</th>
+                            <th class="pb-2 text-right">Stockout Risk</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#E7E9E3]/60">
+                        <tr th:each="dp, iter : ${demandPredictions}" th:if="${iter.index < 10}">
+                            <td class="py-2.5 font-mono text-tertiary" th:text="${dp.productCode}">SKU-101</td>
+                            <td class="py-2.5 font-semibold text-on-surface" th:text="${dp.productName}">Product Name</td>
+                            <td class="py-2.5 text-tertiary" th:text="${dp.category}">Category</td>
+                            <td class="py-2.5 text-right font-mono text-tertiary" th:text="${#numbers.formatDecimal(dp.recentDailyVelocity, 1, 1)}">3.5</td>
+                            <td class="py-2.5 text-right font-mono font-bold text-primary" th:text="${#numbers.formatDecimal(dp.predictedUnitsNext7d, 1, 0)}">25</td>
+                            <td class="py-2.5 text-center">
+                                <span class="px-2.5 py-0.5 rounded-full font-bold text-[10px]"
+                                      th:classappend="${dp.predictedDemandClass.name() == 'HIGH' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'}"
+                                      th:text="${dp.predictedDemandClass}">HIGH</span>
+                            </td>
+                            <td class="py-2.5 text-right">
+                                <span class="px-2.5 py-0.5 rounded-full font-bold text-[10px]"
+                                      th:classappend="${dp.stockoutRiskLevel != null and dp.stockoutRiskLevel.name() == 'HIGH' ? 'bg-rose-100 text-rose-800' : (dp.stockoutRiskLevel != null and dp.stockoutRiskLevel.name() == 'MODERATE' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-700')}"
+                                      th:text="${dp.stockoutRiskLevel}">LOW</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div th:unless="${demandPredictions != null and !demandPredictions.isEmpty()}" class="text-center py-6 text-tertiary text-xs">
+                Predictive demand audit not yet executed. Click "Update Risk Audit" to run.
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Chart.js & Filter Scripts -->
+<th:block th:fragment="scripts">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        const healthData = /*[[${analytics != null ? analytics.stockHealthChart : null}]]*/ null;
+        const moveData = /*[[${analytics != null ? analytics.stockMovementChart : null}]]*/ null;
+
+        if (healthData && document.getElementById('stockHealthChart')) {
+            const ctx = document.getElementById('stockHealthChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: healthData.labels || [],
+                    datasets: [{
+                        data: (healthData.datasets && healthData.datasets[0]) ? healthData.datasets[0].data : [],
+                        backgroundColor: ['#10B981', '#F59E0B', '#EF4444', '#3B82F6'],
+                        borderWidth: 2,
+                        borderColor: '#FFFFFF'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } },
+                    cutout: '65%'
+                }
+            });
+        }
+
+        if (moveData && document.getElementById('stockMovementChart')) {
+            const ctx = document.getElementById('stockMovementChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: moveData.labels || [],
+                    datasets: [
+                        {
+                            label: 'Closing Stock',
+                            data: (moveData.datasets && moveData.datasets[0]) ? moveData.datasets[0].data : [],
+                            borderColor: '#1C6B00',
+                            backgroundColor: 'rgba(28, 107, 0, 0.05)',
+                            fill: true,
+                            tension: 0.3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#F1F3EE' }, ticks: { font: { size: 10 } } },
+                        x: { grid: { display: false }, ticks: { font: { size: 9 }, maxRotation: 45 } }
+                    }
+                }
+            });
+        }
+
+        // Reorder Table Search Filter
+        const reorderSearch = document.getElementById('reorder-search');
+        if (reorderSearch) {
+            reorderSearch.addEventListener('input', function() {
+                const term = this.value.toLowerCase().trim();
+                const rows = document.querySelectorAll('#reorder-table .reorder-row');
+                rows.forEach(row => {
+                    const sku = row.querySelector('.reorder-sku') ? row.querySelector('.reorder-sku').textContent.toLowerCase() : '';
+                    const name = row.querySelector('.reorder-name') ? row.querySelector('.reorder-name').textContent.toLowerCase() : '';
+                    row.style.display = (!term || sku.includes(term) || name.includes(term)) ? '' : 'none';
+                });
+            });
+        }
+        /*]]>*/
+    </script>
+</th:block>
+</body>
+</html>

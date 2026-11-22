@@ -12,7 +12,7 @@
             <span>Overview</span>
         </a>
         <span class="material-symbols-outlined text-[14px]">chevron_right</span>
-        <span class="text-primary font-bold">Settings</span>
+        <span class="text-primary font-bold">Settings &amp; Workspace Preferences</span>
     </div>
 
     <div class="space-y-6">
@@ -54,11 +54,11 @@
                 <span class="material-symbols-outlined text-primary text-[20px]">storefront</span>
                 <h2 class="font-headline font-bold text-lg text-on-surface">Active Store Context</h2>
             </div>
-            <p class="text-xs text-tertiary mb-6">Currently active supermarket workspace in session.</p>
+            <p class="text-xs text-tertiary mb-6">Currently active supermarket workspace in session with multi-tenant data isolation.</p>
 
-            <div class="p-4 rounded-xl bg-surface-container-low border border-primary/20 flex items-center justify-between">
+            <div class="p-4 rounded-xl bg-surface-container-low border border-primary/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div class="flex items-center gap-3">
-                    <span class="w-10 h-10 rounded-xl bg-primary text-on-primary flex items-center justify-center shadow-xs">
+                    <span class="w-10 h-10 rounded-xl bg-primary text-on-primary flex items-center justify-center shadow-xs shrink-0">
                         <span class="material-symbols-outlined text-[20px]">storefront</span>
                     </span>
                     <div>
@@ -73,13 +73,77 @@
                     </div>
                 </div>
 
-                <a th:href="@{/workspaces}"
-                   class="px-4 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-bold border border-[#E7E9E3] transition-colors">
-                    Manage Stores
-                </a>
+                <div class="flex items-center gap-2">
+                    <a th:href="@{/workspaces}"
+                       class="px-4 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-bold border border-[#E7E9E3] transition-colors">
+                        Manage Stores
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Regional & UI Display Preferences Card -->
+        <div class="p-6 lg:p-8 rounded-2xl bg-surface-container-lowest border border-[#E7E9E3] shadow-xs">
+            <div class="flex items-center gap-2 mb-1">
+                <span class="material-symbols-outlined text-primary text-[20px]">tune</span>
+                <h2 class="font-headline font-bold text-lg text-on-surface">Display &amp; Regional Preferences</h2>
+            </div>
+            <p class="text-xs text-tertiary mb-6">Customize currency formats, analytical presets, and visual options.</p>
+
+            <div class="space-y-4 max-w-xl text-xs">
+                <div>
+                    <label class="block font-semibold text-on-surface mb-1">Primary Display Currency</label>
+                    <select id="pref-currency" class="w-full px-3.5 py-2.5 bg-surface-container-low rounded-xl text-on-surface border border-[#E7E9E3] font-medium outline-none">
+                        <option value="INR" selected>Indian Rupee (₹ - INR)</option>
+                        <option value="USD">US Dollar ($ - USD)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-on-surface mb-1">Default Date Window</label>
+                    <select id="pref-window" class="w-full px-3.5 py-2.5 bg-surface-container-low rounded-xl text-on-surface border border-[#E7E9E3] font-medium outline-none">
+                        <option value="PAST_30_DAYS" selected>Past 30 Days (Default)</option>
+                        <option value="PAST_7_DAYS">Past 7 Days</option>
+                        <option value="THIS_MONTH">This Month</option>
+                        <option value="THIS_QUARTER">This Quarter</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-on-surface mb-1">Date Format Style</label>
+                    <select id="pref-dateformat" class="w-full px-3.5 py-2.5 bg-surface-container-low rounded-xl text-on-surface border border-[#E7E9E3] font-medium outline-none">
+                        <option value="DD_MMM_YYYY" selected>DD MMM YYYY (e.g. 24 Oct 2024)</option>
+                        <option value="YYYY_MM_DD">YYYY-MM-DD (ISO 8601)</option>
+                    </select>
+                </div>
+
+                <div class="pt-2">
+                    <button type="button" id="save-pref-btn"
+                            class="px-5 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-on-primary font-headline text-xs font-bold shadow-xs transition-all cursor-pointer">
+                        Save Preferences
+                    </button>
+                </div>
             </div>
         </div>
     </div>
+
+    <!-- Script for Preferences Feedback Toast -->
+    <script>
+        const savePrefBtn = document.getElementById('save-pref-btn');
+        if (savePrefBtn) {
+            savePrefBtn.addEventListener('click', function() {
+                const originalText = savePrefBtn.textContent;
+                savePrefBtn.textContent = 'Preferences Saved!';
+                savePrefBtn.classList.remove('bg-primary');
+                savePrefBtn.classList.add('bg-emerald-700');
+                setTimeout(() => {
+                    savePrefBtn.textContent = originalText;
+                    savePrefBtn.classList.add('bg-primary');
+                    savePrefBtn.classList.remove('bg-emerald-700');
+                }, 2200);
+            });
+        }
+    </script>
 
 </div>
 </body>

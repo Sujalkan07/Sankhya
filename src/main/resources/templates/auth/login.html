@@ -99,6 +99,21 @@
                     </div>
                 </form>
 
+                <!-- Demo Credentials Auto-Fill Pill -->
+                <div class="mt-4 p-3 rounded-xl bg-surface-container-low border border-[#E7E9E3] flex items-center justify-between text-xs">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary text-[18px]">key</span>
+                        <div>
+                            <div class="font-bold text-on-surface">Demo Store Account</div>
+                            <div class="text-[11px] text-tertiary font-mono">admin@sankhya.com / Password@123</div>
+                        </div>
+                    </div>
+                    <button type="button" onclick="document.getElementById('email').value='admin@sankhya.com';document.getElementById('password').value='Password@123';"
+                            class="px-2.5 py-1 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary font-bold text-[11px] transition-colors cursor-pointer">
+                        Auto-Fill
+                    </button>
+                </div>
+
                 <!-- Registration Navigation -->
                 <div class="mt-6 text-center text-xs text-on-surface-variant">
                     Don't have an account yet?

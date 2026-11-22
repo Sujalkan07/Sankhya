@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: html}"
+      lang="en">
+<body>
+<div th:fragment="content" class="flex flex-col gap-6">
+
+    <!-- Top Summary Banner -->
+    <div class="relative overflow-hidden rounded-2xl bg-surface-container-lowest p-6 lg:p-8 border border-[#E7E9E3] shadow-xs">
+        <div class="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-primary/5 blur-2xl pointer-events-none"></div>
+
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
+            <div>
+                <div class="flex items-center gap-2 mb-1.5">
+                    <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary tracking-wider uppercase">
+                        Module 7 • Analytical Reporting
+                    </span>
+                    <span class="text-tertiary text-xs">• RFC-4180 CSV Data Exports</span>
+                </div>
+                <h1 class="font-headline font-bold text-2xl lg:text-3xl text-on-surface tracking-tight">
+                    Analytical Reporting & Export Center
+                </h1>
+                <p class="text-xs text-tertiary mt-1">
+                    Download fully verified tabular analytical datasets and business intelligence summaries.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5 REPORT DOWNLOAD TILES -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <!-- Report 1: Sales Transactions -->
+        <div class="bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
+            <div class="space-y-2">
+                <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                    <span class="material-symbols-outlined text-[22px]">payments</span>
+                </div>
+                <h3 class="font-headline font-bold text-base text-on-surface">Sales Transactions Report</h3>
+                <p class="text-xs text-on-surface-variant leading-relaxed">
+                    Granular transaction line-items containing invoice IDs, dates, SKUs, categories, quantities, unit prices, discounts, and payment methods.
+                </p>
+                <div class="pt-1 text-[11px] font-mono text-tertiary">
+                    Format: CSV • Encoding: UTF-8
+                </div>
+            </div>
+
+            <form th:action="@{/analytics/reports/sales}" method="get" class="mt-5 pt-4 border-t border-[#E7E9E3] flex items-center gap-2">
+                <select name="preset" class="px-2.5 py-1.5 rounded-lg bg-surface-container-low text-xs font-semibold border border-[#E7E9E3] outline-none flex-1">
+                    <option value="LAST_7_DAYS">Past 7 Days</option>
+                    <option value="LAST_30_DAYS" selected>Past 30 Days</option>
+                    <option value="THIS_MONTH">This Month</option>
+                    <option value="LAST_90_DAYS">Past 90 Days</option>
+                    <option value="THIS_YEAR">This Year</option>
+                </select>
+                <button type="submit"
+                        class="px-3.5 py-1.5 rounded-lg bg-primary hover:bg-primary-hover text-on-primary font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer">
+                    <span class="material-symbols-outlined text-[16px]">download</span>
+                    <span>Export</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Report 2: Product Performance -->
+        <div class="bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
+            <div class="space-y-2">
+                <div class="w-10 h-10 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-[22px]">category</span>
+                </div>
+                <h3 class="font-headline font-bold text-base text-on-surface">Product & Margin Economics</h3>
+                <p class="text-xs text-on-surface-variant leading-relaxed">
+                    SKU-level performance matrix with total units sold, gross revenues, estimated COGS, gross margins, and BCG quadrant classifications.
+                </p>
+                <div class="pt-1 text-[11px] font-mono text-tertiary">
+                    Format: CSV • Encoding: UTF-8
+                </div>
+            </div>
+
+            <form th:action="@{/analytics/reports/products}" method="get" class="mt-5 pt-4 border-t border-[#E7E9E3] flex items-center gap-2">
+                <select name="preset" class="px-2.5 py-1.5 rounded-lg bg-surface-container-low text-xs font-semibold border border-[#E7E9E3] outline-none flex-1">
+                    <option value="LAST_7_DAYS">Past 7 Days</option>
+                    <option value="LAST_30_DAYS" selected>Past 30 Days</option>
+                    <option value="THIS_MONTH">This Month</option>
+                    <option value="LAST_90_DAYS">Past 90 Days</option>
+                    <option value="THIS_YEAR">This Year</option>
+                </select>
+                <button type="submit"
+                        class="px-3.5 py-1.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer">
+                    <span class="material-symbols-outlined text-[16px]">download</span>
+                    <span>Export</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Report 3: Customer RFM Segmentation -->
+        <div class="bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
+            <div class="space-y-2">
+                <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-[22px]">group</span>
+                </div>
+                <h3 class="font-headline font-bold text-base text-on-surface">Customer RFM Intelligence</h3>
+                <p class="text-xs text-on-surface-variant leading-relaxed">
+                    Customer recency days, frequency counts, cumulative spend, 1-5 quintile scores, RFM composite codes, and assigned behavioral segments.
+                </p>
+                <div class="pt-1 text-[11px] font-mono text-tertiary">
+                    Format: CSV • Encoding: UTF-8
+                </div>
+            </div>
+
+            <form th:action="@{/analytics/reports/customers}" method="get" class="mt-5 pt-4 border-t border-[#E7E9E3] flex items-center gap-2">
+                <select name="preset" class="px-2.5 py-1.5 rounded-lg bg-surface-container-low text-xs font-semibold border border-[#E7E9E3] outline-none flex-1">
+                    <option value="LAST_7_DAYS">Past 7 Days</option>
+                    <option value="LAST_30_DAYS" selected>Past 30 Days</option>
+                    <option value="THIS_MONTH">This Month</option>
+                    <option value="LAST_90_DAYS">Past 90 Days</option>
+                    <option value="THIS_YEAR">This Year</option>
+                </select>
+                <button type="submit"
+                        class="px-3.5 py-1.5 rounded-lg bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer">
+                    <span class="material-symbols-outlined text-[16px]">download</span>
+                    <span>Export</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Report 4: Inventory Health -->
+        <div class="bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
+            <div class="space-y-2">
+                <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-[22px]">inventory_2</span>
+                </div>
+                <h3 class="font-headline font-bold text-base text-on-surface">Inventory Health & Reorders</h3>
+                <p class="text-xs text-on-surface-variant leading-relaxed">
+                    Current warehouse stock on hand, reorder thresholds, calculated replenishment order quantities, unit costs, and urgency indicators.
+                </p>
+                <div class="pt-1 text-[11px] font-mono text-tertiary">
+                    Format: CSV • Encoding: UTF-8
+                </div>
+            </div>
+
+            <form th:action="@{/analytics/reports/inventory}" method="get" class="mt-5 pt-4 border-t border-[#E7E9E3] flex items-center gap-2">
+                <select name="preset" class="px-2.5 py-1.5 rounded-lg bg-surface-container-low text-xs font-semibold border border-[#E7E9E3] outline-none flex-1">
+                    <option value="LAST_7_DAYS">Past 7 Days</option>
+                    <option value="LAST_30_DAYS" selected>Past 30 Days</option>
+                    <option value="THIS_MONTH">This Month</option>
+                    <option value="LAST_90_DAYS">Past 90 Days</option>
+                    <option value="THIS_YEAR">This Year</option>
+                </select>
+                <button type="submit"
+                        class="px-3.5 py-1.5 rounded-lg bg-amber-700 hover:bg-amber-800 text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer">
+                    <span class="material-symbols-outlined text-[16px]">download</span>
+                    <span>Export</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Report 5: Business Recommendations -->
+        <div class="bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
+            <div class="space-y-2">
+                <div class="w-10 h-10 rounded-xl bg-rose-50 text-rose-700 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-[22px]">auto_awesome</span>
+                </div>
+                <h3 class="font-headline font-bold text-base text-on-surface">Business Recommendations Log</h3>
+                <p class="text-xs text-on-surface-variant leading-relaxed">
+                    Complete historical log of rule-based recommendations, severity tiers, rule identifiers, title, description, action prompt, and status.
+                </p>
+                <div class="pt-1 text-[11px] font-mono text-tertiary">
+                    Format: CSV • Encoding: UTF-8
+                </div>
+            </div>
+
+            <div class="mt-5 pt-4 border-t border-[#E7E9E3] flex items-center justify-end">
+                <a th:href="@{/analytics/reports/recommendations}"
+                   class="w-full justify-center px-3.5 py-2 rounded-lg bg-rose-700 hover:bg-rose-800 text-white font-bold text-xs flex items-center gap-1.5 transition-colors">
+                    <span class="material-symbols-outlined text-[16px]">download</span>
+                    <span>Download Complete Log</span>
+                </a>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: html}"
+      lang="en">
+<body>
+<div th:fragment="content" class="flex flex-col gap-6 max-w-5xl mx-auto">
+
+    <!-- Back Navigation -->
+    <div>
+        <a th:href="@{/datasets}" class="inline-flex items-center gap-1.5 text-xs font-semibold text-tertiary hover:text-on-surface transition-colors">
+            <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+            <span>Back to Dataset Management</span>
+        </a>
+    </div>
+
+    <!-- Header Banner -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <div class="flex items-center gap-2 mb-1">
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary uppercase tracking-wider">Step 2 of 4</span>
+                <span class="text-xs text-tertiary">• Column Schema Mapping</span>
+            </div>
+            <h1 class="font-headline font-bold text-2xl lg:text-3xl text-on-surface tracking-tight">Map Dataset Columns</h1>
+            <p class="text-xs text-tertiary mt-1">
+                Verify and map the columns from <strong class="text-on-surface" th:text="${datasetImport.originalFilename}">file.csv</strong> to the canonical <span class="font-semibold text-primary" th:text="${datasetImport.datasetType.displayName}">Sales</span> schema.
+            </p>
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="px-3 py-1 rounded-xl bg-surface-container border border-[#E7E9E3] text-xs font-semibold text-on-surface">
+                <span class="text-tertiary">Detected Rows:</span> <strong th:text="${datasetImport.totalRows}">500</strong>
+            </span>
+        </div>
+    </div>
+
+    <!-- Mapping Form -->
+    <form th:action="@{'/datasets/imports/' + ${datasetImport.id} + '/mapping'}" method="post" class="flex flex-col gap-6">
+
+        <div class="rounded-2xl bg-surface-container-lowest border border-[#E7E9E3] shadow-xs overflow-hidden">
+            <div class="p-4 bg-surface-container-low border-b border-[#E7E9E3] flex items-center justify-between">
+                <div>
+                    <h2 class="text-xs font-bold font-headline text-on-surface uppercase tracking-wider">Canonical Schema Fields vs File Headers</h2>
+                    <p class="text-[11px] text-tertiary mt-0.5">Required fields marked with <span class="text-red-500 font-bold">*</span> must be mapped to proceed.</p>
+                </div>
+                <div class="text-[11px] text-tertiary">
+                    Auto-detection has pre-selected matching column names.
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                    <tr class="border-b border-[#E7E9E3] bg-surface-container-lowest text-tertiary uppercase tracking-wider text-[10px]">
+                        <th class="py-3 px-4">Canonical Field</th>
+                        <th class="py-3 px-4">Type</th>
+                        <th class="py-3 px-4">Source Column (From File)</th>
+                        <th class="py-3 px-4">Description</th>
+                    </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#E7E9E3]">
+                    <tr th:each="field : ${canonicalFields}" class="hover:bg-surface-container-low transition-colors">
+                        <td class="py-3.5 px-4">
+                            <div class="flex items-center gap-1.5 font-bold text-on-surface">
+                                <span th:text="${field.displayName}">Transaction ID</span>
+                                <span th:if="${field.required}" class="text-red-500 font-bold">*</span>
+                            </div>
+                            <span class="font-mono text-[10px] text-tertiary" th:text="${field.name}">transaction_id</span>
+                        </td>
+                        <td class="py-3.5 px-4">
+                            <span class="px-2 py-0.5 rounded font-mono text-[10px] font-semibold bg-surface-container text-on-surface"
+                                  th:text="${field.dataType}">STRING</span>
+                        </td>
+                        <td class="py-3.5 px-4 min-w-[240px]">
+                            <select th:name="'col_' + ${field.name}"
+                                    class="w-full text-xs font-semibold rounded-xl border border-[#E7E9E3] bg-surface-container-lowest p-2 focus:ring-1 focus:ring-primary focus:border-primary">
+                                <option value="">-- Do not map (Ignore) --</option>
+                                <option th:each="h : ${fileHeaders}"
+                                        th:value="${h}"
+                                        th:text="${h}"
+                                        th:selected="${currentMapping.get(field.name) == h or currentMapping.get(h) == field.name}"></option>
+                            </select>
+                        </td>
+                        <td class="py-3.5 px-4 text-tertiary" th:text="${field.description}">
+                            Unique transaction receipt number
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Sample Preview from File Box -->
+        <div th:if="${not #lists.isEmpty(previewRows)}" class="rounded-2xl bg-surface-container-lowest p-5 border border-[#E7E9E3] shadow-xs">
+            <h3 class="text-xs font-bold font-headline text-on-surface uppercase tracking-wider mb-2">Uploaded File Sample Rows (Top 5)</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-[11px] font-mono">
+                    <thead>
+                    <tr class="border-b border-[#E7E9E3] text-tertiary">
+                        <th th:each="header : ${fileHeaders}" class="py-2 px-3 bg-surface-container-low whitespace-nowrap" th:text="${header}">Header</th>
+                    </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#E7E9E3]">
+                    <tr th:each="row : ${previewRows}">
+                        <td th:each="header : ${fileHeaders}" class="py-2 px-3 whitespace-nowrap" th:text="${row.get(header)}">val</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex items-center justify-between">
+            <button type="submit" formaction="#" th:formaction="@{'/datasets/imports/' + ${datasetImport.id} + '/cancel'}"
+                    class="px-4 py-2 rounded-xl text-xs font-semibold text-red-600 hover:bg-red-50 border border-red-200 transition-colors">
+                Cancel Import
+            </button>
+            <div class="flex items-center gap-3">
+                <button type="submit" class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-on-primary font-headline text-xs font-bold shadow-xs transition-all">
+                    <span>Save Mapping & Preview Data</span>
+                    <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+                </button>
+            </div>
+        </div>
+
+    </form>
+
+</div>
+</body>
+</html>

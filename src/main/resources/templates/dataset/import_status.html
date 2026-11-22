@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: html}"
+      lang="en">
+<body>
+<div th:fragment="content" class="flex flex-col gap-6 max-w-4xl mx-auto py-6">
+
+    <!-- Success Hero Card -->
+    <div class="rounded-2xl bg-surface-container-lowest p-8 border border-[#E7E9E3] shadow-xs text-center flex flex-col items-center">
+        <div class="h-16 w-16 rounded-full bg-green-100 text-primary flex items-center justify-center mb-4">
+            <span class="material-symbols-outlined text-4xl">check_circle</span>
+        </div>
+
+        <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-[#56DA33]/20 text-[#125B00] tracking-wider uppercase mb-2">
+            Ingestion Job Completed
+        </span>
+
+        <h1 class="font-headline font-bold text-2xl lg:text-3xl text-on-surface tracking-tight">
+            Data Successfully Ingested!
+        </h1>
+
+        <p class="text-xs text-tertiary max-w-md mx-auto mt-2">
+            Records from <strong class="text-on-surface" th:text="${datasetImport.originalFilename}">file.csv</strong> have been validated and loaded into <strong class="text-on-surface" th:text="${activeWorkspace != null ? activeWorkspace.name : 'Supermarket'}">Supermarket</strong>.
+        </p>
+
+        <!-- Stats Pill Row -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full max-w-2xl mt-8">
+            <div class="p-4 rounded-xl bg-surface-container-low border border-[#E7E9E3]">
+                <span class="text-[11px] text-tertiary block">Job Reference</span>
+                <span class="font-mono font-bold text-sm text-on-surface mt-1" th:text="'#' + ${datasetImport.id}">#1</span>
+            </div>
+            <div class="p-4 rounded-xl bg-surface-container-low border border-[#E7E9E3]">
+                <span class="text-[11px] text-tertiary block">Valid Records Ingested</span>
+                <span class="font-bold text-sm text-primary mt-1" th:text="${#numbers.formatInteger(datasetImport.validRows, 1, 'COMMA')}">500</span>
+            </div>
+            <div class="p-4 rounded-xl bg-surface-container-low border border-[#E7E9E3]">
+                <span class="text-[11px] text-tertiary block">Data Quality Score</span>
+                <span class="font-bold text-sm text-on-surface mt-1" th:text="${datasetImport.qualityScore != null ? datasetImport.qualityScore + '%' : '100%'}">98.5%</span>
+            </div>
+            <div class="p-4 rounded-xl bg-surface-container-low border border-[#E7E9E3]">
+                <span class="text-[11px] text-tertiary block">Target Category</span>
+                <span class="font-bold text-sm text-on-surface mt-1" th:text="${datasetImport.datasetType.displayName}">Sales</span>
+            </div>
+        </div>
+
+        <!-- Action CTAs -->
+        <div class="flex items-center gap-3 mt-8 flex-wrap justify-center">
+            <a th:href="@{/datasets}"
+               class="px-5 py-2.5 rounded-xl border border-[#E7E9E3] bg-surface-container-lowest hover:bg-surface-container-low text-xs font-semibold text-on-surface shadow-xs transition-colors">
+                Return to Datasets Hub
+            </a>
+            <a th:if="${datasetImport.dataset != null}"
+               th:href="@{'/datasets/' + ${datasetImport.dataset.id}}"
+               class="px-5 py-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface text-xs font-bold border border-[#E7E9E3] shadow-xs transition-colors">
+                Explore Ingested Records
+            </a>
+            <a th:href="@{/dashboard}"
+               class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-on-primary font-headline text-xs font-bold shadow-xs transition-all">
+                <span>View Dashboard</span>
+                <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+            </a>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

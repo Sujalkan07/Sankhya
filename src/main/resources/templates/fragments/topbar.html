@@ -4,10 +4,16 @@
 <header th:fragment="topbar(pageTitle)"
         class="fixed top-0 left-0 right-0 z-40 bg-surface-container-lowest shadow-[0_1px_8px_rgba(0,0,0,0.04)] border-b border-[#E7E9E3]">
 
-    <!-- Row 1: Brand Logo, Active Store Selector, Telemetry, Notifications & User Info (h-16) -->
-    <div class="h-16 px-6 lg:px-8 flex items-center justify-between">
-        <!-- Left: Brand Logo & Workspace Switcher -->
-        <div class="flex items-center gap-4 lg:gap-6">
+    <!-- Row 1: Brand Logo, Active Store Selector, Telemetry, Date Filter, Notifications & User Info (h-16) -->
+    <div class="h-16 px-4 lg:px-8 flex items-center justify-between">
+        <!-- Left: Hamburger Toggle (Mobile) + Brand Logo & Workspace Switcher -->
+        <div class="flex items-center gap-3 lg:gap-6">
+            <!-- Mobile Menu Toggle Button -->
+            <button type="button" id="mobile-menu-btn" aria-label="Toggle Navigation"
+                    class="lg:hidden p-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors">
+                <span class="material-symbols-outlined text-[22px]">menu</span>
+            </button>
+
             <!-- Brand Logo -->
             <a th:href="@{/dashboard}" class="flex items-center gap-2.5">
                 <div class="w-9 h-9 rounded-xl bg-surface-container-low border border-[#E7E9E3] p-1.5 flex items-center justify-center text-primary shadow-xs">
@@ -15,7 +21,7 @@
                 </div>
                 <div class="flex items-center gap-2">
                     <span class="font-headline font-bold text-lg text-on-surface tracking-tight leading-none">Sankhya</span>
-                    <span class="px-2 py-0.5 rounded-full bg-surface-container text-primary font-semibold text-[10px]">
+                    <span class="hidden sm:inline-block px-2 py-0.5 rounded-full bg-surface-container text-primary font-semibold text-[10px]">
                         AI Supermarket Analytics
                     </span>
                 </div>
@@ -26,12 +32,12 @@
                 <button type="button"
                         class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface text-xs font-semibold border border-[#E7E9E3] transition-all cursor-pointer">
                     <span class="material-symbols-outlined text-[16px] text-primary">storefront</span>
-                    <span class="truncate max-w-[180px] sm:max-w-[220px]"
+                    <span class="truncate max-w-[140px] sm:max-w-[220px]"
                           th:text="${activeWorkspace != null ? activeWorkspace.name : 'Select Store'}">
                         Green Basket Supermarket
                     </span>
-                    <span class="text-tertiary">|</span>
-                    <span class="text-primary font-bold">Active Store</span>
+                    <span class="hidden md:inline text-tertiary">|</span>
+                    <span class="hidden md:inline text-primary font-bold">Active Store</span>
                     <span class="material-symbols-outlined text-[16px] text-on-surface-variant">expand_more</span>
                 </button>
 
@@ -70,26 +76,46 @@
             </div>
         </div>
 
-        <!-- Right: Telemetry, Date Range, Dataset Sync, Notifications & User Info -->
-        <div class="flex items-center gap-3 sm:gap-4">
+        <!-- Right: Telemetry, Global Date Range Dropdown, Dataset Sync, Notifications & User Info -->
+        <div class="flex items-center gap-2.5 sm:gap-4">
             <!-- Live Telemetry Status Pill (From Stitch Reference) -->
             <div class="hidden xl:flex items-center gap-2 bg-[#EFF9E9] border border-[#E7E9E3] px-3 py-1 rounded-full text-xs">
                 <span class="relative flex h-2 w-2">
                     <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-container opacity-75"></span>
                     <span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
                 </span>
-                <span class="font-semibold text-on-surface text-[11px]">ML Cluster Active</span>
+                <span class="font-semibold text-on-surface text-[11px]">Analytics Core Active</span>
                 <span class="text-outline-variant">|</span>
-                <span class="text-tertiary text-[11px]">Latency: <strong class="text-primary font-mono">&lt;14ms</strong></span>
+                <span class="text-tertiary text-[11px]">Engine: <strong class="text-primary font-mono">&lt;14ms</strong></span>
             </div>
 
-            <!-- Date Range Selector Pill (From Stitch Reference) -->
-            <button type="button"
-                    class="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container-lowest text-on-surface-variant hover:text-on-surface hover:bg-surface-container border border-[#E7E9E3] transition-colors text-xs font-medium">
-                <span class="material-symbols-outlined text-[16px] text-primary">calendar_today</span>
-                <span>Past 30 Days</span>
-                <span class="material-symbols-outlined text-[14px]">expand_more</span>
-            </button>
+            <!-- Global Date Range Dropdown Selector (From Stitch Reference) -->
+            <div class="relative group">
+                <button type="button"
+                        class="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container-lowest text-on-surface-variant hover:text-on-surface hover:bg-surface-container border border-[#E7E9E3] transition-colors text-xs font-medium cursor-pointer">
+                    <span class="material-symbols-outlined text-[16px] text-primary">calendar_today</span>
+                    <span th:text="${currentPreset != null ? currentPreset.label : 'Past 30 Days'}">Past 30 Days</span>
+                    <span class="material-symbols-outlined text-[14px]">expand_more</span>
+                </button>
+
+                <!-- Date Range Menu -->
+                <div class="absolute right-0 top-full mt-1.5 w-64 rounded-xl bg-surface-container-lowest border border-[#E7E9E3] shadow-lg p-2.5 hidden group-hover:block z-50">
+                    <div class="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-tertiary">
+                        Select Analytical Window
+                    </div>
+                    <div class="flex flex-col gap-1 my-1">
+                        <a th:href="@{''(preset='TODAY')}" class="px-2.5 py-1.5 rounded-lg text-xs text-on-surface hover:bg-surface-container-low transition-colors">Today</a>
+                        <a th:href="@{''(preset='YESTERDAY')}" class="px-2.5 py-1.5 rounded-lg text-xs text-on-surface hover:bg-surface-container-low transition-colors">Yesterday</a>
+                        <a th:href="@{''(preset='LAST_7_DAYS')}" class="px-2.5 py-1.5 rounded-lg text-xs text-on-surface hover:bg-surface-container-low transition-colors">Last 7 Days</a>
+                        <a th:href="@{''(preset='LAST_30_DAYS')}" class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-primary bg-surface-container-low transition-colors">Last 30 Days (Default)</a>
+                        <a th:href="@{''(preset='LAST_90_DAYS')}" class="px-2.5 py-1.5 rounded-lg text-xs text-on-surface hover:bg-surface-container-low transition-colors">Last 90 Days</a>
+                        <a th:href="@{''(preset='THIS_MONTH')}" class="px-2.5 py-1.5 rounded-lg text-xs text-on-surface hover:bg-surface-container-low transition-colors">This Month</a>
+                        <a th:href="@{''(preset='LAST_MONTH')}" class="px-2.5 py-1.5 rounded-lg text-xs text-on-surface hover:bg-surface-container-low transition-colors">Last Month</a>
+                        <a th:href="@{''(preset='THIS_QUARTER')}" class="px-2.5 py-1.5 rounded-lg text-xs text-on-surface hover:bg-surface-container-low transition-colors">This Quarter</a>
+                        <a th:href="@{''(preset='THIS_YEAR')}" class="px-2.5 py-1.5 rounded-lg text-xs text-on-surface hover:bg-surface-container-low transition-colors">This Year</a>
+                    </div>
+                </div>
+            </div>
 
             <!-- Dataset Sync Quick Action (From Stitch Reference) -->
             <a th:href="@{/datasets}"
@@ -99,38 +125,96 @@
                 <span class="material-symbols-outlined text-[15px]">sync</span>
             </a>
 
-            <!-- Notification Bell -->
-            <button type="button" aria-label="Notifications"
-                    class="relative p-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors">
-                <span class="material-symbols-outlined text-[20px]">notifications</span>
-                <span class="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-error"></span>
-            </button>
+            <!-- Notification Bell with Dropdown -->
+            <div class="relative group">
+                <button type="button" aria-label="Notifications"
+                        class="relative p-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors cursor-pointer">
+                    <span class="material-symbols-outlined text-[20px]">notifications</span>
+                    <span class="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-error"></span>
+                </button>
+
+                <!-- Notifications Dropdown -->
+                <div class="absolute right-0 top-full mt-1.5 w-80 rounded-2xl bg-surface-container-lowest border border-[#E7E9E3] shadow-xl p-3 hidden group-hover:block z-50">
+                    <div class="flex items-center justify-between pb-2 mb-2 border-b border-[#E7E9E3]">
+                        <span class="font-headline font-bold text-xs text-on-surface">Store Alerts &amp; Directives</span>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-error/15 text-error">3 Unread</span>
+                    </div>
+                    <div class="flex flex-col gap-2 max-h-64 overflow-y-auto">
+                        <a th:href="@{/analytics/inventory}" class="p-2 rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors flex items-start gap-2.5">
+                            <span class="material-symbols-outlined text-error text-[18px] shrink-0 mt-0.5">warning</span>
+                            <div class="text-xs">
+                                <p class="font-bold text-on-surface">Critical Stockout Risk</p>
+                                <p class="text-[11px] text-tertiary">Daawat Basmati 5kg depletion rate: 4.2 days remaining.</p>
+                            </div>
+                        </a>
+                        <a th:href="@{/analytics/recommendations}" class="p-2 rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors flex items-start gap-2.5">
+                            <span class="material-symbols-outlined text-primary text-[18px] shrink-0 mt-0.5">auto_awesome</span>
+                            <div class="text-xs">
+                                <p class="font-bold text-on-surface">New Cross-Sell Rule</p>
+                                <p class="text-[11px] text-tertiary">Atta + Ghee festive bundle recommendation ready for review.</p>
+                            </div>
+                        </a>
+                        <a th:href="@{/analytics/sales}" class="p-2 rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors flex items-start gap-2.5">
+                            <span class="material-symbols-outlined text-primary text-[18px] shrink-0 mt-0.5">trending_up</span>
+                            <div class="text-xs">
+                                <p class="font-bold text-on-surface">Surge Peak Velocity</p>
+                                <p class="text-[11px] text-tertiary">Peak evening transaction velocity reached ₹42,800/hr.</p>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
 
             <div class="h-5 w-px bg-outline-variant"></div>
 
-            <!-- User Profile Pill -->
-            <div class="flex items-center gap-2.5">
-                <div class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-xs shadow-xs">
-                    <span th:text="${currentUser != null && currentUser.fullName != null && !currentUser.fullName.isEmpty() ? currentUser.fullName.substring(0, 1).toUpperCase() : 'U'}">
-                        R
-                    </span>
+            <!-- User Profile Pill with Dropdown -->
+            <div class="relative group">
+                <div class="flex items-center gap-2.5 cursor-pointer p-1 rounded-xl hover:bg-surface-container-low transition-colors">
+                    <div class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-xs shadow-xs">
+                        <span th:text="${currentUser != null && currentUser.fullName != null && !currentUser.fullName.isEmpty() ? currentUser.fullName.substring(0, 1).toUpperCase() : 'U'}">
+                            R
+                        </span>
+                    </div>
+                    <div class="hidden sm:flex flex-col text-left">
+                        <span class="text-xs font-bold text-on-surface leading-tight"
+                              th:text="${currentUser != null ? currentUser.fullName : 'Store Owner'}">
+                            Rajesh Kumar
+                        </span>
+                        <span class="text-[10px] text-tertiary leading-tight">
+                            Store Owner
+                        </span>
+                    </div>
+                    <span class="material-symbols-outlined text-[16px] text-tertiary hidden sm:inline">expand_more</span>
                 </div>
-                <div class="hidden sm:flex flex-col text-left">
-                    <span class="text-xs font-bold text-on-surface leading-tight"
-                          th:text="${currentUser != null ? currentUser.fullName : 'Store Owner'}">
-                        Rajesh Kumar
-                    </span>
-                    <span class="text-[10px] text-tertiary leading-tight">
-                        Store Owner
-                    </span>
+
+                <!-- User Dropdown Menu -->
+                <div class="absolute right-0 top-full mt-1.5 w-52 rounded-xl bg-surface-container-lowest border border-[#E7E9E3] shadow-lg p-2 hidden group-hover:block z-50">
+                    <div class="px-2.5 py-1.5 border-b border-[#E7E9E3] mb-1">
+                        <p class="text-xs font-bold text-on-surface truncate" th:text="${currentUser != null ? currentUser.fullName : 'User'}">User</p>
+                        <p class="text-[10px] text-tertiary truncate" th:text="${currentUser != null ? currentUser.username : 'email@store.com'}">email@store.com</p>
+                    </div>
+                    <a th:href="@{/settings}" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-on-surface hover:bg-surface-container-low transition-colors">
+                        <span class="material-symbols-outlined text-[16px]">settings</span>
+                        <span>Settings &amp; Store</span>
+                    </a>
+                    <a th:href="@{/workspaces}" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-on-surface hover:bg-surface-container-low transition-colors">
+                        <span class="material-symbols-outlined text-[16px]">store</span>
+                        <span>Workspaces</span>
+                    </a>
+                    <form th:action="@{/logout}" method="post" class="mt-1 pt-1 border-t border-[#E7E9E3]">
+                        <button type="submit" class="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-error hover:bg-error/10 transition-colors text-left cursor-pointer">
+                            <span class="material-symbols-outlined text-[16px]">logout</span>
+                            <span>Sign Out</span>
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Row 2: Secondary Navigation Horizontal Tabs (From Stitch Reference) (h-12) -->
-    <div class="h-12 px-6 lg:px-8 bg-surface-container-low flex items-center overflow-x-auto border-t border-[#E7E9E3]">
-        <nav class="flex items-center gap-1.5 sm:gap-2 whitespace-nowrap text-xs">
+    <div class="h-12 px-4 lg:px-8 bg-surface-container-low flex items-center overflow-x-auto border-t border-[#E7E9E3]">
+        <nav class="flex items-center gap-1 sm:gap-2 whitespace-nowrap text-xs">
             <!-- 1. Overview -->
             <a th:href="@{/dashboard}"
                th:classappend="${currentPage == 'overview' ? 'bg-surface-container-highest text-primary font-bold shadow-xs' : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container'}"
@@ -193,6 +277,22 @@
                class="px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5">
                 <span class="material-symbols-outlined text-[16px]">table_chart</span>
                 <span>Dataset Management</span>
+            </a>
+
+            <!-- Reports -->
+            <a th:href="@{/analytics/reports}"
+               th:classappend="${currentPage == 'reports' ? 'bg-surface-container-highest text-primary font-bold shadow-xs' : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container'}"
+               class="px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[16px]">download</span>
+                <span>Reports</span>
+            </a>
+
+            <!-- Settings -->
+            <a th:href="@{/settings}"
+               th:classappend="${currentPage == 'settings' ? 'bg-surface-container-highest text-primary font-bold shadow-xs' : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container'}"
+               class="px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[16px]">settings</span>
+                <span>Settings</span>
             </a>
         </nav>
     </div>

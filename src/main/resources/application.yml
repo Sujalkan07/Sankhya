@@ -21,8 +21,10 @@ server:
         http-only: true
         same-site: lax
 
-# Reserved for future phases
+# Reserved for future phases / ML & AI
 sankhya:
   ai:
     gemini:
       api-key: ${GEMINI_API_KEY:}
+      model: ${GEMINI_MODEL:gemini-2.5-flash}
+      timeout-seconds: ${GEMINI_TIMEOUT:30}

@@ -1,16 +1,34 @@
 package com.sankhya.analytics.sales.controller;
 
+import com.sankhya.analytics.common.dto.AnalyticsReadinessResponse;
+import com.sankhya.analytics.common.dto.DateRangeFilter;
+import com.sankhya.analytics.common.enums.DatePreset;
+import com.sankhya.analytics.sales.dto.SalesAnalyticsResponse;
+import com.sankhya.analytics.sales.service.SalesAnalyticsService;
+import com.sankhya.dataset.service.DatasetQueryService;
+import com.sankhya.ml.entity.ForecastResultEntity;
+import com.sankhya.ml.repository.ForecastResultRepository;
+import com.sankhya.sales.entity.SalesTransaction;
+import com.sankhya.sales.repository.SalesTransactionRepository;
 import com.sankhya.security.CustomUserDetails;
 import com.sankhya.workspace.dto.WorkspaceResponse;
 import com.sankhya.workspace.entity.Workspace;
 import com.sankhya.workspace.service.WorkspaceService;
 import jakarta.servlet.http.HttpSession;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Controller
@@ -18,15 +36,30 @@ import java.util.List;
 public class SalesAnalyticsController {
 
     private final WorkspaceService workspaceService;
+    private final SalesAnalyticsService salesAnalyticsService;
+    private final DatasetQueryService datasetQueryService;
+    private final SalesTransactionRepository salesTransactionRepository;
+    private final ForecastResultRepository forecastResultRepository;
 
-    public SalesAnalyticsController(WorkspaceService workspaceService) {
+    public SalesAnalyticsController(WorkspaceService workspaceService,
+                                    SalesAnalyticsService salesAnalyticsService,
+                                    DatasetQueryService datasetQueryService,
+                                    SalesTransactionRepository salesTransactionRepository,
+                                    ForecastResultRepository forecastResultRepository) {
         this.workspaceService = workspaceService;
+        this.salesAnalyticsService = salesAnalyticsService;
+        this.datasetQueryService = datasetQueryService;
+        this.salesTransactionRepository = salesTransactionRepository;
+        this.forecastResultRepository = forecastResultRepository;
     }
 
     @GetMapping
-    public String showSalesPlaceholder(@AuthenticationPrincipal CustomUserDetails userDetails,
-                                       HttpSession session,
-                                       Model model) {
+    public String showSalesAnalytics(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                     HttpSession session,
+                                     @RequestParam(required = false, defaultValue = "LAST_30_DAYS") DatePreset preset,
+                                     @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+                                     @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+                                     Model model) {
         Workspace activeWorkspace = workspaceService.getActiveWorkspace(session, userDetails.getId());
         List<WorkspaceResponse> workspaces = workspaceService.getUserWorkspaces(
                 userDetails.getId(),
@@ -37,13 +70,66 @@ public class SalesAnalyticsController {
         model.addAttribute("activeWorkspace", activeWorkspace);
         model.addAttribute("workspaces", workspaces);
         model.addAttribute("currentPage", "sales-analytics");
+        model.addAttribute("pageTitle", "Sales Intelligence & Basket Dynamics");
 
-        model.addAttribute("moduleTitle", "Sales Analytics & Forecasting");
-        model.addAttribute("modulePhase", "Phase 3");
-        model.addAttribute("moduleIcon", "trending_up");
-        model.addAttribute("moduleDescription", "Comprehensive revenue metrics, hourly transaction velocity, basket size trends, and sales KPIs across all POS billing registers.");
-        model.addAttribute("moduleRoadmapDetails", "In Phase 2, POS datasets will be ingested. Phase 3 will activate real-time revenue KPIs, profit margins, and sales forecasting algorithms.");
+        DateRangeFilter filter = DateRangeFilter.of(preset, startDate, endDate);
+        model.addAttribute("currentPreset", filter.getPreset());
+        model.addAttribute("startDate", filter.getStartDate());
+        model.addAttribute("endDate", filter.getEndDate());
+        model.addAttribute("allPresets", DatePreset.values());
 
-        return "dashboard/placeholder";
+        if (activeWorkspace != null) {
+            Long wsId = activeWorkspace.getId();
+            AnalyticsReadinessResponse readiness = datasetQueryService.getAnalyticsReadiness(wsId);
+            model.addAttribute("readiness", readiness);
+
+            if (readiness.isSalesReady()) {
+                SalesAnalyticsResponse response = salesAnalyticsService.getSalesAnalytics(wsId, filter);
+                model.addAttribute("analytics", response);
+
+                // Fetch recent transactions for drill-down inspection
+                List<SalesTransaction> recentTransactions = salesTransactionRepository.findByWorkspaceId(
+                        wsId,
+                        PageRequest.of(0, 15, Sort.by(Sort.Direction.DESC, "transactionDate"))
+                ).getContent();
+                model.addAttribute("recentTransactions", recentTransactions);
+            }
+
+            // Phase 5 ML Forward Revenue Forecast
+            List<ForecastResultEntity> forecastResults = forecastResultRepository.findByWorkspaceIdOrderByForecastDateAsc(wsId);
+            model.addAttribute("forecastResults", forecastResults);
+        }
+
+        return "analytics/sales";
+    }
+
+    @GetMapping("/api")
+    @ResponseBody
+    public SalesAnalyticsResponse getSalesAnalyticsApi(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                                        HttpSession session,
+                                                        @RequestParam(required = false, defaultValue = "LAST_30_DAYS") DatePreset preset,
+                                                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+                                                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        Workspace activeWorkspace = workspaceService.getActiveWorkspace(session, userDetails.getId());
+        if (activeWorkspace == null) return null;
+
+        DateRangeFilter filter = DateRangeFilter.of(preset, startDate, endDate);
+        return salesAnalyticsService.getSalesAnalytics(activeWorkspace.getId(), filter);
+    }
+
+    @GetMapping("/api/transactions/{transactionId}")
+    @ResponseBody
+    public ResponseEntity<List<SalesTransaction>> getTransactionLineItems(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            HttpSession session,
+            @PathVariable String transactionId) {
+        Workspace activeWorkspace = workspaceService.getActiveWorkspace(session, userDetails.getId());
+        if (activeWorkspace == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        List<SalesTransaction> items = salesTransactionRepository.findByWorkspaceIdAndTransactionId(
+                activeWorkspace.getId(), transactionId);
+        return ResponseEntity.ok(items);
     }
 }

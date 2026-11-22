@@ -9,9 +9,12 @@
     <!-- Fixed Sub-Tools Sidebar (Positioned from top-28 to bottom-0) -->
     <aside th:replace="~{fragments/sidebar :: sidebar(${currentPage})}"></aside>
 
-    <!-- Main Content Area with offset for fixed sidebar (pl-64) and topbar (pt-32) -->
-    <div class="pl-64 flex flex-col min-h-screen">
-        <main class="flex-1 w-full pt-32 px-6 lg:px-10 pb-12">
+    <!-- Mobile Backdrop Overlay -->
+    <div id="mobile-sidebar-backdrop" class="fixed inset-0 bg-black/40 backdrop-blur-xs z-40 hidden lg:hidden"></div>
+
+    <!-- Main Content Area with offset for fixed sidebar (lg:pl-64) and topbar (pt-32) -->
+    <div class="lg:pl-64 flex flex-col min-h-screen transition-all duration-300">
+        <main class="flex-1 w-full pt-32 px-4 sm:px-6 lg:px-10 pb-12">
             <div class="max-w-[1440px] mx-auto w-full">
                 <!-- Flash Alerts Fragment -->
                 <div th:replace="~{fragments/alerts :: alerts}"></div>
@@ -22,5 +25,28 @@
         </main>
     </div>
 
+    <!-- Layout Interactivity Scripts -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+            const sidebarCloseBtn = document.getElementById('sidebar-close-btn');
+            const appSidebar = document.getElementById('app-sidebar');
+            const mobileBackdrop = document.getElementById('mobile-sidebar-backdrop');
+
+            function openSidebar() {
+                if (appSidebar) appSidebar.classList.remove('-translate-x-full');
+                if (mobileBackdrop) mobileBackdrop.classList.remove('hidden');
+            }
+
+            function closeSidebar() {
+                if (appSidebar) appSidebar.classList.add('-translate-x-full');
+                if (mobileBackdrop) mobileBackdrop.classList.add('hidden');
+            }
+
+            if (mobileMenuBtn) mobileMenuBtn.addEventListener('click', openSidebar);
+            if (sidebarCloseBtn) sidebarCloseBtn.addEventListener('click', closeSidebar);
+            if (mobileBackdrop) mobileBackdrop.addEventListener('click', closeSidebar);
+        });
+    </script>
 </body>
 </html>

@@ -7,6 +7,7 @@ import com.sankhya.analytics.common.util.AnalyticsMathUtils;
 import com.sankhya.analytics.customers.dto.*;
 import com.sankhya.customers.entity.Customer;
 import com.sankhya.customers.repository.CustomerRepository;
+import com.sankhya.dataset.repository.UnifiedSalesMartRepository;
 import com.sankhya.sales.repository.SalesTransactionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,31 +23,132 @@ public class CustomerIntelligenceService {
 
     private final SalesTransactionRepository salesTransactionRepository;
     private final CustomerRepository customerRepository;
+    private final UnifiedSalesMartRepository unifiedSalesMartRepository;
 
     public CustomerIntelligenceService(SalesTransactionRepository salesTransactionRepository,
-                                       CustomerRepository customerRepository) {
+                                       CustomerRepository customerRepository,
+                                       UnifiedSalesMartRepository unifiedSalesMartRepository) {
         this.salesTransactionRepository = salesTransactionRepository;
         this.customerRepository = customerRepository;
+        this.unifiedSalesMartRepository = unifiedSalesMartRepository;
     }
 
     @Transactional(readOnly = true)
     public CustomerIntelligenceResponse getCustomerIntelligence(Long workspaceId, DateRangeFilter filter) {
         CustomerIntelligenceResponse response = new CustomerIntelligenceResponse();
 
+        boolean useMart = unifiedSalesMartRepository.countByWorkspaceId(workspaceId) > 0;
+
         // 1. Current Period Customer Counts
-        long totalCustomers = customerRepository.countByWorkspaceId(workspaceId);
-        long currActive = salesTransactionRepository.countActiveCustomersBetween(
-                workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
-        long currNew = customerRepository.countByWorkspaceIdAndRegistrationDateBetween(
-                workspaceId, filter.getStartDateTime().toLocalDate(), filter.getEndDateTime().toLocalDate());
+        long totalCustomers;
+        long currActive;
+        long currNew;
+        long currReturning;
+        BigDecimal currRevenue;
 
-        List<String> returningIds = salesTransactionRepository.findReturningCustomerIdsBetween(
-                workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
-        long currReturning = returningIds.size();
+        DateRangeFilter prevFilter = filter.getPrecedingComparisonFilter();
+        long prevActive;
+        long prevNew;
+        long prevReturning;
 
-        BigDecimal currRevenue = salesTransactionRepository.sumRevenueByWorkspaceIdAndDateBetween(
-                workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
-        if (currRevenue == null) currRevenue = BigDecimal.ZERO;
+        List<RfmCustomerDto> rfmList = new ArrayList<>();
+        LocalDateTime endDateTime = filter.getEndDateTime();
+
+        if (useMart) {
+            totalCustomers = unifiedSalesMartRepository.countTotalCustomersByWorkspaceId(workspaceId);
+            currActive = unifiedSalesMartRepository.countActiveCustomersBetween(
+                    workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+
+            List<String> returningIds = unifiedSalesMartRepository.findReturningCustomerIdsBetween(
+                    workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+            currReturning = returningIds.size();
+            currNew = Math.max(0, currActive - currReturning);
+
+            currRevenue = unifiedSalesMartRepository.sumRevenueByWorkspaceIdAndDateBetween(
+                    workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+            if (currRevenue == null) currRevenue = BigDecimal.ZERO;
+
+            prevActive = unifiedSalesMartRepository.countActiveCustomersBetween(
+                    workspaceId, prevFilter.getStartDateTime(), prevFilter.getEndDateTime());
+            prevNew = 0;
+            List<String> prevReturningIds = unifiedSalesMartRepository.findReturningCustomerIdsBetween(
+                    workspaceId, prevFilter.getStartDateTime(), prevFilter.getEndDateTime());
+            prevReturning = prevReturningIds.size();
+
+            List<Object[]> rfmRows = unifiedSalesMartRepository.findCustomerRfmMetricsBetween(
+                    workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+
+            for (Object[] row : rfmRows) {
+                String cId = (String) row[0];
+                if (cId == null || cId.trim().isEmpty()) continue;
+
+                String name = row[1] != null ? row[1].toString() : cId;
+                LocalDateTime lastTxnDate = (LocalDateTime) row[4];
+                long freq = ((Number) row[5]).longValue();
+                BigDecimal monetary = (BigDecimal) row[6];
+                long recencyDays = Math.max(0, Duration.between(lastTxnDate, endDateTime).toDays());
+
+                RfmCustomerDto dto = new RfmCustomerDto();
+                dto.setCustomerId(cId);
+                dto.setCustomerName(name);
+                dto.setRecencyDays(recencyDays);
+                dto.setFrequency(freq);
+                dto.setMonetary(monetary);
+                rfmList.add(dto);
+            }
+        } else {
+            totalCustomers = customerRepository.countByWorkspaceId(workspaceId);
+            currActive = salesTransactionRepository.countActiveCustomersBetween(
+                    workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+            currNew = customerRepository.countByWorkspaceIdAndRegistrationDateBetween(
+                    workspaceId, filter.getStartDateTime().toLocalDate(), filter.getEndDateTime().toLocalDate());
+
+            List<String> returningIds = salesTransactionRepository.findReturningCustomerIdsBetween(
+                    workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+            currReturning = returningIds.size();
+
+            currRevenue = salesTransactionRepository.sumRevenueByWorkspaceIdAndDateBetween(
+                    workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+            if (currRevenue == null) currRevenue = BigDecimal.ZERO;
+
+            prevActive = salesTransactionRepository.countActiveCustomersBetween(
+                    workspaceId, prevFilter.getStartDateTime(), prevFilter.getEndDateTime());
+            prevNew = customerRepository.countByWorkspaceIdAndRegistrationDateBetween(
+                    workspaceId, prevFilter.getStartDateTime().toLocalDate(), prevFilter.getEndDateTime().toLocalDate());
+            List<String> prevReturningIds = salesTransactionRepository.findReturningCustomerIdsBetween(
+                    workspaceId, prevFilter.getStartDateTime(), prevFilter.getEndDateTime());
+            prevReturning = prevReturningIds.size();
+
+            List<Customer> customerEntities = customerRepository.findByWorkspaceId(workspaceId);
+            Map<String, String> customerNames = customerEntities.stream()
+                    .collect(Collectors.toMap(
+                            Customer::getCustomerId,
+                            c -> c.getCustomerName() != null ? c.getCustomerName() : c.getCustomerId(),
+                            (existing, replacement) -> existing
+                    ));
+
+            List<Object[]> rfmRows = salesTransactionRepository.findCustomerRfmMetricsBetween(
+                    workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+
+            for (Object[] row : rfmRows) {
+                String cId = (String) row[0];
+                if (cId == null || cId.trim().isEmpty()) continue;
+
+                LocalDateTime lastTxnDate = (LocalDateTime) row[1];
+                long freq = ((Number) row[2]).longValue();
+                BigDecimal monetary = (BigDecimal) row[3];
+                long recencyDays = Math.max(0, Duration.between(lastTxnDate, endDateTime).toDays());
+
+                String name = customerNames.getOrDefault(cId, cId);
+                RfmCustomerDto dto = new RfmCustomerDto();
+                dto.setCustomerId(cId);
+                dto.setCustomerName(name);
+                dto.setRecencyDays(recencyDays);
+                dto.setFrequency(freq);
+                dto.setMonetary(monetary);
+                rfmList.add(dto);
+            }
+        }
 
         BigDecimal repeatPurchaseRate = currActive > 0
                 ? AnalyticsMathUtils.safePercentage(BigDecimal.valueOf(currReturning), BigDecimal.valueOf(currActive))
@@ -55,16 +157,6 @@ public class CustomerIntelligenceService {
         BigDecimal arpu = currActive > 0
                 ? AnalyticsMathUtils.safeDivide(currRevenue, BigDecimal.valueOf(currActive))
                 : BigDecimal.ZERO;
-
-        // 2. Preceding Period Customer Counts
-        DateRangeFilter prevFilter = filter.getPrecedingComparisonFilter();
-        long prevActive = salesTransactionRepository.countActiveCustomersBetween(
-                workspaceId, prevFilter.getStartDateTime(), prevFilter.getEndDateTime());
-        long prevNew = customerRepository.countByWorkspaceIdAndRegistrationDateBetween(
-                workspaceId, prevFilter.getStartDateTime().toLocalDate(), prevFilter.getEndDateTime().toLocalDate());
-        List<String> prevReturningIds = salesTransactionRepository.findReturningCustomerIdsBetween(
-                workspaceId, prevFilter.getStartDateTime(), prevFilter.getEndDateTime());
-        long prevReturning = prevReturningIds.size();
 
         // 3. Assemble KPIs
         CustomerKpiResponse kpis = new CustomerKpiResponse();
@@ -79,41 +171,6 @@ public class CustomerIntelligenceService {
         kpis.setRepeatPurchaseRate(repeatPurchaseRate);
         kpis.setAverageRevenuePerUser(arpu);
         response.setKpis(kpis);
-
-        // 4. Customer Name Map
-        List<Customer> customerEntities = customerRepository.findByWorkspaceId(workspaceId);
-        Map<String, String> customerNames = customerEntities.stream()
-                .collect(Collectors.toMap(
-                        Customer::getCustomerId,
-                        c -> c.getCustomerName() != null ? c.getCustomerName() : c.getCustomerId(),
-                        (existing, replacement) -> existing
-                ));
-
-        // 5. Raw RFM Aggregations from Transactions
-        List<Object[]> rfmRows = salesTransactionRepository.findCustomerRfmMetricsBetween(
-                workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
-
-        List<RfmCustomerDto> rfmList = new ArrayList<>();
-        LocalDateTime endDateTime = filter.getEndDateTime();
-
-        for (Object[] row : rfmRows) {
-            String cId = (String) row[0];
-            if (cId == null || cId.trim().isEmpty()) continue;
-
-            LocalDateTime lastTxnDate = (LocalDateTime) row[1];
-            long freq = ((Number) row[2]).longValue();
-            BigDecimal monetary = (BigDecimal) row[3];
-            long recencyDays = Math.max(0, Duration.between(lastTxnDate, endDateTime).toDays());
-
-            String name = customerNames.getOrDefault(cId, cId);
-            RfmCustomerDto dto = new RfmCustomerDto();
-            dto.setCustomerId(cId);
-            dto.setCustomerName(name);
-            dto.setRecencyDays(recencyDays);
-            dto.setFrequency(freq);
-            dto.setMonetary(monetary);
-            rfmList.add(dto);
-        }
 
         // 6. Calculate RFM Quintile Scores & Assign Segments
         assignRfmScoresAndSegments(rfmList);

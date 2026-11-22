@@ -69,6 +69,8 @@ public class SalesAnalyticsController {
         model.addAttribute("currentUser", userDetails);
         model.addAttribute("activeWorkspace", activeWorkspace);
         model.addAttribute("workspaces", workspaces);
+        model.addAttribute("activeModule", "sales");
+        model.addAttribute("activeSubPage", "overview");
         model.addAttribute("currentPage", "sales-analytics");
         model.addAttribute("pageTitle", "Sales Intelligence & Basket Dynamics");
 

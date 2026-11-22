@@ -61,6 +61,10 @@ public class DatasetService {
         sb.append(headerLine).append("\n");
 
         switch (datasetType) {
+            case UNIFIED_MART -> {
+                sb.append("BILL-0000204,2026-09-21 09:00:00,CUST-115481,Rhea More,Bengaluru,REGULAR,SKU-0607,Shredded Mozzarella,Dairy Eggs,Packaged Cheese,MeadowVale Dairy,44.0,60.25,1,60.25,0.0,Cash,Aarav Sharma,2026-11-22,90,45,HEALTHY\n");
+                sb.append("BILL-0000204,2026-09-21 09:00:00,CUST-115481,Rhea More,Bengaluru,REGULAR,SKU-0790,Organic Thyme,Produce,Fresh Herbs,Green Basket Select,110.63,168.12,1,168.12,0.0,Cash,Aarav Sharma,2026-11-22,74,37,HEALTHY\n");
+            }
             case PRODUCT_CATALOG -> {
                 sb.append("PROD_001,Amul Taaza Homogenised Toned Milk 1L,Dairy,Amul,68.00,74.00,Litres,Dairy & Chilled,true,10\n");
                 sb.append("PROD_002,Aashirvaad Shudh Chakki Atta 5kg,Staples & Grains,ITC,210.00,245.00,Kilograms,Grocery,true,180\n");

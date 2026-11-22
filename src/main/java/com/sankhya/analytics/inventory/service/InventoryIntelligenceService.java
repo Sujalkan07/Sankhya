@@ -4,6 +4,7 @@ import com.sankhya.analytics.common.dto.ChartDataResponse;
 import com.sankhya.analytics.common.dto.DateRangeFilter;
 import com.sankhya.analytics.common.util.AnalyticsMathUtils;
 import com.sankhya.analytics.inventory.dto.*;
+import com.sankhya.dataset.repository.UnifiedSalesMartRepository;
 import com.sankhya.inventory.entity.InventorySnapshot;
 import com.sankhya.inventory.repository.InventorySnapshotRepository;
 import com.sankhya.products.entity.Product;
@@ -23,28 +24,24 @@ public class InventoryIntelligenceService {
     private final InventorySnapshotRepository inventorySnapshotRepository;
     private final ProductRepository productRepository;
     private final SalesTransactionRepository salesTransactionRepository;
+    private final UnifiedSalesMartRepository unifiedSalesMartRepository;
 
     public InventoryIntelligenceService(InventorySnapshotRepository inventorySnapshotRepository,
                                         ProductRepository productRepository,
-                                        SalesTransactionRepository salesTransactionRepository) {
+                                        SalesTransactionRepository salesTransactionRepository,
+                                        UnifiedSalesMartRepository unifiedSalesMartRepository) {
         this.inventorySnapshotRepository = inventorySnapshotRepository;
         this.productRepository = productRepository;
         this.salesTransactionRepository = salesTransactionRepository;
+        this.unifiedSalesMartRepository = unifiedSalesMartRepository;
     }
 
     @Transactional(readOnly = true)
     public InventoryIntelligenceResponse getInventoryIntelligence(Long workspaceId, DateRangeFilter filter) {
         InventoryIntelligenceResponse response = new InventoryIntelligenceResponse();
 
-        // 1. Fetch Latest Snapshots per Product
-        List<InventorySnapshot> latestSnapshots = inventorySnapshotRepository.findLatestSnapshotsByWorkspaceId(workspaceId);
+        boolean useMart = unifiedSalesMartRepository.countByWorkspaceId(workspaceId) > 0;
 
-        // 2. Fetch Products Map for Names, Categories, Selling Prices
-        List<Product> products = productRepository.findByWorkspaceId(workspaceId);
-        Map<String, Product> productMap = products.stream()
-                .collect(Collectors.toMap(Product::getProductId, p -> p, (a, b) -> a));
-
-        // 3. Process Snapshots for Health & Valuation
         long healthyCount = 0;
         long lowStockCount = 0;
         long outOfStockCount = 0;
@@ -55,50 +52,100 @@ public class InventoryIntelligenceService {
 
         List<ReorderRecommendationDto> reorders = new ArrayList<>();
 
-        for (InventorySnapshot s : latestSnapshots) {
-            Product p = productMap.get(s.getProductId());
-            String name = p != null ? p.getProductName() : s.getProductId();
-            String category = p != null ? p.getCategory() : "General";
+        if (useMart) {
+            // Deduplicated inventory position directly from canonical mart
+            List<Object[]> martInv = unifiedSalesMartRepository.findLatestInventoryPerProductByWorkspaceId(workspaceId);
 
-            BigDecimal unitCost = s.getUnitCost() != null ? s.getUnitCost()
-                    : (p != null && p.getUnitCost() != null ? p.getUnitCost() : BigDecimal.ZERO);
-            BigDecimal sellingPrice = p != null && p.getSellingPrice() != null
-                    ? p.getSellingPrice() : BigDecimal.ZERO;
+            for (Object[] row : martInv) {
+                String pId = (String) row[0];
+                String name = row[1] != null ? row[1].toString() : pId;
+                String category = row[2] != null ? row[2].toString() : "General";
+                BigDecimal unitCost = row[3] != null ? (BigDecimal) row[3] : BigDecimal.ZERO;
+                BigDecimal sellingPrice = row[4] != null ? (BigDecimal) row[4] : BigDecimal.ZERO;
+                int closing = row[6] != null ? ((Number) row[6]).intValue() : 0;
+                int reorder = row[7] != null ? ((Number) row[7]).intValue() : 0;
 
-            int closing = s.getClosingStock() != null ? s.getClosingStock() : 0;
-            int reorder = s.getReorderLevel() != null ? s.getReorderLevel() : 0;
-
-            if (closing > 0) {
-                totalCostValuation = totalCostValuation.add(unitCost.multiply(BigDecimal.valueOf(closing)));
-                totalRetailValuation = totalRetailValuation.add(sellingPrice.multiply(BigDecimal.valueOf(closing)));
-            }
-
-            // Health Classification
-            if (closing <= 0) {
-                outOfStockCount++;
-            } else if (closing <= reorder) {
-                lowStockCount++;
-            } else if (reorder > 0 && closing > 3 * reorder) {
-                overstockedCount++;
-            } else {
-                healthyCount++;
-            }
-
-            // Reorder Recommendation
-            if (closing <= reorder) {
-                int suggested = Math.max((2 * reorder) - closing, Math.max(reorder, 10));
-                BigDecimal restockCost = unitCost.multiply(BigDecimal.valueOf(suggested));
-                String urgency;
-                if (closing <= 0) {
-                    urgency = "CRITICAL";
-                } else if (closing <= Math.max(1, reorder / 2)) {
-                    urgency = "HIGH";
-                } else {
-                    urgency = "MEDIUM";
+                if (closing > 0) {
+                    totalCostValuation = totalCostValuation.add(unitCost.multiply(BigDecimal.valueOf(closing)));
+                    totalRetailValuation = totalRetailValuation.add(sellingPrice.multiply(BigDecimal.valueOf(closing)));
                 }
 
-                reorders.add(new ReorderRecommendationDto(
-                        s.getProductId(), name, category, closing, reorder, suggested, unitCost, restockCost, urgency));
+                if (closing <= 0) {
+                    outOfStockCount++;
+                } else if (closing <= reorder) {
+                    lowStockCount++;
+                } else if (reorder > 0 && closing > 3 * reorder) {
+                    overstockedCount++;
+                } else {
+                    healthyCount++;
+                }
+
+                if (closing <= reorder) {
+                    int suggested = Math.max((2 * reorder) - closing, Math.max(reorder, 10));
+                    BigDecimal restockCost = unitCost.multiply(BigDecimal.valueOf(suggested));
+                    String urgency;
+                    if (closing <= 0) {
+                        urgency = "CRITICAL";
+                    } else if (closing <= Math.max(1, reorder / 2)) {
+                        urgency = "HIGH";
+                    } else {
+                        urgency = "MEDIUM";
+                    }
+
+                    reorders.add(new ReorderRecommendationDto(
+                            pId, name, category, closing, reorder, suggested, unitCost, restockCost, urgency));
+                }
+            }
+        } else {
+            // Legacy multi-dataset fallback
+            List<InventorySnapshot> latestSnapshots = inventorySnapshotRepository.findLatestSnapshotsByWorkspaceId(workspaceId);
+            List<Product> products = productRepository.findByWorkspaceId(workspaceId);
+            Map<String, Product> productMap = products.stream()
+                    .collect(Collectors.toMap(Product::getProductId, p -> p, (a, b) -> a));
+
+            for (InventorySnapshot s : latestSnapshots) {
+                Product p = productMap.get(s.getProductId());
+                String name = p != null ? p.getProductName() : s.getProductId();
+                String category = p != null ? p.getCategory() : "General";
+
+                BigDecimal unitCost = s.getUnitCost() != null ? s.getUnitCost()
+                        : (p != null && p.getUnitCost() != null ? p.getUnitCost() : BigDecimal.ZERO);
+                BigDecimal sellingPrice = p != null && p.getSellingPrice() != null
+                        ? p.getSellingPrice() : BigDecimal.ZERO;
+
+                int closing = s.getClosingStock() != null ? s.getClosingStock() : 0;
+                int reorder = s.getReorderLevel() != null ? s.getReorderLevel() : 0;
+
+                if (closing > 0) {
+                    totalCostValuation = totalCostValuation.add(unitCost.multiply(BigDecimal.valueOf(closing)));
+                    totalRetailValuation = totalRetailValuation.add(sellingPrice.multiply(BigDecimal.valueOf(closing)));
+                }
+
+                if (closing <= 0) {
+                    outOfStockCount++;
+                } else if (closing <= reorder) {
+                    lowStockCount++;
+                } else if (reorder > 0 && closing > 3 * reorder) {
+                    overstockedCount++;
+                } else {
+                    healthyCount++;
+                }
+
+                if (closing <= reorder) {
+                    int suggested = Math.max((2 * reorder) - closing, Math.max(reorder, 10));
+                    BigDecimal restockCost = unitCost.multiply(BigDecimal.valueOf(suggested));
+                    String urgency;
+                    if (closing <= 0) {
+                        urgency = "CRITICAL";
+                    } else if (closing <= Math.max(1, reorder / 2)) {
+                        urgency = "HIGH";
+                    } else {
+                        urgency = "MEDIUM";
+                    }
+
+                    reorders.add(new ReorderRecommendationDto(
+                            s.getProductId(), name, category, closing, reorder, suggested, unitCost, restockCost, urgency));
+                }
             }
         }
 
@@ -111,7 +158,7 @@ public class InventoryIntelligenceService {
         response.setReorderRecommendations(reorders);
 
         // 4. Stock Health DTO & Chart
-        long totalSkus = latestSnapshots.size();
+        long totalSkus = healthyCount + lowStockCount + outOfStockCount + overstockedCount;
         BigDecimal healthyPct = totalSkus > 0 ? AnalyticsMathUtils.safePercentage(BigDecimal.valueOf(healthyCount), BigDecimal.valueOf(totalSkus)) : BigDecimal.ZERO;
         BigDecimal lowStockPct = totalSkus > 0 ? AnalyticsMathUtils.safePercentage(BigDecimal.valueOf(lowStockCount), BigDecimal.valueOf(totalSkus)) : BigDecimal.ZERO;
         BigDecimal outOfStockPct = totalSkus > 0 ? AnalyticsMathUtils.safePercentage(BigDecimal.valueOf(outOfStockCount), BigDecimal.valueOf(totalSkus)) : BigDecimal.ZERO;

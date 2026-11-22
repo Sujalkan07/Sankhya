@@ -39,12 +39,15 @@ class InventoryIntelligenceServiceTest {
     @Mock
     private SalesTransactionRepository salesTransactionRepository;
 
+    @Mock
+    private com.sankhya.dataset.repository.UnifiedSalesMartRepository unifiedSalesMartRepository;
+
     private InventoryIntelligenceService inventoryIntelligenceService;
 
     @BeforeEach
     void setUp() {
         inventoryIntelligenceService = new InventoryIntelligenceService(
-                inventorySnapshotRepository, productRepository, salesTransactionRepository);
+                inventorySnapshotRepository, productRepository, salesTransactionRepository, unifiedSalesMartRepository);
     }
 
     @Test

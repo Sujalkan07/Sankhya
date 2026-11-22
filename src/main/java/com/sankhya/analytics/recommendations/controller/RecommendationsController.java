@@ -59,6 +59,8 @@ public class RecommendationsController {
         model.addAttribute("currentUser", userDetails);
         model.addAttribute("activeWorkspace", activeWorkspace);
         model.addAttribute("workspaces", workspaces);
+        model.addAttribute("activeModule", "recommendations");
+        model.addAttribute("activeSubPage", "overview");
         model.addAttribute("currentPage", "recommendations");
         model.addAttribute("pageTitle", "Actionable Business Recommendations");
         model.addAttribute("selectedCategory", category);

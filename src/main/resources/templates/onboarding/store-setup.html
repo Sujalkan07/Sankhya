@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/head :: head('Supermarket Setup — Step 2')}"></head>
+<body class="bg-background text-on-surface font-body antialiased min-h-screen flex items-center justify-center p-4 selection:bg-primary-fixed selection:text-on-surface">
+
+    <!-- Ambient Decorative Glows -->
+    <div class="fixed top-0 left-1/4 w-[500px] h-[300px] bg-primary/5 rounded-full blur-[120px] pointer-events-none -z-10"></div>
+    <div class="fixed bottom-10 right-10 w-[400px] h-[300px] bg-secondary-container/15 rounded-full blur-[140px] pointer-events-none -z-10"></div>
+
+    <div class="w-full max-w-4xl mx-auto bg-surface-container-lowest rounded-2xl border border-[#E7E9E3] shadow-[0_20px_40px_-15px_rgba(24,110,0,0.08)] overflow-hidden">
+
+        <!-- Onboarding Header & Multi-Step Progress Tracker -->
+        <div class="p-6 sm:p-8 border-b border-[#E7E9E3] bg-surface-container-low/50">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-surface-container-low border border-[#E7E9E3] flex items-center justify-center text-primary shadow-xs">
+                        <span class="material-symbols-outlined text-[22px]">storefront</span>
+                    </div>
+                    <div>
+                        <span class="font-headline font-bold text-xl text-on-surface tracking-tight leading-none">Sankhya</span>
+                        <div class="text-xs text-tertiary font-medium">Supermarket Setup Wizard</div>
+                    </div>
+                </div>
+                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#EFF9E9] text-primary text-xs font-semibold border border-primary/20">
+                    <span class="material-symbols-outlined text-[15px]">flag</span>
+                    <span>Step 2 of 4 • Store Configuration</span>
+                </div>
+            </div>
+
+            <!-- 4-Step Progress Bar -->
+            <div class="grid grid-cols-4 gap-2 text-center text-xs">
+                <div class="flex flex-col items-center gap-1">
+                    <div class="w-7 h-7 rounded-full bg-primary text-on-primary flex items-center justify-center text-xs font-bold shadow-xs">
+                        <span class="material-symbols-outlined text-[16px]">check</span>
+                    </div>
+                    <span class="text-on-surface font-semibold text-[11px] hidden sm:inline">1. Account</span>
+                </div>
+                <div class="flex flex-col items-center gap-1">
+                    <div class="w-7 h-7 rounded-full bg-primary text-on-primary ring-4 ring-primary/10 flex items-center justify-center text-xs font-bold shadow-xs">2</div>
+                    <span class="text-primary font-bold text-[11px] hidden sm:inline">2. Store Setup</span>
+                </div>
+                <div class="flex flex-col items-center gap-1">
+                    <div class="w-7 h-7 rounded-full bg-surface-container text-tertiary flex items-center justify-center text-xs font-bold">3</div>
+                    <span class="text-tertiary text-[11px] hidden sm:inline">3. Datasets</span>
+                </div>
+                <div class="flex flex-col items-center gap-1">
+                    <div class="w-7 h-7 rounded-full bg-surface-container text-tertiary flex items-center justify-center text-xs font-bold">4</div>
+                    <span class="text-tertiary text-[11px] hidden sm:inline">4. Launch</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Setup Form Card -->
+        <div class="p-6 sm:p-10">
+            <div class="mb-6">
+                <h1 class="font-headline font-bold text-2xl text-on-surface tracking-tight mb-1.5">
+                    Configure Your Supermarket Store Profile
+                </h1>
+                <p class="text-xs sm:text-sm text-tertiary leading-relaxed">
+                    Set up your supermarket branch identity, retail classification, and location. This establishes the isolated data tenancy for all sales, inventory logs, and AI models.
+                </p>
+            </div>
+
+            <!-- Flash Alerts -->
+            <div th:replace="~{fragments/alerts :: alerts}"></div>
+
+            <form th:action="@{/onboarding/store-setup}" th:object="${workspaceRequest}" method="post" class="space-y-6">
+
+                <!-- Supermarket Name (Required) -->
+                <div>
+                    <label for="name" class="block text-xs font-semibold text-on-surface mb-1.5">
+                        Supermarket / Store Name *
+                    </label>
+                    <div class="relative">
+                        <span class="material-symbols-outlined absolute left-3.5 top-2.5 text-tertiary text-[18px]">store</span>
+                        <input type="text" id="name" th:field="*{name}" required
+                               placeholder="e.g. Green Basket Supermarket"
+                               class="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm bg-surface-container-lowest border border-[#E7E9E3] focus:border-primary focus:ring-2 focus:ring-primary/10 rounded-xl text-on-surface placeholder:text-tertiary outline-none transition-all"/>
+                    </div>
+                </div>
+
+                <!-- Store Format Selection (Required) -->
+                <div>
+                    <label class="block text-xs font-semibold text-on-surface mb-2">
+                        Store Format Classification *
+                    </label>
+                    <input type="hidden" id="storeFormatInput" th:field="*{storeFormat}"/>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <button type="button" onclick="selectStoreFormat(this, 'Supermarket')"
+                                class="format-btn p-3.5 rounded-xl border text-left text-xs font-semibold flex flex-col gap-1 transition-all cursor-pointer"
+                                th:classappend="${workspaceRequest.storeFormat == 'Supermarket' || workspaceRequest.storeFormat == null ? 'bg-inverse-surface text-inverse-on-surface border-inverse-surface active-format' : 'border-[#E7E9E3] bg-surface-container-low text-on-surface hover:bg-surface-container'}">
+                            <span class="material-symbols-outlined text-[20px] text-primary-fixed">shopping_cart</span>
+                            <span>Supermarket</span>
+                            <span class="text-[10px] opacity-75 font-normal">Full grocery & fresh produce</span>
+                        </button>
+                        <button type="button" onclick="selectStoreFormat(this, 'Hypermarket')"
+                                class="format-btn p-3.5 rounded-xl border text-left text-xs font-semibold flex flex-col gap-1 transition-all cursor-pointer"
+                                th:classappend="${workspaceRequest.storeFormat == 'Hypermarket' ? 'bg-inverse-surface text-inverse-on-surface border-inverse-surface active-format' : 'border-[#E7E9E3] bg-surface-container-low text-on-surface hover:bg-surface-container'}">
+                            <span class="material-symbols-outlined text-[20px]">apartment</span>
+                            <span>Hypermarket</span>
+                            <span class="text-[10px] opacity-75 font-normal">Large department & retail</span>
+                        </button>
+                        <button type="button" onclick="selectStoreFormat(this, 'Grocery Mart')"
+                                class="format-btn p-3.5 rounded-xl border text-left text-xs font-semibold flex flex-col gap-1 transition-all cursor-pointer"
+                                th:classappend="${workspaceRequest.storeFormat == 'Grocery Mart' ? 'bg-inverse-surface text-inverse-on-surface border-inverse-surface active-format' : 'border-[#E7E9E3] bg-surface-container-low text-on-surface hover:bg-surface-container'}">
+                            <span class="material-symbols-outlined text-[20px]">local_grocery_store</span>
+                            <span>Grocery Mart</span>
+                            <span class="text-[10px] opacity-75 font-normal">Neighborhood grocery store</span>
+                        </button>
+                        <button type="button" onclick="selectStoreFormat(this, 'Convenience')"
+                                class="format-btn p-3.5 rounded-xl border text-left text-xs font-semibold flex flex-col gap-1 transition-all cursor-pointer"
+                                th:classappend="${workspaceRequest.storeFormat == 'Convenience' ? 'bg-inverse-surface text-inverse-on-surface border-inverse-surface active-format' : 'border-[#E7E9E3] bg-surface-container-low text-on-surface hover:bg-surface-container'}">
+                            <span class="material-symbols-outlined text-[20px]">store</span>
+                            <span>Convenience</span>
+                            <span class="text-[10px] opacity-75 font-normal">Quick retail & essentials</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Location Fields (Recommended) -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label for="city" class="block text-xs font-semibold text-on-surface mb-1.5">
+                            City
+                        </label>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-3.5 top-2.5 text-tertiary text-[18px]">location_city</span>
+                            <input type="text" id="city" th:field="*{city}"
+                                   placeholder="e.g. Mumbai"
+                                   class="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm bg-surface-container-lowest border border-[#E7E9E3] focus:border-primary focus:ring-2 focus:ring-primary/10 rounded-xl text-on-surface placeholder:text-tertiary outline-none transition-all"/>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="state" class="block text-xs font-semibold text-on-surface mb-1.5">
+                            State
+                        </label>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-3.5 top-2.5 text-tertiary text-[18px]">map</span>
+                            <input type="text" id="state" th:field="*{state}"
+                                   placeholder="e.g. Maharashtra"
+                                   class="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm bg-surface-container-lowest border border-[#E7E9E3] focus:border-primary focus:ring-2 focus:ring-primary/10 rounded-xl text-on-surface placeholder:text-tertiary outline-none transition-all"/>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="country" class="block text-xs font-semibold text-on-surface mb-1.5">
+                            Country
+                        </label>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-3.5 top-2.5 text-tertiary text-[18px]">public</span>
+                            <input type="text" id="country" th:field="*{country}"
+                                   placeholder="e.g. India"
+                                   class="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm bg-surface-container-lowest border border-[#E7E9E3] focus:border-primary focus:ring-2 focus:ring-primary/10 rounded-xl text-on-surface placeholder:text-tertiary outline-none transition-all"/>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Description (Optional) -->
+                <div>
+                    <label for="description" class="block text-xs font-semibold text-on-surface mb-1.5">
+                        Store Description (Optional)
+                    </label>
+                    <textarea id="description" th:field="*{description}" rows="3"
+                              placeholder="Brief description of this supermarket's retail footprint, customer demographics, or merchandise specialities..."
+                              class="w-full p-3.5 text-xs sm:text-sm bg-surface-container-lowest border border-[#E7E9E3] focus:border-primary focus:ring-2 focus:ring-primary/10 rounded-xl text-on-surface placeholder:text-tertiary outline-none transition-all"></textarea>
+                </div>
+
+                <!-- Multi-Tenant Isolation Assurance -->
+                <div class="p-4 rounded-xl bg-surface-container-low border border-[#E7E9E3] flex items-start gap-3">
+                    <span class="material-symbols-outlined text-primary text-[20px] shrink-0 mt-0.5">verified_user</span>
+                    <div class="space-y-1">
+                        <div class="text-xs font-bold text-on-surface">Strict Workspace Tenant Isolation</div>
+                        <p class="text-[11px] text-tertiary leading-relaxed">
+                            All transactional POS logs, customer RFM tables, inventory snapshots, and trained ML models are strictly scoped to this store workspace.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Submission Actions -->
+                <div class="pt-4 border-t border-[#E7E9E3] flex items-center justify-end gap-3">
+                    <button type="submit"
+                            class="px-6 py-3 rounded-xl bg-primary hover:bg-primary-hover text-on-primary font-headline text-xs sm:text-sm font-bold shadow-sm transition-all flex items-center gap-2 cursor-pointer active:scale-[0.99]">
+                        <span>Save Profile &amp; Ingest Datasets</span>
+                        <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+    <!-- Store Format Script -->
+    <script>
+        function selectStoreFormat(button, formatName) {
+            document.querySelectorAll('.format-btn').forEach(btn => {
+                btn.classList.remove('bg-inverse-surface', 'text-inverse-on-surface', 'border-inverse-surface', 'active-format');
+                btn.classList.add('border-[#E7E9E3]', 'bg-surface-container-low', 'text-on-surface');
+                const icon = btn.querySelector('.material-symbols-outlined');
+                if (icon) icon.classList.remove('text-primary-fixed');
+            });
+            button.classList.add('bg-inverse-surface', 'text-inverse-on-surface', 'border-inverse-surface', 'active-format');
+            button.classList.remove('border-[#E7E9E3]', 'bg-surface-container-low', 'text-on-surface');
+            const activeIcon = button.querySelector('.material-symbols-outlined');
+            if (activeIcon) activeIcon.classList.add('text-primary-fixed');
+
+            document.getElementById('storeFormatInput').value = formatName;
+        }
+    </script>
+</body>
+</html>

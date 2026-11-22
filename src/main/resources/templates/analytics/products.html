@@ -55,7 +55,7 @@
             Product intelligence links product catalog costs and selling prices with transactional sales volumes to calculate unit economics and gross margins.
         </p>
         <div class="flex items-center gap-3 mt-2">
-            <a th:href="@{/datasets/generate}"
+            <a th:href="@{/datasets/sample-generator}"
                class="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs transition-colors">
                 Generate Synthetic Data
             </a>
@@ -123,7 +123,7 @@
         </div>
 
         <!-- 4 PERFORMANCE QUADRANT SUMMARY TILES (BCG-Style) -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div id="pareto-curve" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <!-- Stars -->
             <div class="bg-surface-container-lowest rounded-2xl p-5 border border-emerald-200 shadow-xs flex items-center justify-between">
                 <div>
@@ -174,7 +174,7 @@
         </div>
 
         <!-- CATEGORY PROFITABILITY BREAKDOWN -->
-        <div class="bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs">
+        <div id="sku-margins" class="bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs">
             <div class="flex items-center justify-between pb-3.5 mb-4 border-b border-[#E7E9E3]">
                 <div>
                     <h3 class="font-headline text-sm font-bold text-on-surface">Category Profitability &amp; Unit Economics</h3>
@@ -213,7 +213,7 @@
         </div>
 
         <!-- DETAILED PRODUCT PERFORMANCE RANKINGS TABLE WITH SEARCH & DETAIL MODAL -->
-        <div class="bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs">
+        <div id="sku-velocity" class="bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 mb-4 border-b border-[#E7E9E3]">
                 <div>
                     <h3 class="font-headline text-sm font-bold text-on-surface">SKU Performance &amp; Profitability Matrix</h3>

@@ -54,6 +54,8 @@ public class AnalyticalReportingController {
         model.addAttribute("currentUser", userDetails);
         model.addAttribute("activeWorkspace", activeWorkspace);
         model.addAttribute("workspaces", workspaces);
+        model.addAttribute("activeModule", "reports");
+        model.addAttribute("activeSubPage", "overview");
         model.addAttribute("currentPage", "reports");
 
         if (activeWorkspace != null) {

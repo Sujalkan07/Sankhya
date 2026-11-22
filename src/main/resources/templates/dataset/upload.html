@@ -47,7 +47,18 @@
         <!-- 1. Select Dataset Category -->
         <div class="rounded-2xl bg-surface-container-lowest p-6 border border-[#E7E9E3] shadow-xs">
             <h2 class="text-sm font-bold font-headline text-on-surface mb-3">1. Select Target Dataset Category</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+
+                <!-- Unified Sales Mart (Recommended) -->
+                <label class="relative flex flex-col p-4 rounded-xl border-2 cursor-pointer transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/5 border-[#E7E9E3] hover:border-primary/40 col-span-1 sm:col-span-2 lg:col-span-3 bg-surface-container-low/30">
+                    <input type="radio" name="datasetType" value="UNIFIED_MART" th:checked="${selectedType.name() == 'UNIFIED_MART'}" class="absolute top-4 right-4 text-primary focus:ring-primary">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="material-symbols-outlined text-primary text-[24px]">hub</span>
+                        <span class="font-bold text-sm text-on-surface">Unified Sales &amp; Analytics Mart (Recommended)</span>
+                        <span class="px-2 py-0.5 rounded bg-primary text-on-primary text-[10px] font-bold uppercase">Primary Mart</span>
+                    </div>
+                    <span class="text-xs text-tertiary mt-1">Complete 22-column fact mart containing receipt line items, customer context, product pricing, and latest inventory (e.g. <code>sankhya_unified_mart.csv</code>). Powers all dashboards in one upload.</span>
+                </label>
 
                 <!-- Sales Transactions -->
                 <label class="relative flex flex-col p-4 rounded-xl border-2 cursor-pointer transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/5 border-[#E7E9E3] hover:border-primary/40">
@@ -91,8 +102,8 @@
             <div id="drop-area"
                  class="border-2 border-dashed border-[#BDCBB3] rounded-2xl p-8 lg:p-12 text-center flex flex-col items-center justify-center hover:bg-surface-container-low transition-all cursor-pointer">
                 <span class="p-4 rounded-full bg-primary/10 text-primary material-symbols-outlined text-4xl mb-3">cloud_upload</span>
-                <p class="font-bold text-sm text-on-surface">Drag & drop your dataset file here, or click to browse</p>
-                <p class="text-xs text-tertiary mt-1">Supports CSV, XLSX, XLS (up to 50 MB)</p>
+                <p class="font-bold text-sm text-on-surface">Drag &amp; drop your dataset file here, or click to browse</p>
+                <p class="text-xs text-tertiary mt-1">Supports CSV, XLSX, XLS (streaming ingestion up to 150 MB)</p>
 
                 <input type="file" id="file-input" name="file" accept=".csv, .xlsx, .xls" required class="hidden"
                        onchange="updateFileName(this)">

@@ -60,6 +60,8 @@ public class InventoryAnalyticsController {
         model.addAttribute("currentUser", userDetails);
         model.addAttribute("activeWorkspace", activeWorkspace);
         model.addAttribute("workspaces", workspaces);
+        model.addAttribute("activeModule", "inventory");
+        model.addAttribute("activeSubPage", "overview");
         model.addAttribute("currentPage", "inventory");
 
         DateRangeFilter filter = DateRangeFilter.of(preset, startDate, endDate);

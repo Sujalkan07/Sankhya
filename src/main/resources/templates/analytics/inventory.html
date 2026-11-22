@@ -55,7 +55,7 @@
             Inventory intelligence requires daily warehouse and store stock snapshots to calculate safety reorder thresholds, inventory valuations, and stock drift.
         </p>
         <div class="flex items-center gap-3 mt-2">
-            <a th:href="@{/datasets/generate}"
+            <a th:href="@{/datasets/sample-generator}"
                class="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs transition-colors">
                 Generate Synthetic Data
             </a>
@@ -137,7 +137,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
             <!-- Stock Health Breakdown (5 cols) -->
-            <div class="lg:col-span-5 bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
+            <div id="stockout-risk" class="lg:col-span-5 bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
                 <div>
                     <div class="flex items-center justify-between pb-3.5 mb-4 border-b border-[#E7E9E3]">
                         <h3 class="font-headline text-sm font-bold text-on-surface">Stock Health Classification</h3>
@@ -186,7 +186,7 @@
         </div>
 
         <!-- ACTIONABLE REORDER RECOMMENDATIONS TABLE WITH CLIENT-SIDE SEARCH -->
-        <div class="bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs">
+        <div id="reorder-alerts" class="bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 mb-4 border-b border-[#E7E9E3]">
                 <div>
                     <h3 class="font-headline text-sm font-bold text-on-surface">Actionable Replenishment Recommendations</h3>
@@ -301,7 +301,7 @@
                 </table>
             </div>
         <!-- Phase 5 ML Section: Predictive Demand & Stockout Risk Alerts -->
-        <div class="bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs">
+        <div id="stock-drift" class="bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs">
             <div class="flex items-center justify-between mb-4 pb-3 border-b border-[#E7E9E3]">
                 <div class="flex items-center gap-2">
                     <span class="material-symbols-outlined text-primary text-[22px]">warning_amber</span>

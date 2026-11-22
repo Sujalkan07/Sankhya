@@ -32,11 +32,14 @@ class ProductIntelligenceServiceTest {
     @Mock
     private ProductRepository productRepository;
 
+    @Mock
+    private com.sankhya.dataset.repository.UnifiedSalesMartRepository unifiedSalesMartRepository;
+
     private ProductIntelligenceService productIntelligenceService;
 
     @BeforeEach
     void setUp() {
-        productIntelligenceService = new ProductIntelligenceService(salesTransactionRepository, productRepository);
+        productIntelligenceService = new ProductIntelligenceService(salesTransactionRepository, productRepository, unifiedSalesMartRepository);
     }
 
     @Test

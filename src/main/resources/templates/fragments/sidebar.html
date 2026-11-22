@@ -5,145 +5,323 @@
        th:fragment="sidebar(currentPage)"
        class="fixed left-0 top-28 bottom-0 w-64 bg-surface-container-lowest border-r border-[#E7E9E3] shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-50 lg:z-30 flex flex-col justify-between py-3 overflow-y-auto transition-transform duration-300 -translate-x-full lg:translate-x-0">
 
-    <!-- Top Section: Intelligence Sub-Tools & Department Pivots (From Stitch Reference) -->
+    <!-- Top Section: Context-Specific Sub-Navigation (Changes with activeModule) -->
     <div class="flex flex-col gap-3 px-3">
-        <!-- Sub-Tools Header -->
+        <!-- Sub-Navigation Header -->
         <div class="px-2 py-1 flex items-center justify-between">
-            <span class="text-[10px] font-bold uppercase tracking-wider text-tertiary">Intelligence Sub-Tools</span>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-tertiary"
+                  th:switch="${activeModule}">
+                <span th:case="'sales'">Sales Sub-Tools</span>
+                <span th:case="'customers'">Customer Sub-Tools</span>
+                <span th:case="'products'">Product Sub-Tools</span>
+                <span th:case="'inventory'">Inventory Sub-Tools</span>
+                <span th:case="'recommendations'">Recommendation Tools</span>
+                <span th:case="'ai-insights'">AI &amp; ML Models</span>
+                <span th:case="'datasets'">Data Ingestion Pipeline</span>
+                <span th:case="'reports'">Reporting Hub</span>
+                <span th:case="'workspaces'">Store Workspaces</span>
+                <span th:case="'settings'">Store Settings</span>
+                <span th:case="*">KPI Command Core</span>
+            </span>
             <div class="flex items-center gap-1">
-                <span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+                <span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
                 <!-- Mobile Close Button -->
                 <button type="button" id="sidebar-close-btn" aria-label="Close Sidebar"
-                        class="lg:hidden p-1 rounded-md text-tertiary hover:text-on-surface hover:bg-surface-container transition-colors">
+                        class="lg:hidden p-1 rounded-md text-tertiary hover:text-on-surface hover:bg-surface-container transition-colors cursor-pointer">
                     <span class="material-symbols-outlined text-[16px]">close</span>
                 </button>
             </div>
         </div>
 
-        <!-- Sub-Tools Navigation -->
-        <nav class="flex flex-col gap-1">
-            <!-- 1. Overview: KPI Command Core -->
-            <a th:href="@{/dashboard}"
-               th:classappend="${currentPage == 'overview' ? 'bg-surface-container text-primary font-bold shadow-xs' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}"
-               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors">
+        <!-- 1. OVERVIEW SUB-NAV -->
+        <nav th:if="${activeModule == 'overview' || activeModule == null}" class="flex flex-col gap-1">
+            <a th:href="@{/dashboard#overview-kpis}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors bg-surface-container text-primary font-bold shadow-xs">
                 <span class="material-symbols-outlined text-[18px]">speed</span>
-                <span>KPI Command Core</span>
+                <span>Executive KPIs</span>
             </a>
-
-            <!-- 2. Sales: Revenue & Baskets -->
-            <a th:href="@{/analytics/sales}"
-               th:classappend="${currentPage == 'sales-analytics' ? 'bg-surface-container text-primary font-bold shadow-xs' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}"
-               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors">
-                <span class="material-symbols-outlined text-[18px]">payments</span>
+            <a th:href="@{/dashboard#revenue-trends}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors">
+                <span class="material-symbols-outlined text-[18px]">show_chart</span>
                 <span>Revenue &amp; Baskets</span>
             </a>
-
-            <!-- 3. Customers: Cohort Dynamics -->
-            <a th:href="@{/analytics/customers}"
-               th:classappend="${currentPage == 'customer-intelligence' ? 'bg-surface-container text-primary font-bold shadow-xs' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}"
-               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors">
-                <span class="material-symbols-outlined text-[18px]">group</span>
-                <span>Cohort Dynamics</span>
+            <a th:href="@{/dashboard#hourly-footfall}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors">
+                <span class="material-symbols-outlined text-[18px]">schedule</span>
+                <span>Hourly Footfall</span>
             </a>
-
-            <!-- 4. Recommendations: Cross-Sell Neural ML -->
-            <a th:href="@{/analytics/recommendations}"
-               th:classappend="${currentPage == 'recommendations' ? 'bg-surface-container text-primary font-bold shadow-xs' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}"
-               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors">
-                <span class="material-symbols-outlined text-[18px]">auto_awesome</span>
-                <span>Cross-Sell Neural ML</span>
+            <a th:href="@{/dashboard#top-categories}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors">
+                <span class="material-symbols-outlined text-[18px]">donut_small</span>
+                <span>Category Breakdown</span>
             </a>
+            <div class="pt-2 my-1 border-t border-[#E7E9E3]">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-tertiary px-2">Quick Pipeline</span>
+                <div class="mt-1 flex flex-col gap-1">
+                    <a th:href="@{/datasets/upload}" class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors">
+                        <span class="material-symbols-outlined text-[16px]">upload_file</span>
+                        <span>Upload Datasets</span>
+                    </a>
+                    <a th:href="@{/datasets/sample-generator}" class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors">
+                        <span class="material-symbols-outlined text-[16px]">auto_fix_high</span>
+                        <span>Synthetic Data Generator</span>
+                    </a>
+                </div>
+            </div>
+        </nav>
 
-            <!-- 5. Inventory: Spoilage & Stock Drift -->
-            <a th:href="@{/analytics/inventory}"
-               th:classappend="${currentPage == 'inventory' ? 'bg-surface-container text-primary font-bold shadow-xs' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}"
-               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors">
-                <span class="material-symbols-outlined text-[18px]">warehouse</span>
-                <span>Spoilage &amp; Stock Drift</span>
+        <!-- 2. SALES SUB-NAV -->
+        <nav th:if="${activeModule == 'sales'}" class="flex flex-col gap-1">
+            <a th:href="@{/analytics/sales}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors bg-surface-container text-primary font-bold shadow-xs">
+                <span class="material-symbols-outlined text-[18px]">payments</span>
+                <span>Sales Overview</span>
             </a>
-
-            <!-- 6. Products: SKU Margins & Velocity -->
-            <a th:href="@{/analytics/products}"
-               th:classappend="${currentPage == 'product-intelligence' ? 'bg-surface-container text-primary font-bold shadow-xs' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}"
-               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors">
-                <span class="material-symbols-outlined text-[18px]">category</span>
-                <span>SKU Margins &amp; Velocity</span>
+            <a th:href="@{/analytics/sales#sales-trends}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors">
+                <span class="material-symbols-outlined text-[18px]">trending_up</span>
+                <span>Revenue Trends</span>
             </a>
-
-            <!-- 7. AI Insights: Executive Forecasts -->
-            <a th:href="@{/analytics/ai-insights}"
-               th:classappend="${currentPage == 'ai-insights' ? 'bg-surface-container text-primary font-bold shadow-xs' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}"
-               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors">
+            <a th:href="@{/analytics/sales#transaction-velocity}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors">
+                <span class="material-symbols-outlined text-[18px]">receipt_long</span>
+                <span>Transaction Velocity</span>
+            </a>
+            <a th:href="@{/analytics/sales#payment-breakdown}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors">
+                <span class="material-symbols-outlined text-[18px]">credit_card</span>
+                <span>Payment Analysis</span>
+            </a>
+            <a th:href="@{/analytics/sales#sales-forecast}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors">
                 <span class="material-symbols-outlined text-[18px]">query_stats</span>
-                <span>Executive Forecasts</span>
-            </a>
-
-            <!-- 8. Datasets: Dataset Pipeline Sync -->
-            <a th:href="@{/datasets}"
-               th:classappend="${currentPage == 'dataset-management' ? 'bg-surface-container text-primary font-bold shadow-xs' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}"
-               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors">
-                <span class="material-symbols-outlined text-[18px]">table_chart</span>
-                <span>Dataset Pipeline Sync</span>
-            </a>
-
-            <!-- 9. Reports: Analytical Export Center -->
-            <a th:href="@{/analytics/reports}"
-               th:classappend="${currentPage == 'reports' ? 'bg-surface-container text-primary font-bold shadow-xs' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}"
-               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors">
-                <span class="material-symbols-outlined text-[18px]">download</span>
-                <span>Export Reports</span>
+                <span>Predictive Forecast</span>
             </a>
         </nav>
 
-        <!-- Department Pivot Breakdown (Direct from Stitch Reference) -->
-        <div class="mt-2 pt-2 border-t border-[#E7E9E3]">
-            <span class="text-[10px] font-bold uppercase tracking-wider text-tertiary px-2">Department Pivot</span>
-            <div class="mt-1 flex flex-col gap-1">
-                <div class="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-surface-container-low text-on-surface text-xs font-medium">
-                    <span>Produce &amp; Fresh</span>
-                    <span class="font-mono text-primary font-bold text-[11px]">98.2%</span>
-                </div>
-                <div class="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container text-xs transition-colors">
-                    <span>Dairy &amp; Chilled</span>
-                    <span class="font-mono text-tertiary text-[11px]">94.1%</span>
-                </div>
-                <div class="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container text-xs transition-colors">
-                    <span>FMCG &amp; Groceries</span>
-                    <span class="font-mono text-tertiary text-[11px]">99.4%</span>
-                </div>
-                <div class="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container text-xs transition-colors">
-                    <span>Frozen Foods</span>
-                    <span class="font-mono text-tertiary text-[11px]">91.8%</span>
-                </div>
-            </div>
-        </div>
+        <!-- 3. CUSTOMER SUB-NAV -->
+        <nav th:if="${activeModule == 'customers'}" class="flex flex-col gap-1">
+            <a th:href="@{/analytics/customers}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors bg-surface-container text-primary font-bold shadow-xs">
+                <span class="material-symbols-outlined text-[18px]">group</span>
+                <span>Customer Overview</span>
+            </a>
+            <a th:href="@{/analytics/customers#rfm-matrix}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors">
+                <span class="material-symbols-outlined text-[18px]">grid_view</span>
+                <span>RFM Segmentation</span>
+            </a>
+            <a th:href="@{/analytics/customers#customer-clusters}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors">
+                <span class="material-symbols-outlined text-[18px]">scatter_plot</span>
+                <span>K-Means Clusters</span>
+            </a>
+            <a th:href="@{/analytics/customers#cohort-retention}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors">
+                <span class="material-symbols-outlined text-[18px]">person_pin</span>
+                <span>Retention &amp; Churn</span>
+            </a>
+        </nav>
+
+        <!-- 4. PRODUCT SUB-NAV -->
+        <nav th:if="${activeModule == 'products'}" class="flex flex-col gap-1">
+            <a th:href="@{/analytics/products}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors bg-surface-container text-primary font-bold shadow-xs">
+                <span class="material-symbols-outlined text-[18px]">category</span>
+                <span>Catalog Overview</span>
+            </a>
+            <a th:href="@{/analytics/products#pareto-curve}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors">
+                <span class="material-symbols-outlined text-[18px]">pie_chart</span>
+                <span>80/20 Pareto Curve</span>
+            </a>
+            <a th:href="@{/analytics/products#sku-velocity}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors">
+                <span class="material-symbols-outlined text-[18px]">flash_on</span>
+                <span>SKU Velocity</span>
+            </a>
+            <a th:href="@{/analytics/products#sku-margins}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors">
+                <span class="material-symbols-outlined text-[18px]">account_balance_wallet</span>
+                <span>Margin Contribution</span>
+            </a>
+        </nav>
+
+        <!-- 5. INVENTORY SUB-NAV -->
+        <nav th:if="${activeModule == 'inventory'}" class="flex flex-col gap-1">
+            <a th:href="@{/analytics/inventory}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors bg-surface-container text-primary font-bold shadow-xs">
+                <span class="material-symbols-outlined text-[18px]">warehouse</span>
+                <span>Inventory Overview</span>
+            </a>
+            <a th:href="@{/analytics/inventory#stockout-risk}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors">
+                <span class="material-symbols-outlined text-[18px]">report_problem</span>
+                <span>Stockout Risk Index</span>
+            </a>
+            <a th:href="@{/analytics/inventory#reorder-alerts}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors">
+                <span class="material-symbols-outlined text-[18px]">notification_important</span>
+                <span>Reorder Alerts</span>
+            </a>
+            <a th:href="@{/analytics/inventory#stock-drift}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors">
+                <span class="material-symbols-outlined text-[18px]">sync_problem</span>
+                <span>Stock Drift &amp; Spoilage</span>
+            </a>
+        </nav>
+
+        <!-- 6. RECOMMENDATIONS SUB-NAV -->
+        <nav th:if="${activeModule == 'recommendations'}" class="flex flex-col gap-1">
+            <a th:href="@{/analytics/recommendations}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors bg-surface-container text-primary font-bold shadow-xs">
+                <span class="material-symbols-outlined text-[18px]">auto_awesome</span>
+                <span>Action Matrix</span>
+            </a>
+            <a th:href="@{/analytics/recommendations#cross-sell}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors">
+                <span class="material-symbols-outlined text-[18px]">shopping_basket</span>
+                <span>Cross-Sell Neural ML</span>
+            </a>
+            <a th:href="@{/analytics/recommendations#inventory-actions}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors">
+                <span class="material-symbols-outlined text-[18px]">inventory</span>
+                <span>Inventory Reorder</span>
+            </a>
+            <a th:href="@{/analytics/recommendations#margin-actions}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors">
+                <span class="material-symbols-outlined text-[18px]">price_change</span>
+                <span>Margin Recovery</span>
+            </a>
+        </nav>
+
+        <!-- 7. AI INSIGHTS SUB-NAV -->
+        <nav th:if="${activeModule == 'ai-insights'}" class="flex flex-col gap-1">
+            <a th:href="@{/analytics/ai-insights}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors bg-surface-container text-primary font-bold shadow-xs">
+                <span class="material-symbols-outlined text-[18px]">psychology</span>
+                <span>Executive Synthesis</span>
+            </a>
+            <a th:href="@{/analytics/ai-insights#copilot-chat}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors">
+                <span class="material-symbols-outlined text-[18px]">chat</span>
+                <span>Retail Copilot Chat</span>
+            </a>
+            <a th:href="@{/analytics/ai-insights#model-registry}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors">
+                <span class="material-symbols-outlined text-[18px]">model_training</span>
+                <span>Model Registry</span>
+            </a>
+        </nav>
+
+        <!-- 8. DATASETS SUB-NAV -->
+        <nav th:if="${activeModule == 'datasets'}" class="flex flex-col gap-1">
+            <a th:href="@{/datasets}"
+               th:classappend="${activeSubPage == 'overview' || activeSubPage == null ? 'bg-surface-container text-primary font-bold shadow-xs' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors">
+                <span class="material-symbols-outlined text-[18px]">table_chart</span>
+                <span>Pipeline Overview</span>
+            </a>
+            <a th:href="@{/datasets/upload}"
+               th:classappend="${activeSubPage == 'upload' ? 'bg-surface-container text-primary font-bold shadow-xs' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors">
+                <span class="material-symbols-outlined text-[18px]">upload_file</span>
+                <span>Upload Dataset</span>
+            </a>
+            <a th:href="@{/datasets/sample-generator}"
+               th:classappend="${activeSubPage == 'generator' ? 'bg-surface-container text-primary font-bold shadow-xs' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors">
+                <span class="material-symbols-outlined text-[18px]">auto_fix_high</span>
+                <span>Synthetic Generator</span>
+            </a>
+            <a th:href="@{/datasets/history}"
+               th:classappend="${activeSubPage == 'history' ? 'bg-surface-container text-primary font-bold shadow-xs' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors">
+                <span class="material-symbols-outlined text-[18px]">history</span>
+                <span>Ingestion History</span>
+            </a>
+        </nav>
+
+        <!-- 9. REPORTS SUB-NAV -->
+        <nav th:if="${activeModule == 'reports'}" class="flex flex-col gap-1">
+            <a th:href="@{/analytics/reports}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors bg-surface-container text-primary font-bold shadow-xs">
+                <span class="material-symbols-outlined text-[18px]">download</span>
+                <span>Export Hub</span>
+            </a>
+            <a th:href="@{/analytics/reports#sales-export}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors">
+                <span class="material-symbols-outlined text-[18px]">receipt_long</span>
+                <span>Sales Financials Export</span>
+            </a>
+            <a th:href="@{/analytics/reports#inventory-export}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors">
+                <span class="material-symbols-outlined text-[18px]">warehouse</span>
+                <span>Inventory Logs Export</span>
+            </a>
+            <a th:href="@{/analytics/reports#customer-export}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors">
+                <span class="material-symbols-outlined text-[18px]">group</span>
+                <span>Customer Cohorts Export</span>
+            </a>
+        </nav>
+
+        <!-- 10. WORKSPACES SUB-NAV -->
+        <nav th:if="${activeModule == 'workspaces'}" class="flex flex-col gap-1">
+            <a th:href="@{/workspaces}"
+               th:classappend="${activeSubPage == 'list' ? 'bg-surface-container text-primary font-bold shadow-xs' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors">
+                <span class="material-symbols-outlined text-[18px]">storefront</span>
+                <span>Store Workspaces</span>
+            </a>
+            <a th:href="@{/workspaces/create}"
+               th:classappend="${activeSubPage == 'create' ? 'bg-surface-container text-primary font-bold shadow-xs' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors">
+                <span class="material-symbols-outlined text-[18px]">add_business</span>
+                <span>Provision New Store</span>
+            </a>
+        </nav>
+
+        <!-- 11. SETTINGS SUB-NAV -->
+        <nav th:if="${activeModule == 'settings'}" class="flex flex-col gap-1">
+            <a th:href="@{/settings}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors bg-surface-container text-primary font-bold shadow-xs">
+                <span class="material-symbols-outlined text-[18px]">store</span>
+                <span>Store Profile</span>
+            </a>
+            <a th:href="@{/settings#security}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors">
+                <span class="material-symbols-outlined text-[18px]">security</span>
+                <span>Data Isolation &amp; Session</span>
+            </a>
+        </nav>
     </div>
 
-    <!-- Bottom Section: Telemetry Badge + Utilities (From Stitch Reference) -->
+    <!-- Bottom Section: Store Setup Status & System Actions -->
     <div class="px-3 flex flex-col gap-2 pt-2 border-t border-[#E7E9E3]">
-        <!-- ML Pipeline Status Card -->
-        <div class="p-2.5 rounded-xl bg-surface-container-low flex flex-col gap-1 text-[11px] border border-[#E7E9E3]">
+        <!-- Store Setup / Onboarding Status Card -->
+        <a th:href="@{/onboarding/datasets}"
+           class="p-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container flex flex-col gap-1 text-[11px] border border-[#E7E9E3] transition-colors">
             <div class="flex items-center gap-1.5 text-primary font-bold">
-                <span class="material-symbols-outlined text-[15px]">model_training</span>
-                <span>Model Pipeline Ready</span>
+                <span class="material-symbols-outlined text-[15px]">checklist</span>
+                <span>Dataset Onboarding</span>
             </div>
-            <p class="text-[10px] text-tertiary leading-tight">
-                ML Inference latency &lt;14ms • Schema validated for multi-table ingestion.
+            <p class="text-[10px] text-tertiary leading-tight"
+               th:text="${activeWorkspace != null ? activeWorkspace.name + ' (' + activeWorkspace.storeFormat + ')' : 'Store setup wizard'}">
+                Green Basket Supermarket
             </p>
-        </div>
+        </a>
 
         <!-- Workspace Manager Link -->
         <a th:href="@{/workspaces}"
-           th:classappend="${currentPage == 'workspaces' ? 'bg-surface-container text-primary font-bold shadow-xs' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}"
-           class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs transition-colors">
+           class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors">
             <span class="material-symbols-outlined text-[18px]">workspaces</span>
-            <span>Workspace Manager</span>
+            <span>Switch Store</span>
         </a>
 
         <!-- Settings Link -->
         <a th:href="@{/settings}"
-           th:classappend="${currentPage == 'settings' ? 'bg-surface-container text-primary font-bold shadow-xs' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}"
-           class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs transition-colors">
+           class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors">
             <span class="material-symbols-outlined text-[18px]">settings</span>
             <span>Settings</span>
         </a>

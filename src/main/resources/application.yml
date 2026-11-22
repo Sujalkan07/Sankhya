@@ -3,6 +3,10 @@ spring:
     name: sankhya-platform
   profiles:
     active: dev
+  servlet:
+    multipart:
+      max-file-size: 150MB
+      max-request-size: 150MB
   thymeleaf:
     cache: false
     mode: HTML

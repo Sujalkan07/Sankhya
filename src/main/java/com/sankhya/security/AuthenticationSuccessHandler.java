@@ -33,11 +33,29 @@ public class AuthenticationSuccessHandler extends SavedRequestAwareAuthenticatio
             HttpSession session = request.getSession(true);
             Long existingActiveId = (Long) session.getAttribute(ACTIVE_WORKSPACE_ID_SESSION_KEY);
 
-            if (existingActiveId == null) {
+            Workspace activeWorkspace = null;
+            if (existingActiveId != null) {
+                activeWorkspace = workspaceRepository.findById(existingActiveId).orElse(null);
+            }
+            if (activeWorkspace == null) {
                 List<Workspace> accessible = workspaceRepository.findAllAccessibleByUserId(userDetails.getId());
                 if (!accessible.isEmpty()) {
-                    session.setAttribute(ACTIVE_WORKSPACE_ID_SESSION_KEY, accessible.get(0).getId());
+                    activeWorkspace = accessible.get(0);
+                    session.setAttribute(ACTIVE_WORKSPACE_ID_SESSION_KEY, activeWorkspace.getId());
                 }
+            }
+
+            if (activeWorkspace != null) {
+                if ("STORE_SETUP".equalsIgnoreCase(activeWorkspace.getOnboardingStatus())) {
+                    getRedirectStrategy().sendRedirect(request, response, "/onboarding/store-setup");
+                    return;
+                } else if ("DATASET_ONBOARDING".equalsIgnoreCase(activeWorkspace.getOnboardingStatus())) {
+                    getRedirectStrategy().sendRedirect(request, response, "/onboarding/datasets");
+                    return;
+                }
+            } else {
+                getRedirectStrategy().sendRedirect(request, response, "/onboarding/store-setup");
+                return;
             }
         }
 

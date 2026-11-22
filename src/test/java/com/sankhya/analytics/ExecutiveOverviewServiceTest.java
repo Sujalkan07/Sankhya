@@ -37,6 +37,9 @@ class ExecutiveOverviewServiceTest {
     @Mock
     private BusinessRecommendationRepository businessRecommendationRepository;
 
+    @Mock
+    private com.sankhya.dataset.repository.UnifiedSalesMartRepository unifiedSalesMartRepository;
+
     private ExecutiveOverviewService executiveOverviewService;
 
     @BeforeEach
@@ -44,7 +47,8 @@ class ExecutiveOverviewServiceTest {
         executiveOverviewService = new ExecutiveOverviewService(
                 salesTransactionRepository,
                 inventorySnapshotRepository,
-                businessRecommendationRepository
+                businessRecommendationRepository,
+                unifiedSalesMartRepository
         );
     }
 

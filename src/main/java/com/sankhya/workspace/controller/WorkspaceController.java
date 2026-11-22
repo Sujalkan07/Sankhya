@@ -43,6 +43,8 @@ public class WorkspaceController {
         model.addAttribute("currentUser", userDetails);
         model.addAttribute("activeWorkspace", activeWorkspace);
         model.addAttribute("workspaces", workspaces);
+        model.addAttribute("activeModule", "workspaces");
+        model.addAttribute("activeSubPage", "list");
         model.addAttribute("currentPage", "workspaces");
 
         return "workspace/list";
@@ -65,6 +67,8 @@ public class WorkspaceController {
         model.addAttribute("currentUser", userDetails);
         model.addAttribute("activeWorkspace", activeWorkspace);
         model.addAttribute("workspaces", workspaces);
+        model.addAttribute("activeModule", "workspaces");
+        model.addAttribute("activeSubPage", "list");
         model.addAttribute("currentPage", "workspaces");
 
         return "workspace/create";
@@ -86,6 +90,8 @@ public class WorkspaceController {
             model.addAttribute("currentUser", userDetails);
             model.addAttribute("activeWorkspace", activeWorkspace);
             model.addAttribute("workspaces", workspaces);
+            model.addAttribute("activeModule", "workspaces");
+            model.addAttribute("activeSubPage", "create");
             model.addAttribute("currentPage", "workspaces");
             return "workspace/create";
         }

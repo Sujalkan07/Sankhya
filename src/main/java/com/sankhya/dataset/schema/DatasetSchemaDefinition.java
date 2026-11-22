@@ -9,6 +9,54 @@ public class DatasetSchemaDefinition {
     private static final Map<DatasetType, List<CanonicalField>> SCHEMAS = new EnumMap<>(DatasetType.class);
 
     static {
+        // 0. Unified Sales & Analytics Mart (Lean Upload Edition - 22 Columns)
+        SCHEMAS.put(DatasetType.UNIFIED_MART, List.of(
+                new CanonicalField("transaction_id", "Transaction ID", "STRING", true, "Receipt / bill number",
+                        List.of("tx_id", "bill_no", "invoice_no", "order_id", "bill_id", "receipt_id")),
+                new CanonicalField("transaction_date", "Transaction Date", "DATETIME", true, "Date and timestamp of purchase",
+                        List.of("tx_date", "bill_date", "purchase_date", "date", "timestamp", "datetime")),
+                new CanonicalField("customer_id", "Customer ID", "STRING", false, "Customer identification code",
+                        List.of("cust_id", "client_id", "customer_code", "buyer_id")),
+                new CanonicalField("customer_name", "Customer Name", "STRING", false, "Customer full name",
+                        List.of("cust_name", "name", "client_name")),
+                new CanonicalField("city", "Customer City", "STRING", false, "Customer residential city",
+                        List.of("location", "town", "region")),
+                new CanonicalField("customer_segment", "Customer Segment", "STRING", false, "Loyalty tier or segment",
+                        List.of("segment", "loyalty_tier", "tier")),
+                new CanonicalField("product_id", "Product ID / SKU", "STRING", true, "Product code or SKU",
+                        List.of("sku", "item_id", "product_code", "barcode")),
+                new CanonicalField("product_name", "Product Name", "STRING", true, "Display name of product",
+                        List.of("item_name", "product_title", "title", "description")),
+                new CanonicalField("category", "Product Category", "STRING", true, "Main retail department",
+                        List.of("dept", "department", "main_category")),
+                new CanonicalField("subcategory", "Subcategory", "STRING", false, "Secondary category classification",
+                        List.of("sub_category", "sub_cat", "minor_category")),
+                new CanonicalField("brand", "Brand", "STRING", false, "Brand or manufacturer name",
+                        List.of("company", "manufacturer", "make")),
+                new CanonicalField("unit_cost", "Unit Cost", "DECIMAL", true, "Wholesale acquisition cost in INR",
+                        List.of("cost", "purchase_cost", "cost_price", "cp")),
+                new CanonicalField("selling_price", "Selling Price", "DECIMAL", true, "Catalog retail price in INR",
+                        List.of("mrp", "list_price", "retail_price", "sp")),
+                new CanonicalField("quantity", "Quantity", "INTEGER", true, "Units purchased (>0)",
+                        List.of("qty", "units", "items_count", "volume")),
+                new CanonicalField("unit_price", "Unit Price", "DECIMAL", true, "Actual selling price per unit in INR",
+                        List.of("price", "rate", "unit_rate")),
+                new CanonicalField("discount", "Discount", "DECIMAL", false, "Line item discount in INR",
+                        List.of("disc", "discount_amount", "rebate")),
+                new CanonicalField("payment_method", "Payment Method", "STRING", false, "Tender type (Cash, Card, UPI)",
+                        List.of("payment_mode", "tender_type", "mode")),
+                new CanonicalField("cashier_name", "Cashier Name", "STRING", false, "Cashier or terminal operator name",
+                        List.of("cashier", "operator", "biller")),
+                new CanonicalField("latest_inventory_snapshot_date", "Inventory Date", "DATE", false, "Latest stock snapshot date",
+                        List.of("snapshot_date", "inv_date", "stock_date")),
+                new CanonicalField("current_closing_stock", "Current Stock", "INTEGER", false, "Latest closing stock quantity",
+                        List.of("closing_stock", "stock", "on_hand", "quantity_on_hand")),
+                new CanonicalField("current_reorder_level", "Reorder Level", "INTEGER", false, "Minimum threshold for restocking",
+                        List.of("reorder_level", "safety_stock", "min_stock")),
+                new CanonicalField("current_inventory_status", "Inventory Status", "STRING", false, "Current stock status label",
+                        List.of("inventory_status", "stock_status", "health_status"))
+        ));
+
         // 1. Sales Transactions
         SCHEMAS.put(DatasetType.SALES_TRANSACTIONS, List.of(
                 new CanonicalField("transaction_id", "Transaction ID", "STRING", true, "Unique transaction/receipt number",

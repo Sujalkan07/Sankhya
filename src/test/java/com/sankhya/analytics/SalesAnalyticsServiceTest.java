@@ -29,11 +29,14 @@ class SalesAnalyticsServiceTest {
     @Mock
     private SalesTransactionRepository salesTransactionRepository;
 
+    @Mock
+    private com.sankhya.dataset.repository.UnifiedSalesMartRepository unifiedSalesMartRepository;
+
     private SalesAnalyticsService salesAnalyticsService;
 
     @BeforeEach
     void setUp() {
-        salesAnalyticsService = new SalesAnalyticsService(salesTransactionRepository);
+        salesAnalyticsService = new SalesAnalyticsService(salesTransactionRepository, unifiedSalesMartRepository);
     }
 
     @Test

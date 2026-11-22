@@ -65,6 +65,8 @@ public class ProductIntelligenceController {
         model.addAttribute("currentUser", userDetails);
         model.addAttribute("activeWorkspace", activeWorkspace);
         model.addAttribute("workspaces", workspaces);
+        model.addAttribute("activeModule", "products");
+        model.addAttribute("activeSubPage", "overview");
         model.addAttribute("currentPage", "product-intelligence");
 
         DateRangeFilter filter = DateRangeFilter.of(preset, startDate, endDate);

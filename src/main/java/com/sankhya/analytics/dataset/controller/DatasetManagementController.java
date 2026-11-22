@@ -80,6 +80,8 @@ public class DatasetManagementController {
         model.addAttribute("currentUser", userDetails);
         model.addAttribute("activeWorkspace", activeWorkspace);
         model.addAttribute("workspaces", workspaces);
+        model.addAttribute("activeModule", "datasets");
+        model.addAttribute("activeSubPage", "overview");
         model.addAttribute("currentPage", "dataset-management");
         return activeWorkspace;
     }
@@ -121,7 +123,7 @@ public class DatasetManagementController {
         Workspace workspace = populateBaseModel(userDetails, session, model);
         if (workspace == null) return "redirect:/workspaces";
 
-        model.addAttribute("selectedType", datasetType != null ? datasetType : DatasetType.SALES_TRANSACTIONS);
+        model.addAttribute("selectedType", datasetType != null ? datasetType : DatasetType.UNIFIED_MART);
         model.addAttribute("datasetTypes", DatasetType.values());
         return "dataset/upload";
     }
@@ -377,8 +379,8 @@ public class DatasetManagementController {
         return "dataset/details";
     }
 
-    // 14. Synthetic Data Generator Page
-    @GetMapping("/sample-generator")
+    // 14. Synthetic Data Generator Page (Aliased to both /sample-generator and /generate for robustness)
+    @GetMapping({"/sample-generator", "/generate"})
     public String showGeneratorPage(@AuthenticationPrincipal CustomUserDetails userDetails,
                                     HttpSession session,
                                     Model model) {

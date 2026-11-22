@@ -87,6 +87,8 @@ public class AiInsightsController {
         model.addAttribute("currentUser", userDetails);
         model.addAttribute("activeWorkspace", activeWorkspace);
         model.addAttribute("workspaces", workspaces);
+        model.addAttribute("activeModule", "ai-insights");
+        model.addAttribute("activeSubPage", "overview");
         model.addAttribute("currentPage", "ai-insights");
         model.addAttribute("pageTitle", "AI Insights & Machine Learning Engine");
 

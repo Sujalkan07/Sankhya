@@ -129,6 +129,10 @@ public class DatasetImport {
         return id;
     }
 
+    public void setId(Long id) {
+        this.id = id;
+    }
+
     public Dataset getDataset() {
         return dataset;
     }

@@ -29,6 +29,21 @@ public class Workspace {
     @Column(name = "description", length = 500)
     private String description;
 
+    @Column(name = "store_format", length = 50)
+    private String storeFormat = "Supermarket";
+
+    @Column(name = "city", length = 100)
+    private String city;
+
+    @Column(name = "state", length = 100)
+    private String state;
+
+    @Column(name = "country", length = 100)
+    private String country = "India";
+
+    @Column(name = "onboarding_status", length = 50)
+    private String onboardingStatus = "COMPLETED";
+
     @NotNull(message = "Workspace owner is required")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "owner_id", nullable = false, foreignKey = @ForeignKey(name = "fk_workspace_owner"))
@@ -119,6 +134,50 @@ public class Workspace {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getStoreFormat() {
+        return storeFormat != null ? storeFormat : "Supermarket";
+    }
+
+    public void setStoreFormat(String storeFormat) {
+        this.storeFormat = storeFormat;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
+    }
+
+    public String getCountry() {
+        return country;
+    }
+
+    public void setCountry(String country) {
+        this.country = country;
+    }
+
+    public String getOnboardingStatus() {
+        return onboardingStatus != null ? onboardingStatus : "COMPLETED";
+    }
+
+    public void setOnboardingStatus(String onboardingStatus) {
+        this.onboardingStatus = onboardingStatus;
+    }
+
+    public boolean isOnboardingCompleted() {
+        return "COMPLETED".equalsIgnoreCase(this.onboardingStatus);
     }
 
     public List<WorkspaceMembership> getMemberships() {

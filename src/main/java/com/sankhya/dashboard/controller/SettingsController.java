@@ -36,6 +36,8 @@ public class SettingsController {
         model.addAttribute("currentUser", userDetails);
         model.addAttribute("activeWorkspace", activeWorkspace);
         model.addAttribute("workspaces", workspaces);
+        model.addAttribute("activeModule", "settings");
+        model.addAttribute("activeSubPage", "settings");
         model.addAttribute("currentPage", "settings");
 
         return "settings/index";

@@ -22,4 +22,20 @@ public interface FileParser {
         List<Map<String, String>> allRows = readAllRows(file);
         return new ParsedFileData(preview.getHeaders(), allRows, allRows.size());
     }
+
+    default void processRowsStreaming(File file, java.util.function.BiConsumer<Long, Map<String, String>> rowConsumer) throws IOException {
+        List<Map<String, String>> allRows = readAllRows(file);
+        long rowNum = 2;
+        for (Map<String, String> row : allRows) {
+            rowConsumer.accept(rowNum++, row);
+        }
+    }
+
+    default void processBatches(File file, int batchSize, java.util.function.Consumer<List<Map<String, String>>> batchConsumer) throws IOException {
+        List<Map<String, String>> allRows = readAllRows(file);
+        for (int i = 0; i < allRows.size(); i += batchSize) {
+            int end = Math.min(i + batchSize, allRows.size());
+            batchConsumer.accept(allRows.subList(i, end));
+        }
+    }
 }

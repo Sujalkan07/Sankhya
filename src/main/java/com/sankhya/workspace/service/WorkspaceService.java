@@ -37,12 +37,32 @@ public class WorkspaceService {
                 request.getDescription() != null ? request.getDescription().trim() : "",
                 owner
         );
+        if (request.getStoreFormat() != null && !request.getStoreFormat().isBlank()) {
+            workspace.setStoreFormat(request.getStoreFormat());
+        }
+        if (request.getCity() != null && !request.getCity().isBlank()) {
+            workspace.setCity(request.getCity().trim());
+        }
+        if (request.getState() != null && !request.getState().isBlank()) {
+            workspace.setState(request.getState().trim());
+        }
+        if (request.getCountry() != null && !request.getCountry().isBlank()) {
+            workspace.setCountry(request.getCountry().trim());
+        }
+        workspace.setOnboardingStatus("DATASET_ONBOARDING");
         Workspace saved = workspaceRepository.save(workspace);
 
         WorkspaceMembership membership = new WorkspaceMembership(saved, owner, WorkspaceRole.OWNER);
         membershipRepository.save(membership);
 
         return saved;
+    }
+
+    @Transactional
+    public Workspace updateOnboardingStatus(Long workspaceId, Long userId, String status) {
+        Workspace workspace = getWorkspaceByIdAndValidateAccess(workspaceId, userId);
+        workspace.setOnboardingStatus(status);
+        return workspaceRepository.save(workspace);
     }
 
     @Transactional(readOnly = true)

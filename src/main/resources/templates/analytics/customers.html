@@ -55,7 +55,7 @@
             Customer intelligence requires customer profiles or POS transactions with customer identifiers to compute RFM quintiles and repeat purchase rates.
         </p>
         <div class="flex items-center gap-3 mt-2">
-            <a th:href="@{/datasets/generate}"
+            <a th:href="@{/datasets/sample-generator}"
                class="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs transition-colors">
                 Generate Synthetic Data
             </a>
@@ -145,7 +145,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
             <!-- 9 RFM Segments Summary Table & Chart (7 cols) -->
-            <div class="lg:col-span-7 bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs">
+            <div id="rfm-matrix" class="lg:col-span-7 bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs">
                 <div class="flex items-center justify-between pb-3.5 mb-4 border-b border-[#E7E9E3]">
                     <div>
                         <h3 class="font-headline text-sm font-bold text-on-surface">RFM Segment Breakdown</h3>
@@ -218,7 +218,7 @@
         </div>
 
         <!-- CUSTOMER COHORT RETENTION ANALYSIS SECTION -->
-        <div class="bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs">
+        <div id="cohort-retention" class="bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs">
             <div class="flex items-center justify-between pb-3.5 mb-4 border-b border-[#E7E9E3]">
                 <div>
                     <h3 class="font-headline text-sm font-bold text-on-surface">Monthly Customer Cohort Retention</h3>
@@ -350,7 +350,7 @@
                 </table>
             </div>
         <!-- Phase 5 Machine Learning — K-Means Customer Clusters Section -->
-        <div class="bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs">
+        <div id="customer-clusters" class="bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs">
             <div class="flex items-center justify-between mb-4 pb-3 border-b border-[#E7E9E3]">
                 <div class="flex items-center gap-2">
                     <span class="material-symbols-outlined text-primary text-[22px]">group_work</span>

@@ -61,6 +61,8 @@ public class DashboardController {
         model.addAttribute("currentUser", userDetails);
         model.addAttribute("activeWorkspace", activeWorkspace);
         model.addAttribute("workspaces", workspaces);
+        model.addAttribute("activeModule", "overview");
+        model.addAttribute("activeSubPage", "overview");
         model.addAttribute("currentPage", "overview");
 
         DateRangeFilter filter = DateRangeFilter.of(preset, startDate, endDate);

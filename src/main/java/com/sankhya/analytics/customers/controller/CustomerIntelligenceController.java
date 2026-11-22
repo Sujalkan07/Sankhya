@@ -60,6 +60,8 @@ public class CustomerIntelligenceController {
         model.addAttribute("currentUser", userDetails);
         model.addAttribute("activeWorkspace", activeWorkspace);
         model.addAttribute("workspaces", workspaces);
+        model.addAttribute("activeModule", "customers");
+        model.addAttribute("activeSubPage", "overview");
         model.addAttribute("currentPage", "customer-intelligence");
 
         DateRangeFilter filter = DateRangeFilter.of(preset, startDate, endDate);

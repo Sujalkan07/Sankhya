@@ -2,6 +2,7 @@ package com.sankhya.ml.features;
 
 import com.sankhya.customers.entity.Customer;
 import com.sankhya.customers.repository.CustomerRepository;
+import com.sankhya.dataset.repository.UnifiedSalesMartRepository;
 import com.sankhya.ml.enums.DemandClass;
 import com.sankhya.products.entity.Product;
 import com.sankhya.products.repository.ProductRepository;
@@ -23,13 +24,16 @@ public class FeatureEngineeringService {
     private final CustomerRepository customerRepository;
     private final ProductRepository productRepository;
     private final SalesTransactionRepository salesTransactionRepository;
+    private final UnifiedSalesMartRepository unifiedSalesMartRepository;
 
     public FeatureEngineeringService(CustomerRepository customerRepository,
                                      ProductRepository productRepository,
-                                     SalesTransactionRepository salesTransactionRepository) {
+                                     SalesTransactionRepository salesTransactionRepository,
+                                     UnifiedSalesMartRepository unifiedSalesMartRepository) {
         this.customerRepository = customerRepository;
         this.productRepository = productRepository;
         this.salesTransactionRepository = salesTransactionRepository;
+        this.unifiedSalesMartRepository = unifiedSalesMartRepository;
     }
 
     @Transactional(readOnly = true)
@@ -37,52 +41,77 @@ public class FeatureEngineeringService {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime oneYearAgo = now.minusYears(1);
 
-        List<Customer> customers = customerRepository.findByWorkspaceId(workspaceId);
-        List<Object[]> rfmRows = salesTransactionRepository.findCustomerRfmMetricsBetween(workspaceId, oneYearAgo, now);
-
-        // Map: customerId -> [maxDate, txCount, totalRevenue]
-        Map<String, Object[]> rfmMap = new HashMap<>();
-        for (Object[] row : rfmRows) {
-            if (row[0] != null) {
-                rfmMap.put(row[0].toString(), row);
-            }
-        }
-
+        boolean useMart = unifiedSalesMartRepository.countByWorkspaceId(workspaceId) > 0;
         List<CustomerFeatureVector> vectors = new ArrayList<>();
-        for (Customer c : customers) {
-            String cId = c.getCustomerId();
-            Object[] metrics = rfmMap.get(cId);
 
-            double recencyDays = 180.0;
-            double frequency = 0.0;
-            double monetary = 0.0;
-            double atv = 0.0;
+        if (useMart) {
+            List<Object[]> rfmRows = unifiedSalesMartRepository.findCustomerRfmMetricsBetween(workspaceId, oneYearAgo, now);
+            long pseudoId = 1L;
+            for (Object[] row : rfmRows) {
+                if (row[0] == null) continue;
+                String cId = row[0].toString();
+                LocalDateTime lastTx = (LocalDateTime) row[4];
+                double recencyDays = lastTx != null ? Math.max(0, Duration.between(lastTx, now).toDays()) : 180.0;
+                double frequency = row[5] != null ? ((Number) row[5]).doubleValue() : 0.0;
+                double monetary = row[6] != null ? ((BigDecimal) row[6]).doubleValue() : 0.0;
+                double atv = frequency > 0 ? monetary / frequency : 0.0;
 
-            if (metrics != null) {
-                LocalDateTime lastTx = (LocalDateTime) metrics[1];
-                if (lastTx != null) {
-                    recencyDays = Math.max(0, Duration.between(lastTx, now).toDays());
-                }
-                if (metrics[2] != null) {
-                    frequency = ((Number) metrics[2]).doubleValue();
-                }
-                if (metrics[3] != null) {
-                    monetary = ((BigDecimal) metrics[3]).doubleValue();
-                }
-                if (frequency > 0) {
-                    atv = monetary / frequency;
+                vectors.add(new CustomerFeatureVector(
+                        pseudoId++,
+                        cId,
+                        recencyDays,
+                        frequency,
+                        monetary,
+                        atv,
+                        frequency * 2.5
+                ));
+            }
+        } else {
+            List<Customer> customers = customerRepository.findByWorkspaceId(workspaceId);
+            List<Object[]> rfmRows = salesTransactionRepository.findCustomerRfmMetricsBetween(workspaceId, oneYearAgo, now);
+
+            Map<String, Object[]> rfmMap = new HashMap<>();
+            for (Object[] row : rfmRows) {
+                if (row[0] != null) {
+                    rfmMap.put(row[0].toString(), row);
                 }
             }
 
-            vectors.add(new CustomerFeatureVector(
-                    c.getId(),
-                    c.getCustomerId(),
-                    recencyDays,
-                    frequency,
-                    monetary,
-                    atv,
-                    frequency * 2.5
-            ));
+            for (Customer c : customers) {
+                String cId = c.getCustomerId();
+                Object[] metrics = rfmMap.get(cId);
+
+                double recencyDays = 180.0;
+                double frequency = 0.0;
+                double monetary = 0.0;
+                double atv = 0.0;
+
+                if (metrics != null) {
+                    LocalDateTime lastTx = (LocalDateTime) metrics[1];
+                    if (lastTx != null) {
+                        recencyDays = Math.max(0, Duration.between(lastTx, now).toDays());
+                    }
+                    if (metrics[2] != null) {
+                        frequency = ((Number) metrics[2]).doubleValue();
+                    }
+                    if (metrics[3] != null) {
+                        monetary = ((BigDecimal) metrics[3]).doubleValue();
+                    }
+                    if (frequency > 0) {
+                        atv = monetary / frequency;
+                    }
+                }
+
+                vectors.add(new CustomerFeatureVector(
+                        c.getId(),
+                        c.getCustomerId(),
+                        recencyDays,
+                        frequency,
+                        monetary,
+                        atv,
+                        frequency * 2.5
+                ));
+            }
         }
 
         return vectors;
@@ -93,7 +122,11 @@ public class FeatureEngineeringService {
         LocalDateTime start = LocalDateTime.now().minusDays(365);
         LocalDateTime end = LocalDateTime.now();
 
-        List<Object[]> dailyRows = salesTransactionRepository.findDailyAggregationsBetween(workspaceId, start, end);
+        boolean useMart = unifiedSalesMartRepository.countByWorkspaceId(workspaceId) > 0;
+        List<Object[]> dailyRows = useMart
+                ? unifiedSalesMartRepository.findDailyAggregationsBetween(workspaceId, start, end)
+                : salesTransactionRepository.findDailyAggregationsBetween(workspaceId, start, end);
+
         List<TimeSeriesFeatureVector> vectors = new ArrayList<>();
 
         if (dailyRows.isEmpty()) {
@@ -147,52 +180,87 @@ public class FeatureEngineeringService {
         LocalDateTime start = LocalDateTime.now().minusDays(90);
         LocalDateTime end = LocalDateTime.now();
 
-        List<Product> products = productRepository.findByWorkspaceId(workspaceId);
-        List<Object[]> perfRows = salesTransactionRepository.findProductPerformanceBetween(workspaceId, start, end);
-
-        Map<String, Object[]> perfMap = new HashMap<>();
-        for (Object[] row : perfRows) {
-            if (row[0] != null) {
-                perfMap.put(row[0].toString(), row);
-            }
-        }
-
+        boolean useMart = unifiedSalesMartRepository.countByWorkspaceId(workspaceId) > 0;
         List<ProductFeatureVector> vectors = new ArrayList<>();
         double daysInPeriod = 90.0;
 
-        for (Product p : products) {
-            String pId = p.getProductId();
-            Object[] perf = perfMap.get(pId);
+        if (useMart) {
+            List<Object[]> perfRows = unifiedSalesMartRepository.findProductPerformanceBetween(workspaceId, start, end);
+            long pseudoId = 1L;
+            for (Object[] perf : perfRows) {
+                String pId = (String) perf[0];
+                String pName = perf[1] != null ? perf[1].toString() : pId;
+                String cat = perf[2] != null ? perf[2].toString() : "General";
+                double totalUnits = perf[3] != null ? ((Number) perf[3]).doubleValue() : 0.0;
+                double dailyVelocity = totalUnits / daysInPeriod;
+                double unitPrice = 50.0;
 
-            double totalUnits = 0.0;
-            if (perf != null && perf[3] != null) {
-                totalUnits = ((Number) perf[3]).doubleValue();
+                DemandClass label;
+                if (dailyVelocity >= 4.0) {
+                    label = DemandClass.HIGH;
+                } else if (dailyVelocity >= 1.0) {
+                    label = DemandClass.MEDIUM;
+                } else {
+                    label = DemandClass.LOW;
+                }
+
+                vectors.add(new ProductFeatureVector(
+                        pseudoId++,
+                        pId,
+                        pName,
+                        cat,
+                        totalUnits,
+                        dailyVelocity,
+                        unitPrice,
+                        100.0,
+                        label
+                ));
+            }
+        } else {
+            List<Product> products = productRepository.findByWorkspaceId(workspaceId);
+            List<Object[]> perfRows = salesTransactionRepository.findProductPerformanceBetween(workspaceId, start, end);
+
+            Map<String, Object[]> perfMap = new HashMap<>();
+            for (Object[] row : perfRows) {
+                if (row[0] != null) {
+                    perfMap.put(row[0].toString(), row);
+                }
             }
 
-            double dailyVelocity = totalUnits / daysInPeriod;
-            double unitPrice = p.getSellingPrice() != null ? p.getSellingPrice().doubleValue() : 10.0;
-            double currentStock = 100.0; // Default stock level
+            for (Product p : products) {
+                String pId = p.getProductId();
+                Object[] perf = perfMap.get(pId);
 
-            DemandClass label;
-            if (dailyVelocity >= 4.0) {
-                label = DemandClass.HIGH;
-            } else if (dailyVelocity >= 1.0) {
-                label = DemandClass.MEDIUM;
-            } else {
-                label = DemandClass.LOW;
+                double totalUnits = 0.0;
+                if (perf != null && perf[3] != null) {
+                    totalUnits = ((Number) perf[3]).doubleValue();
+                }
+
+                double dailyVelocity = totalUnits / daysInPeriod;
+                double unitPrice = p.getSellingPrice() != null ? p.getSellingPrice().doubleValue() : 10.0;
+                double currentStock = 100.0;
+
+                DemandClass label;
+                if (dailyVelocity >= 4.0) {
+                    label = DemandClass.HIGH;
+                } else if (dailyVelocity >= 1.0) {
+                    label = DemandClass.MEDIUM;
+                } else {
+                    label = DemandClass.LOW;
+                }
+
+                vectors.add(new ProductFeatureVector(
+                        p.getId(),
+                        p.getProductId(),
+                        p.getProductName(),
+                        p.getCategory(),
+                        totalUnits,
+                        dailyVelocity,
+                        unitPrice,
+                        currentStock,
+                        label
+                ));
             }
-
-            vectors.add(new ProductFeatureVector(
-                    p.getId(),
-                    p.getProductId(),
-                    p.getProductName(),
-                    p.getCategory(),
-                    totalUnits,
-                    dailyVelocity,
-                    unitPrice,
-                    currentStock,
-                    label
-            ));
         }
 
         return vectors;
@@ -200,7 +268,11 @@ public class FeatureEngineeringService {
 
     @Transactional(readOnly = true)
     public List<Set<String>> prepareMarketBaskets(Long workspaceId) {
-        List<Object[]> rows = salesTransactionRepository.findBasketItemsByWorkspaceId(workspaceId);
+        boolean useMart = unifiedSalesMartRepository.countByWorkspaceId(workspaceId) > 0;
+        List<Object[]> rows = useMart
+                ? unifiedSalesMartRepository.findBasketItemsByWorkspaceId(workspaceId)
+                : salesTransactionRepository.findBasketItemsByWorkspaceId(workspaceId);
+
         Map<String, Set<String>> basketMap = new HashMap<>();
 
         for (Object[] row : rows) {

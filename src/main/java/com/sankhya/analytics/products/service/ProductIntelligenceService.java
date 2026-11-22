@@ -4,6 +4,7 @@ import com.sankhya.analytics.common.dto.ChartDataResponse;
 import com.sankhya.analytics.common.dto.DateRangeFilter;
 import com.sankhya.analytics.common.util.AnalyticsMathUtils;
 import com.sankhya.analytics.products.dto.*;
+import com.sankhya.dataset.repository.UnifiedSalesMartRepository;
 import com.sankhya.products.repository.ProductRepository;
 import com.sankhya.sales.repository.SalesTransactionRepository;
 import org.springframework.stereotype.Service;
@@ -18,23 +19,35 @@ public class ProductIntelligenceService {
 
     private final SalesTransactionRepository salesTransactionRepository;
     private final ProductRepository productRepository;
+    private final UnifiedSalesMartRepository unifiedSalesMartRepository;
 
     public ProductIntelligenceService(SalesTransactionRepository salesTransactionRepository,
-                                      ProductRepository productRepository) {
+                                      ProductRepository productRepository,
+                                      UnifiedSalesMartRepository unifiedSalesMartRepository) {
         this.salesTransactionRepository = salesTransactionRepository;
         this.productRepository = productRepository;
+        this.unifiedSalesMartRepository = unifiedSalesMartRepository;
     }
 
     @Transactional(readOnly = true)
     public ProductIntelligenceResponse getProductIntelligence(Long workspaceId, DateRangeFilter filter) {
         ProductIntelligenceResponse response = new ProductIntelligenceResponse();
 
-        // 1. Catalog Products Count
-        long totalCatalog = productRepository.countByWorkspaceId(workspaceId);
+        boolean useMart = unifiedSalesMartRepository.countByWorkspaceId(workspaceId) > 0;
 
-        // 2. Query Raw Product Performance
-        List<Object[]> rawProdList = salesTransactionRepository.findProductPerformanceBetween(
-                workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+        // 1. Catalog Products Count
+        long totalCatalog;
+        List<Object[]> rawProdList;
+
+        if (useMart) {
+            totalCatalog = unifiedSalesMartRepository.countTotalProductsByWorkspaceId(workspaceId);
+            rawProdList = unifiedSalesMartRepository.findProductPerformanceBetween(
+                    workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+        } else {
+            totalCatalog = productRepository.countByWorkspaceId(workspaceId);
+            rawProdList = salesTransactionRepository.findProductPerformanceBetween(
+                    workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+        }
 
         List<ProductPerformanceDto> prods = new ArrayList<>();
         BigDecimal totalRev = BigDecimal.ZERO;

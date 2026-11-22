@@ -8,6 +8,7 @@ import com.sankhya.analytics.overview.dto.ExecutiveOverviewResponse;
 import com.sankhya.analytics.recommendations.entity.BusinessRecommendation;
 import com.sankhya.analytics.recommendations.enums.RecommendationSeverity;
 import com.sankhya.analytics.recommendations.repository.BusinessRecommendationRepository;
+import com.sankhya.dataset.repository.UnifiedSalesMartRepository;
 import com.sankhya.inventory.repository.InventorySnapshotRepository;
 import com.sankhya.sales.repository.SalesTransactionRepository;
 import org.springframework.stereotype.Service;
@@ -24,36 +25,112 @@ public class ExecutiveOverviewService {
     private final SalesTransactionRepository salesTransactionRepository;
     private final InventorySnapshotRepository inventorySnapshotRepository;
     private final BusinessRecommendationRepository businessRecommendationRepository;
+    private final UnifiedSalesMartRepository unifiedSalesMartRepository;
 
     public ExecutiveOverviewService(SalesTransactionRepository salesTransactionRepository,
                                     InventorySnapshotRepository inventorySnapshotRepository,
-                                    BusinessRecommendationRepository businessRecommendationRepository) {
+                                    BusinessRecommendationRepository businessRecommendationRepository,
+                                    UnifiedSalesMartRepository unifiedSalesMartRepository) {
         this.salesTransactionRepository = salesTransactionRepository;
         this.inventorySnapshotRepository = inventorySnapshotRepository;
         this.businessRecommendationRepository = businessRecommendationRepository;
+        this.unifiedSalesMartRepository = unifiedSalesMartRepository;
     }
 
     @Transactional(readOnly = true)
     public ExecutiveOverviewResponse getExecutiveOverview(Long workspaceId, DateRangeFilter filter) {
         ExecutiveOverviewResponse response = new ExecutiveOverviewResponse();
 
-        // 1. Current Window Metrics
-        BigDecimal currRevenue = salesTransactionRepository.sumRevenueByWorkspaceIdAndDateBetween(
-                workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
-        if (currRevenue == null) currRevenue = BigDecimal.ZERO;
+        boolean useMart = unifiedSalesMartRepository.countByWorkspaceId(workspaceId) > 0;
 
-        long currTxns = salesTransactionRepository.countDistinctTransactionsBetween(
-                workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+        // 1. Current Window Metrics
+        BigDecimal currRevenue;
+        long currTxns;
+        long currCustomers;
+        BigDecimal currCogs;
+        long lowStockCount;
+        List<Object[]> dailyData;
+        List<Object[]> categoryData;
+
+        DateRangeFilter prevFilter = filter.getPrecedingComparisonFilter();
+        BigDecimal prevRevenue;
+        long prevTxns;
+        long prevCustomers;
+
+        if (useMart) {
+            currRevenue = unifiedSalesMartRepository.sumRevenueByWorkspaceIdAndDateBetween(
+                    workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+            if (currRevenue == null) currRevenue = BigDecimal.ZERO;
+
+            currTxns = unifiedSalesMartRepository.countDistinctTransactionsBetween(
+                    workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+
+            currCustomers = unifiedSalesMartRepository.countActiveCustomersBetween(
+                    workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+
+            currCogs = unifiedSalesMartRepository.sumEstimatedCogsBetween(
+                    workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+            if (currCogs == null) currCogs = BigDecimal.ZERO;
+
+            prevRevenue = unifiedSalesMartRepository.sumRevenueByWorkspaceIdAndDateBetween(
+                    workspaceId, prevFilter.getStartDateTime(), prevFilter.getEndDateTime());
+            if (prevRevenue == null) prevRevenue = BigDecimal.ZERO;
+
+            prevTxns = unifiedSalesMartRepository.countDistinctTransactionsBetween(
+                    workspaceId, prevFilter.getStartDateTime(), prevFilter.getEndDateTime());
+
+            prevCustomers = unifiedSalesMartRepository.countActiveCustomersBetween(
+                    workspaceId, prevFilter.getStartDateTime(), prevFilter.getEndDateTime());
+
+            List<Object[]> invList = unifiedSalesMartRepository.findLatestInventoryPerProductByWorkspaceId(workspaceId);
+            lowStockCount = invList.stream().filter(row -> {
+                Number closing = (Number) row[6];
+                Number reorder = (Number) row[7];
+                return closing != null && reorder != null && closing.intValue() <= reorder.intValue();
+            }).count();
+
+            dailyData = unifiedSalesMartRepository.findDailyAggregationsBetween(
+                    workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+
+            categoryData = unifiedSalesMartRepository.findCategorySalesContributionBetween(
+                    workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+        } else {
+            currRevenue = salesTransactionRepository.sumRevenueByWorkspaceIdAndDateBetween(
+                    workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+            if (currRevenue == null) currRevenue = BigDecimal.ZERO;
+
+            currTxns = salesTransactionRepository.countDistinctTransactionsBetween(
+                    workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+
+            currCustomers = salesTransactionRepository.countActiveCustomersBetween(
+                    workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+
+            currCogs = salesTransactionRepository.sumEstimatedCogsBetween(
+                    workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+            if (currCogs == null) currCogs = BigDecimal.ZERO;
+
+            prevRevenue = salesTransactionRepository.sumRevenueByWorkspaceIdAndDateBetween(
+                    workspaceId, prevFilter.getStartDateTime(), prevFilter.getEndDateTime());
+            if (prevRevenue == null) prevRevenue = BigDecimal.ZERO;
+
+            prevTxns = salesTransactionRepository.countDistinctTransactionsBetween(
+                    workspaceId, prevFilter.getStartDateTime(), prevFilter.getEndDateTime());
+
+            prevCustomers = salesTransactionRepository.countActiveCustomersBetween(
+                    workspaceId, prevFilter.getStartDateTime(), prevFilter.getEndDateTime());
+
+            lowStockCount = inventorySnapshotRepository.findLowStockAlertsByWorkspaceId(workspaceId).size();
+
+            dailyData = salesTransactionRepository.findDailyAggregationsBetween(
+                    workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+
+            categoryData = salesTransactionRepository.findCategorySalesContributionBetween(
+                    workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+        }
+
         BigDecimal currAtv = currTxns > 0
                 ? AnalyticsMathUtils.safeDivide(currRevenue, BigDecimal.valueOf(currTxns))
                 : BigDecimal.ZERO;
-
-        long currCustomers = salesTransactionRepository.countActiveCustomersBetween(
-                workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
-
-        BigDecimal currCogs = salesTransactionRepository.sumEstimatedCogsBetween(
-                workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
-        if (currCogs == null) currCogs = BigDecimal.ZERO;
 
         BigDecimal grossProfit = currRevenue.subtract(currCogs);
         BigDecimal grossMarginPct = currRevenue.compareTo(BigDecimal.ZERO) > 0
@@ -61,20 +138,9 @@ public class ExecutiveOverviewService {
                 : BigDecimal.ZERO;
         response.setGrossMarginPercentage(grossMarginPct);
 
-        // 2. Preceding Comparison Window Metrics
-        DateRangeFilter prevFilter = filter.getPrecedingComparisonFilter();
-        BigDecimal prevRevenue = salesTransactionRepository.sumRevenueByWorkspaceIdAndDateBetween(
-                workspaceId, prevFilter.getStartDateTime(), prevFilter.getEndDateTime());
-        if (prevRevenue == null) prevRevenue = BigDecimal.ZERO;
-
-        long prevTxns = salesTransactionRepository.countDistinctTransactionsBetween(
-                workspaceId, prevFilter.getStartDateTime(), prevFilter.getEndDateTime());
         BigDecimal prevAtv = prevTxns > 0
                 ? AnalyticsMathUtils.safeDivide(prevRevenue, BigDecimal.valueOf(prevTxns))
                 : BigDecimal.ZERO;
-
-        long prevCustomers = salesTransactionRepository.countActiveCustomersBetween(
-                workspaceId, prevFilter.getStartDateTime(), prevFilter.getEndDateTime());
 
         // 3. Populate Comparison Metrics
         response.setTotalRevenue(AnalyticsMathUtils.calculateComparison(
@@ -87,12 +153,9 @@ public class ExecutiveOverviewService {
                 BigDecimal.valueOf(currCustomers), BigDecimal.valueOf(prevCustomers), String.valueOf(currCustomers)));
 
         // 4. Inventory Alerts Count
-        long lowStockCount = inventorySnapshotRepository.findLowStockAlertsByWorkspaceId(workspaceId).size();
         response.setLowStockAlertCount(lowStockCount);
 
         // 5. Daily Sales Trend Chart
-        List<Object[]> dailyData = salesTransactionRepository.findDailyAggregationsBetween(
-                workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
         ChartDataResponse trendChart = new ChartDataResponse();
         List<BigDecimal> trendValues = new ArrayList<>();
         for (Object[] row : dailyData) {
@@ -103,8 +166,6 @@ public class ExecutiveOverviewService {
         response.setSalesTrendChart(trendChart);
 
         // 6. Category Revenue Distribution Chart
-        List<Object[]> categoryData = salesTransactionRepository.findCategorySalesContributionBetween(
-                workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
         ChartDataResponse catChart = new ChartDataResponse();
         List<BigDecimal> catValues = new ArrayList<>();
         String topCategoryName = null;

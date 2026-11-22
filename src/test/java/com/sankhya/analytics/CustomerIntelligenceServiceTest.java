@@ -34,11 +34,14 @@ class CustomerIntelligenceServiceTest {
     @Mock
     private CustomerRepository customerRepository;
 
+    @Mock
+    private com.sankhya.dataset.repository.UnifiedSalesMartRepository unifiedSalesMartRepository;
+
     private CustomerIntelligenceService customerIntelligenceService;
 
     @BeforeEach
     void setUp() {
-        customerIntelligenceService = new CustomerIntelligenceService(salesTransactionRepository, customerRepository);
+        customerIntelligenceService = new CustomerIntelligenceService(salesTransactionRepository, customerRepository, unifiedSalesMartRepository);
     }
 
     @Test

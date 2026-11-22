@@ -75,6 +75,64 @@ public class CsvFileParser implements FileParser {
         }
     }
 
+    @Override
+    public void processRowsStreaming(File file, java.util.function.BiConsumer<Long, Map<String, String>> rowConsumer) throws IOException {
+        try (Reader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
+            CSVFormat format = CSVFormat.Builder.create(CSVFormat.DEFAULT)
+                    .setHeader()
+                    .setSkipHeaderRecord(true)
+                    .setIgnoreHeaderCase(true)
+                    .setTrim(true)
+                    .build();
+
+            try (CSVParser parser = format.parse(reader)) {
+                List<String> headers = cleanHeaders(parser.getHeaderNames());
+                long rowNum = 2; // Row 1 is header
+                for (CSVRecord record : parser) {
+                    Map<String, String> row = new LinkedHashMap<>(headers.size());
+                    for (String header : headers) {
+                        String val = record.isMapped(header) ? record.get(header) : "";
+                        row.put(header, val != null ? val.trim() : "");
+                    }
+                    rowConsumer.accept(rowNum++, row);
+                }
+            }
+        }
+    }
+
+    @Override
+    public void processBatches(File file, int batchSize, java.util.function.Consumer<List<Map<String, String>>> batchConsumer) throws IOException {
+        try (Reader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
+            CSVFormat format = CSVFormat.Builder.create(CSVFormat.DEFAULT)
+                    .setHeader()
+                    .setSkipHeaderRecord(true)
+                    .setIgnoreHeaderCase(true)
+                    .setTrim(true)
+                    .build();
+
+            try (CSVParser parser = format.parse(reader)) {
+                List<String> headers = cleanHeaders(parser.getHeaderNames());
+                List<Map<String, String>> batch = new ArrayList<>(batchSize);
+                for (CSVRecord record : parser) {
+                    Map<String, String> row = new LinkedHashMap<>(headers.size());
+                    for (String header : headers) {
+                        String val = record.isMapped(header) ? record.get(header) : "";
+                        row.put(header, val != null ? val.trim() : "");
+                    }
+                    batch.add(row);
+                    if (batch.size() >= batchSize) {
+                        batchConsumer.accept(batch);
+                        batch.clear();
+                    }
+                }
+                if (!batch.isEmpty()) {
+                    batchConsumer.accept(batch);
+                    batch.clear();
+                }
+            }
+        }
+    }
+
     private List<String> cleanHeaders(List<String> rawHeaders) {
         List<String> cleaned = new ArrayList<>();
         for (String h : rawHeaders) {

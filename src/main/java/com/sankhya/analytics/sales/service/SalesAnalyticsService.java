@@ -5,6 +5,7 @@ import com.sankhya.analytics.common.dto.ComparisonMetric;
 import com.sankhya.analytics.common.dto.DateRangeFilter;
 import com.sankhya.analytics.common.util.AnalyticsMathUtils;
 import com.sankhya.analytics.sales.dto.*;
+import com.sankhya.dataset.repository.UnifiedSalesMartRepository;
 import com.sankhya.sales.entity.SalesTransaction;
 import com.sankhya.sales.repository.SalesTransactionRepository;
 import org.springframework.data.domain.Page;
@@ -19,30 +20,129 @@ import java.util.*;
 public class SalesAnalyticsService {
 
     private final SalesTransactionRepository salesTransactionRepository;
+    private final UnifiedSalesMartRepository unifiedSalesMartRepository;
 
-    public SalesAnalyticsService(SalesTransactionRepository salesTransactionRepository) {
+    public SalesAnalyticsService(SalesTransactionRepository salesTransactionRepository,
+                                 UnifiedSalesMartRepository unifiedSalesMartRepository) {
         this.salesTransactionRepository = salesTransactionRepository;
+        this.unifiedSalesMartRepository = unifiedSalesMartRepository;
     }
 
     @Transactional(readOnly = true)
     public SalesAnalyticsResponse getSalesAnalytics(Long workspaceId, DateRangeFilter filter) {
         SalesAnalyticsResponse response = new SalesAnalyticsResponse();
 
+        boolean useMart = unifiedSalesMartRepository.countByWorkspaceId(workspaceId) > 0;
+
         // 1. Current Period KPIs
-        BigDecimal currRevenue = salesTransactionRepository.sumRevenueByWorkspaceIdAndDateBetween(
-                workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
-        if (currRevenue == null) currRevenue = BigDecimal.ZERO;
+        BigDecimal currRevenue;
+        long currTxns;
+        long currUnits;
+        BigDecimal currDiscounts;
 
-        long currTxns = salesTransactionRepository.countDistinctTransactionsBetween(
-                workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+        DateRangeFilter prevFilter = filter.getPrecedingComparisonFilter();
+        BigDecimal prevRevenue;
+        long prevTxns;
+        long prevUnits;
+        BigDecimal prevDiscounts;
 
-        Long currUnitsLong = salesTransactionRepository.sumQuantityBetween(
-                workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
-        long currUnits = currUnitsLong != null ? currUnitsLong : 0L;
+        List<Object[]> dailyData;
+        List<Object[]> pmtData;
+        List<Object[]> catData;
+        List<Object[]> hourlyData;
+        List<Object[]> prodData;
 
-        BigDecimal currDiscounts = salesTransactionRepository.sumDiscountBetween(
-                workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
-        if (currDiscounts == null) currDiscounts = BigDecimal.ZERO;
+        if (useMart) {
+            currRevenue = unifiedSalesMartRepository.sumRevenueByWorkspaceIdAndDateBetween(
+                    workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+            if (currRevenue == null) currRevenue = BigDecimal.ZERO;
+
+            currTxns = unifiedSalesMartRepository.countDistinctTransactionsBetween(
+                    workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+
+            Long currUnitsLong = unifiedSalesMartRepository.sumQuantityBetween(
+                    workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+            currUnits = currUnitsLong != null ? currUnitsLong : 0L;
+
+            currDiscounts = unifiedSalesMartRepository.sumDiscountBetween(
+                    workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+            if (currDiscounts == null) currDiscounts = BigDecimal.ZERO;
+
+            prevRevenue = unifiedSalesMartRepository.sumRevenueByWorkspaceIdAndDateBetween(
+                    workspaceId, prevFilter.getStartDateTime(), prevFilter.getEndDateTime());
+            if (prevRevenue == null) prevRevenue = BigDecimal.ZERO;
+
+            prevTxns = unifiedSalesMartRepository.countDistinctTransactionsBetween(
+                    workspaceId, prevFilter.getStartDateTime(), prevFilter.getEndDateTime());
+
+            Long prevUnitsLong = unifiedSalesMartRepository.sumQuantityBetween(
+                    workspaceId, prevFilter.getStartDateTime(), prevFilter.getEndDateTime());
+            prevUnits = prevUnitsLong != null ? prevUnitsLong : 0L;
+
+            prevDiscounts = unifiedSalesMartRepository.sumDiscountBetween(
+                    workspaceId, prevFilter.getStartDateTime(), prevFilter.getEndDateTime());
+            if (prevDiscounts == null) prevDiscounts = BigDecimal.ZERO;
+
+            dailyData = unifiedSalesMartRepository.findDailyAggregationsBetween(
+                    workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+
+            pmtData = unifiedSalesMartRepository.findPaymentMethodDistributionBetween(
+                    workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+
+            catData = unifiedSalesMartRepository.findCategorySalesContributionBetween(
+                    workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+
+            hourlyData = unifiedSalesMartRepository.findHourlySalesDistributionBetween(
+                    workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+
+            prodData = unifiedSalesMartRepository.findProductPerformanceBetween(
+                    workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+        } else {
+            currRevenue = salesTransactionRepository.sumRevenueByWorkspaceIdAndDateBetween(
+                    workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+            if (currRevenue == null) currRevenue = BigDecimal.ZERO;
+
+            currTxns = salesTransactionRepository.countDistinctTransactionsBetween(
+                    workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+
+            Long currUnitsLong = salesTransactionRepository.sumQuantityBetween(
+                    workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+            currUnits = currUnitsLong != null ? currUnitsLong : 0L;
+
+            currDiscounts = salesTransactionRepository.sumDiscountBetween(
+                    workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+            if (currDiscounts == null) currDiscounts = BigDecimal.ZERO;
+
+            prevRevenue = salesTransactionRepository.sumRevenueByWorkspaceIdAndDateBetween(
+                    workspaceId, prevFilter.getStartDateTime(), prevFilter.getEndDateTime());
+            if (prevRevenue == null) prevRevenue = BigDecimal.ZERO;
+
+            prevTxns = salesTransactionRepository.countDistinctTransactionsBetween(
+                    workspaceId, prevFilter.getStartDateTime(), prevFilter.getEndDateTime());
+
+            Long prevUnitsLong = salesTransactionRepository.sumQuantityBetween(
+                    workspaceId, prevFilter.getStartDateTime(), prevFilter.getEndDateTime());
+            prevUnits = prevUnitsLong != null ? prevUnitsLong : 0L;
+
+            prevDiscounts = salesTransactionRepository.sumDiscountBetween(
+                    workspaceId, prevFilter.getStartDateTime(), prevFilter.getEndDateTime());
+            if (prevDiscounts == null) prevDiscounts = BigDecimal.ZERO;
+
+            dailyData = salesTransactionRepository.findDailyAggregationsBetween(
+                    workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+
+            pmtData = salesTransactionRepository.findPaymentMethodDistributionBetween(
+                    workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+
+            catData = salesTransactionRepository.findCategorySalesContributionBetween(
+                    workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+
+            hourlyData = salesTransactionRepository.findHourlySalesDistributionBetween(
+                    workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+
+            prodData = salesTransactionRepository.findProductPerformanceBetween(
+                    workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+        }
 
         BigDecimal currAtv = currTxns > 0
                 ? AnalyticsMathUtils.safeDivide(currRevenue, BigDecimal.valueOf(currTxns))
@@ -51,23 +151,6 @@ public class SalesAnalyticsService {
         BigDecimal currBasketSize = currTxns > 0
                 ? AnalyticsMathUtils.safeDivide(BigDecimal.valueOf(currUnits), BigDecimal.valueOf(currTxns))
                 : BigDecimal.ZERO;
-
-        // 2. Preceding Period KPIs
-        DateRangeFilter prevFilter = filter.getPrecedingComparisonFilter();
-        BigDecimal prevRevenue = salesTransactionRepository.sumRevenueByWorkspaceIdAndDateBetween(
-                workspaceId, prevFilter.getStartDateTime(), prevFilter.getEndDateTime());
-        if (prevRevenue == null) prevRevenue = BigDecimal.ZERO;
-
-        long prevTxns = salesTransactionRepository.countDistinctTransactionsBetween(
-                workspaceId, prevFilter.getStartDateTime(), prevFilter.getEndDateTime());
-
-        Long prevUnitsLong = salesTransactionRepository.sumQuantityBetween(
-                workspaceId, prevFilter.getStartDateTime(), prevFilter.getEndDateTime());
-        long prevUnits = prevUnitsLong != null ? prevUnitsLong : 0L;
-
-        BigDecimal prevDiscounts = salesTransactionRepository.sumDiscountBetween(
-                workspaceId, prevFilter.getStartDateTime(), prevFilter.getEndDateTime());
-        if (prevDiscounts == null) prevDiscounts = BigDecimal.ZERO;
 
         BigDecimal prevAtv = prevTxns > 0
                 ? AnalyticsMathUtils.safeDivide(prevRevenue, BigDecimal.valueOf(prevTxns))
@@ -94,8 +177,6 @@ public class SalesAnalyticsService {
         response.setKpis(kpis);
 
         // 4. Daily Sales Trend Chart
-        List<Object[]> dailyData = salesTransactionRepository.findDailyAggregationsBetween(
-                workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
         ChartDataResponse trendChart = new ChartDataResponse();
         List<BigDecimal> trendRevValues = new ArrayList<>();
         List<BigDecimal> trendTxnValues = new ArrayList<>();
@@ -109,8 +190,6 @@ public class SalesAnalyticsService {
         response.setSalesTrendChart(trendChart);
 
         // 5. Payment Methods Distribution
-        List<Object[]> pmtData = salesTransactionRepository.findPaymentMethodDistributionBetween(
-                workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
         List<PaymentMethodShareDto> pmtList = new ArrayList<>();
         ChartDataResponse pmtChart = new ChartDataResponse();
         List<BigDecimal> pmtChartValues = new ArrayList<>();
@@ -133,8 +212,6 @@ public class SalesAnalyticsService {
         response.setPaymentMethodChart(pmtChart);
 
         // 6. Category Performance
-        List<Object[]> catData = salesTransactionRepository.findCategorySalesContributionBetween(
-                workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
         List<CategorySalesDto> catList = new ArrayList<>();
         ChartDataResponse catChart = new ChartDataResponse();
         List<BigDecimal> catChartValues = new ArrayList<>();
@@ -160,8 +237,6 @@ public class SalesAnalyticsService {
         response.setCategoryChart(catChart);
 
         // 7. Hourly Sales Distribution (0 to 23 hours)
-        List<Object[]> hourlyData = salesTransactionRepository.findHourlySalesDistributionBetween(
-                workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
         Map<Integer, Object[]> hourMap = new HashMap<>();
         for (Object[] row : hourlyData) {
             if (row[0] != null) {
@@ -193,8 +268,6 @@ public class SalesAnalyticsService {
         response.setHourlySalesChart(hourlyChart);
 
         // 8. Top Selling Products (Limit 10)
-        List<Object[]> prodData = salesTransactionRepository.findProductPerformanceBetween(
-                workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
         List<TopSellingProductDto> topProds = new ArrayList<>();
         int count = 0;
         for (Object[] row : prodData) {

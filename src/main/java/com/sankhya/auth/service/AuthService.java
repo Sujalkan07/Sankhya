@@ -44,13 +44,15 @@ public class AuthService {
         User user = new User(request.getFullName().trim(), normalizedEmail, encodedPassword, UserRole.ROLE_USER);
         User savedUser = userRepository.save(user);
 
-        // Provision an initial default supermarket workspace for the new user
+        // Provision an initial default supermarket workspace for the new user (marked in STORE_SETUP for onboarding wizard)
         String defaultWorkspaceName = request.getFullName().trim() + " Supermarket";
         Workspace initialWorkspace = new Workspace(
                 defaultWorkspaceName,
                 "Primary supermarket workspace for " + request.getFullName().trim() + ".",
                 savedUser
         );
+        initialWorkspace.setStoreFormat("Supermarket");
+        initialWorkspace.setOnboardingStatus("STORE_SETUP");
         Workspace savedWorkspace = workspaceRepository.save(initialWorkspace);
 
         // Add user as OWNER membership

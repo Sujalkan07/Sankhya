@@ -56,12 +56,16 @@ public class SecurityConfig {
                     "/",
                     "/login",
                     "/register",
+                    "/error",
                     "/css/**",
                     "/js/**",
                     "/images/**",
                     "/favicon.ico"
                 ).permitAll()
                 .anyRequest().authenticated()
+            )
+            .csrf(csrf -> csrf
+                .ignoringRequestMatchers("/login", "/register", "/logout")
             )
             .formLogin(login -> login
                 .loginPage("/login")
@@ -82,8 +86,9 @@ public class SecurityConfig {
             )
             .sessionManagement(session -> session
                 .sessionFixation(sessionFixation -> sessionFixation.changeSessionId())
-                .maximumSessions(2)
-                .expiredUrl("/login?expired=true")
+            )
+            .exceptionHandling(ex -> ex
+                .accessDeniedHandler((req, res, err) -> res.sendRedirect("/login?expired=true"))
             )
             .headers(headers -> headers
                 .frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin)

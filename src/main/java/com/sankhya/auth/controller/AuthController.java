@@ -5,6 +5,7 @@ import com.sankhya.auth.service.AuthService;
 import com.sankhya.auth.validator.RegisterValidator;
 import com.sankhya.common.exception.DuplicateResourceException;
 import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
@@ -58,6 +60,12 @@ public class AuthController {
         }
 
         return "auth/login";
+    }
+
+    @GetMapping("/favicon.ico")
+    @ResponseBody
+    public ResponseEntity<Void> favicon() {
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/register")

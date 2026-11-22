@@ -16,15 +16,10 @@
 
             <!-- Brand Logo -->
             <a th:href="@{/dashboard}" class="flex items-center gap-2.5">
-                <div class="w-9 h-9 rounded-xl bg-surface-container-low border border-[#E7E9E3] p-1.5 flex items-center justify-center text-primary shadow-xs">
-                    <span class="material-symbols-outlined text-[22px]">storefront</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <span class="font-headline font-bold text-lg text-on-surface tracking-tight leading-none">Sankhya</span>
-                    <span class="hidden sm:inline-block px-2 py-0.5 rounded-full bg-surface-container text-primary font-semibold text-[10px]">
-                        AI Supermarket Analytics
-                    </span>
-                </div>
+                <img th:src="@{/images/sankhya-logo.jpg}" alt="Sankhya" class="h-9 w-auto object-contain rounded-md" />
+                <span class="hidden sm:inline-block px-2 py-0.5 rounded-full bg-surface-container text-primary font-semibold text-[10px]">
+                    AI Supermarket Analytics
+                </span>
             </a>
 
             <!-- Single-Store Naveen Store Context Badge -->

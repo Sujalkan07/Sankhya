@@ -13,6 +13,8 @@ import com.sankhya.analytics.products.dto.ProductPerformanceDto;
 import com.sankhya.analytics.products.service.ProductIntelligenceService;
 import com.sankhya.analytics.recommendations.entity.BusinessRecommendation;
 import com.sankhya.analytics.recommendations.service.BusinessRecommendationService;
+import com.sankhya.dataset.entity.UnifiedSalesMart;
+import com.sankhya.dataset.repository.UnifiedSalesMartRepository;
 import com.sankhya.sales.entity.SalesTransaction;
 import com.sankhya.sales.repository.SalesTransactionRepository;
 import org.springframework.data.domain.Page;
@@ -28,17 +30,20 @@ import java.util.List;
 public class AnalyticalReportingService {
 
     private final SalesTransactionRepository salesTransactionRepository;
+    private final UnifiedSalesMartRepository unifiedSalesMartRepository;
     private final ProductIntelligenceService productIntelligenceService;
     private final CustomerIntelligenceService customerIntelligenceService;
     private final InventoryIntelligenceService inventoryIntelligenceService;
     private final BusinessRecommendationService businessRecommendationService;
 
     public AnalyticalReportingService(SalesTransactionRepository salesTransactionRepository,
+                                      UnifiedSalesMartRepository unifiedSalesMartRepository,
                                       ProductIntelligenceService productIntelligenceService,
                                       CustomerIntelligenceService customerIntelligenceService,
                                       InventoryIntelligenceService inventoryIntelligenceService,
                                       BusinessRecommendationService businessRecommendationService) {
         this.salesTransactionRepository = salesTransactionRepository;
+        this.unifiedSalesMartRepository = unifiedSalesMartRepository;
         this.productIntelligenceService = productIntelligenceService;
         this.customerIntelligenceService = customerIntelligenceService;
         this.inventoryIntelligenceService = inventoryIntelligenceService;
@@ -49,31 +54,57 @@ public class AnalyticalReportingService {
     public void exportSalesTransactionsCsv(Long workspaceId, DateRangeFilter filter, Writer writer) throws IOException {
         writer.write("Transaction ID,Date,Product ID,Quantity,Unit Price,Discount,Revenue,Payment Method,Customer ID,Status\n");
 
+        boolean useMart = unifiedSalesMartRepository.countByWorkspaceId(workspaceId) > 0;
         int pageNumber = 0;
         int pageSize = 1000;
-        Page<SalesTransaction> page;
 
-        do {
-            page = salesTransactionRepository.findTransactionsInDateRange(
-                    workspaceId, filter.getStartDateTime(), filter.getEndDateTime(), PageRequest.of(pageNumber, pageSize));
+        if (useMart) {
+            Page<UnifiedSalesMart> page;
+            do {
+                page = unifiedSalesMartRepository.findTransactionsInDateRange(
+                        workspaceId, filter.getStartDateTime(), filter.getEndDateTime(), PageRequest.of(pageNumber, pageSize));
 
-            for (SalesTransaction t : page.getContent()) {
-                writer.write(String.format("%s,%s,%s,%d,%s,%s,%s,%s,%s,%s\n",
-                        escapeCsv(t.getTransactionId()),
-                        t.getTransactionDate() != null ? t.getTransactionDate().toString() : "",
-                        escapeCsv(t.getProductId()),
-                        t.getQuantity() != null ? t.getQuantity() : 0,
-                        t.getUnitPrice() != null ? t.getUnitPrice().toString() : "0.00",
-                        t.getDiscount() != null ? t.getDiscount().toString() : "0.00",
-                        t.getRevenue() != null ? t.getRevenue().toString() : "0.00",
-                        escapeCsv(t.getPaymentMethod()),
-                        escapeCsv(t.getCustomerId()),
-                        escapeCsv(t.getStatus())
-                ));
-            }
-            writer.flush();
-            pageNumber++;
-        } while (page.hasNext());
+                for (UnifiedSalesMart m : page.getContent()) {
+                    writer.write(String.format("%s,%s,%s,%d,%s,%s,%s,%s,%s,%s\n",
+                            escapeCsv(m.getTransactionId()),
+                            m.getTransactionDate() != null ? m.getTransactionDate().toString() : "",
+                            escapeCsv(m.getProductId()),
+                            m.getQuantity() != null ? m.getQuantity() : 0,
+                            m.getUnitPrice() != null ? m.getUnitPrice().toString() : "0.00",
+                            m.getDiscount() != null ? m.getDiscount().toString() : "0.00",
+                            m.getRevenue() != null ? m.getRevenue().toString() : "0.00",
+                            escapeCsv(m.getPaymentMethod()),
+                            escapeCsv(m.getCustomerId()),
+                            "COMPLETED"
+                    ));
+                }
+                writer.flush();
+                pageNumber++;
+            } while (page.hasNext());
+        } else {
+            Page<SalesTransaction> page;
+            do {
+                page = salesTransactionRepository.findTransactionsInDateRange(
+                        workspaceId, filter.getStartDateTime(), filter.getEndDateTime(), PageRequest.of(pageNumber, pageSize));
+
+                for (SalesTransaction t : page.getContent()) {
+                    writer.write(String.format("%s,%s,%s,%d,%s,%s,%s,%s,%s,%s\n",
+                            escapeCsv(t.getTransactionId()),
+                            t.getTransactionDate() != null ? t.getTransactionDate().toString() : "",
+                            escapeCsv(t.getProductId()),
+                            t.getQuantity() != null ? t.getQuantity() : 0,
+                            t.getUnitPrice() != null ? t.getUnitPrice().toString() : "0.00",
+                            t.getDiscount() != null ? t.getDiscount().toString() : "0.00",
+                            t.getRevenue() != null ? t.getRevenue().toString() : "0.00",
+                            escapeCsv(t.getPaymentMethod()),
+                            escapeCsv(t.getCustomerId()),
+                            escapeCsv(t.getStatus())
+                    ));
+                }
+                writer.flush();
+                pageNumber++;
+            } while (page.hasNext());
+        }
     }
 
     @Transactional(readOnly = true)

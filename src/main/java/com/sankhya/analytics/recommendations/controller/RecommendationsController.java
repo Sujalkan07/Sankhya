@@ -73,6 +73,10 @@ public class RecommendationsController {
             AnalyticsReadinessResponse readiness = datasetQueryService.getAnalyticsReadiness(wsId);
             model.addAttribute("readiness", readiness);
 
+            if (readiness.isRecommendationsReady() && businessRecommendationRepository.findActiveByWorkspaceId(wsId).isEmpty()) {
+                businessRecommendationService.generateRecommendations(wsId, DateRangeFilter.of(DatePreset.LAST_30_DAYS, null, null));
+            }
+
             List<BusinessRecommendation> recs = businessRecommendationService.getRecommendations(
                     wsId, category, status);
             model.addAttribute("recommendations", recs);

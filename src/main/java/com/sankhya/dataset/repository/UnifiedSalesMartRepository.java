@@ -200,4 +200,12 @@ public interface UnifiedSalesMartRepository extends JpaRepository<UnifiedSalesMa
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate,
             Pageable pageable);
+
+    List<UnifiedSalesMart> findByWorkspaceIdAndTransactionId(Long workspaceId, String transactionId);
+
+    @Query("SELECT MIN(m.transactionDate) FROM UnifiedSalesMart m WHERE m.workspace.id = :workspaceId")
+    LocalDateTime findMinTransactionDateByWorkspaceId(@Param("workspaceId") Long workspaceId);
+
+    @Query("SELECT MAX(m.transactionDate) FROM UnifiedSalesMart m WHERE m.workspace.id = :workspaceId")
+    LocalDateTime findMaxTransactionDateByWorkspaceId(@Param("workspaceId") Long workspaceId);
 }

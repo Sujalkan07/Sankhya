@@ -51,7 +51,7 @@ public class GeminiInsightService {
         String summary;
         int promptTokens = 0;
         int completionTokens = 0;
-        String modelVersion = "gemini-2.5-flash";
+        String modelVersion = "DETERMINISTIC_FALLBACK";
 
         if (response.success()) {
             narrative = response.text();
@@ -61,6 +61,9 @@ public class GeminiInsightService {
             modelVersion = response.modelUsed();
         } else {
             log.warn("Gemini generation unavailable for {}: {}. Generating heuristic fallback.", category, response.errorMessage());
+            if (response.errorMessage() != null && response.errorMessage().toLowerCase().contains("not configured")) {
+                modelVersion = "NOT_CONFIGURED";
+            }
             narrative = generateFallbackNarrative(workspaceId, category, response.errorMessage());
             summary = "Grounded heuristic insights generated based on persisted metrics (Gemini: " + response.errorMessage() + ").";
         }
@@ -135,7 +138,7 @@ public class GeminiInsightService {
                 3. Focus customer retention campaigns on high-monetary clusters showing increased recency days.
                 """, formatTitle(category), reason != null ? reason : "Offline",
                 telemetry.getOrDefault("totalRevenue", "N/A"),
-                telemetry.getOrDefault("averageBasketValue", "N/A"),
+                telemetry.getOrDefault("averageTransactionValue", "N/A"),
                 telemetry.getOrDefault("grossMarginPercentage", "N/A"));
     }
 }

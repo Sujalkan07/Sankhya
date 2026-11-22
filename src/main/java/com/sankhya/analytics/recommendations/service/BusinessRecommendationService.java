@@ -8,6 +8,7 @@ import com.sankhya.analytics.recommendations.enums.RecommendationSeverity;
 import com.sankhya.analytics.recommendations.enums.RecommendationStatus;
 import com.sankhya.analytics.recommendations.repository.BusinessRecommendationRepository;
 import com.sankhya.customers.repository.CustomerRepository;
+import com.sankhya.dataset.repository.UnifiedSalesMartRepository;
 import com.sankhya.inventory.entity.InventorySnapshot;
 import com.sankhya.inventory.repository.InventorySnapshotRepository;
 import com.sankhya.products.entity.Product;
@@ -33,19 +34,22 @@ public class BusinessRecommendationService {
     private final InventorySnapshotRepository inventorySnapshotRepository;
     private final ProductRepository productRepository;
     private final CustomerRepository customerRepository;
+    private final UnifiedSalesMartRepository unifiedSalesMartRepository;
 
     public BusinessRecommendationService(BusinessRecommendationRepository businessRecommendationRepository,
                                          WorkspaceRepository workspaceRepository,
                                          SalesTransactionRepository salesTransactionRepository,
                                          InventorySnapshotRepository inventorySnapshotRepository,
                                          ProductRepository productRepository,
-                                         CustomerRepository customerRepository) {
+                                         CustomerRepository customerRepository,
+                                         UnifiedSalesMartRepository unifiedSalesMartRepository) {
         this.businessRecommendationRepository = businessRecommendationRepository;
         this.workspaceRepository = workspaceRepository;
         this.salesTransactionRepository = salesTransactionRepository;
         this.inventorySnapshotRepository = inventorySnapshotRepository;
         this.productRepository = productRepository;
         this.customerRepository = customerRepository;
+        this.unifiedSalesMartRepository = unifiedSalesMartRepository;
     }
 
     @Transactional
@@ -53,73 +57,41 @@ public class BusinessRecommendationService {
         Workspace workspace = workspaceRepository.findById(workspaceId)
                 .orElseThrow(() -> new IllegalArgumentException("Workspace not found: " + workspaceId));
 
+        boolean useMart = unifiedSalesMartRepository.countByWorkspaceId(workspaceId) > 0;
         List<BusinessRecommendation> generated = new ArrayList<>();
 
         // 1. RULE_STOCKOUT_RISK & 2. RULE_OVERSTOCK_HOLDING_COST
-        List<InventorySnapshot> snapshots = inventorySnapshotRepository.findLatestSnapshotsByWorkspaceId(workspaceId);
-        List<Product> products = productRepository.findByWorkspaceId(workspaceId);
-        Map<String, Product> productMap = products.stream()
-                .collect(Collectors.toMap(Product::getProductId, p -> p, (a, b) -> a));
-
-        for (InventorySnapshot s : snapshots) {
-            String pId = s.getProductId();
-            Product p = productMap.get(pId);
-            String name = p != null ? p.getProductName() : pId;
-            int closing = s.getClosingStock() != null ? s.getClosingStock() : 0;
-            int reorder = s.getReorderLevel() != null ? s.getReorderLevel() : 0;
-
-            // Stockout Risk
-            if (closing <= reorder) {
-                String ruleId = "RULE_STOCKOUT_RISK";
-                if (!isAlreadyActive(workspaceId, ruleId, pId)) {
-                    int suggested = Math.max((2 * reorder) - closing, Math.max(reorder, 10));
-                    RecommendationSeverity severity = closing <= 0 ? RecommendationSeverity.CRITICAL : RecommendationSeverity.HIGH;
-                    int priority = closing <= 0 ? 1 : 2;
-
-                    BusinessRecommendation rec = new BusinessRecommendation(
-                            workspace,
-                            RecommendationCategory.INVENTORY,
-                            severity,
-                            priority,
-                            ruleId,
-                            "Replenish Stock: " + name,
-                            String.format("Product '%s' (SKU: %s) has closing stock of %d units, below safety threshold of %d units.",
-                                    name, pId, closing, reorder),
-                            String.format("Place an immediate purchase order for %d units to prevent stockout and lost sales.", suggested),
-                            pId,
-                            String.valueOf(closing),
-                            String.valueOf(reorder)
-                    );
-                    generated.add(businessRecommendationRepository.save(rec));
+        if (useMart) {
+            List<Object[]> martInv = unifiedSalesMartRepository.findLatestInventoryPerProductByWorkspaceId(workspaceId);
+            for (Object[] row : martInv) {
+                String pId = (String) row[0];
+                String name = row[1] != null ? row[1].toString() : pId;
+                int closing = row[6] != null ? ((Number) row[6]).intValue() : 0;
+                int reorder = row[7] != null ? ((Number) row[7]).intValue() : 0;
+                if (row[6] != null) {
+                    evaluateInventoryRules(workspace, workspaceId, pId, name, closing, reorder, generated);
                 }
             }
+        } else {
+            List<InventorySnapshot> snapshots = inventorySnapshotRepository.findLatestSnapshotsByWorkspaceId(workspaceId);
+            List<Product> products = productRepository.findByWorkspaceId(workspaceId);
+            Map<String, Product> productMap = products.stream()
+                    .collect(Collectors.toMap(Product::getProductId, p -> p, (a, b) -> a));
 
-            // Overstock Holding Cost
-            if (reorder > 0 && closing > 3 * reorder) {
-                String ruleId = "RULE_OVERSTOCK_HOLDING_COST";
-                if (!isAlreadyActive(workspaceId, ruleId, pId)) {
-                    BusinessRecommendation rec = new BusinessRecommendation(
-                            workspace,
-                            RecommendationCategory.INVENTORY,
-                            RecommendationSeverity.MEDIUM,
-                            4,
-                            ruleId,
-                            "Excess Inventory: " + name,
-                            String.format("Product '%s' (SKU: %s) has %d units in stock, exceeding 3x safety reorder level (%d units).",
-                                    name, pId, closing, reorder),
-                            "Consider a promotional discount, feature display, or product bundle to improve inventory turnover.",
-                            pId,
-                            String.valueOf(closing),
-                            String.valueOf(reorder * 3)
-                    );
-                    generated.add(businessRecommendationRepository.save(rec));
-                }
+            for (InventorySnapshot s : snapshots) {
+                String pId = s.getProductId();
+                Product p = productMap.get(pId);
+                String name = p != null ? p.getProductName() : pId;
+                int closing = s.getClosingStock() != null ? s.getClosingStock() : 0;
+                int reorder = s.getReorderLevel() != null ? s.getReorderLevel() : 0;
+                evaluateInventoryRules(workspace, workspaceId, pId, name, closing, reorder, generated);
             }
         }
 
         // 3. RULE_TOP_PRODUCT_MARGIN_OPTIMIZATION
-        List<Object[]> prodRows = salesTransactionRepository.findProductPerformanceBetween(
-                workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+        List<Object[]> prodRows = useMart
+                ? unifiedSalesMartRepository.findProductPerformanceBetween(workspaceId, filter.getStartDateTime(), filter.getEndDateTime())
+                : salesTransactionRepository.findProductPerformanceBetween(workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
         for (Object[] row : prodRows) {
             String pId = (String) row[0];
             String pName = (String) row[1];
@@ -154,19 +126,22 @@ public class BusinessRecommendationService {
         }
 
         // 4. RULE_CUSTOMER_CHURN_RISK
-        List<Object[]> rfmRows = salesTransactionRepository.findCustomerRfmMetricsBetween(
-                workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+        List<Object[]> rfmRows = useMart
+                ? unifiedSalesMartRepository.findCustomerRfmMetricsBetween(workspaceId, filter.getStartDateTime(), filter.getEndDateTime())
+                : salesTransactionRepository.findCustomerRfmMetricsBetween(workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
         LocalDateTime endDateTime = filter.getEndDateTime();
 
         for (Object[] row : rfmRows) {
             String cId = (String) row[0];
             if (cId == null || cId.trim().isEmpty()) continue;
-            LocalDateTime lastTxn = (LocalDateTime) row[1];
+            String displayName = useMart && row[1] != null ? row[1].toString() : cId;
+            LocalDateTime lastTxn = useMart ? (LocalDateTime) row[4] : (LocalDateTime) row[1];
+            if (lastTxn == null) continue;
             long recencyDays = Math.max(0, Duration.between(lastTxn, endDateTime).toDays());
-            long freq = ((Number) row[2]).longValue();
-            BigDecimal spend = (BigDecimal) row[3];
+            long freq = ((Number) (useMart ? row[5] : row[2])).longValue();
+            BigDecimal spend = (BigDecimal) (useMart ? row[6] : row[3]);
 
-            if (recencyDays > 30 && freq >= 3 && spend.compareTo(BigDecimal.valueOf(150.0)) >= 0) {
+            if (recencyDays > 30 && freq >= 3 && spend != null && spend.compareTo(BigDecimal.valueOf(150.0)) >= 0) {
                 String ruleId = "RULE_CUSTOMER_CHURN_RISK";
                 if (!isAlreadyActive(workspaceId, ruleId, cId)) {
                     BusinessRecommendation rec = new BusinessRecommendation(
@@ -175,9 +150,9 @@ public class BusinessRecommendationService {
                             RecommendationSeverity.HIGH,
                             2,
                             ruleId,
-                            "Win-Back High Value Customer: " + cId,
-                            String.format("Loyal customer %s previously completed %d purchases ($%s spend) but has not returned in %d days.",
-                                    cId, freq, AnalyticsMathUtils.roundMoney(spend), recencyDays),
+                            "Win-Back High Value Customer: " + displayName,
+                            String.format("Loyal customer %s (%s) previously completed %d purchases ($%s spend) but has not returned in %d days.",
+                                    displayName, cId, freq, AnalyticsMathUtils.roundMoney(spend), recencyDays),
                             "Trigger a personalized SMS or email win-back campaign with a 10% re-engagement voucher.",
                             cId,
                             recencyDays + " days",
@@ -189,13 +164,15 @@ public class BusinessRecommendationService {
         }
 
         // 5. RULE_REVENUE_DECLINE_ALERT
-        BigDecimal currRevenue = salesTransactionRepository.sumRevenueByWorkspaceIdAndDateBetween(
-                workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+        BigDecimal currRevenue = useMart
+                ? unifiedSalesMartRepository.sumRevenueByWorkspaceIdAndDateBetween(workspaceId, filter.getStartDateTime(), filter.getEndDateTime())
+                : salesTransactionRepository.sumRevenueByWorkspaceIdAndDateBetween(workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
         if (currRevenue == null) currRevenue = BigDecimal.ZERO;
 
         DateRangeFilter prevFilter = filter.getPrecedingComparisonFilter();
-        BigDecimal prevRevenue = salesTransactionRepository.sumRevenueByWorkspaceIdAndDateBetween(
-                workspaceId, prevFilter.getStartDateTime(), prevFilter.getEndDateTime());
+        BigDecimal prevRevenue = useMart
+                ? unifiedSalesMartRepository.sumRevenueByWorkspaceIdAndDateBetween(workspaceId, prevFilter.getStartDateTime(), prevFilter.getEndDateTime())
+                : salesTransactionRepository.sumRevenueByWorkspaceIdAndDateBetween(workspaceId, prevFilter.getStartDateTime(), prevFilter.getEndDateTime());
         if (prevRevenue == null) prevRevenue = BigDecimal.ZERO;
 
         if (prevRevenue.compareTo(BigDecimal.valueOf(100.0)) > 0) {
@@ -223,12 +200,13 @@ public class BusinessRecommendationService {
         }
 
         // 6. RULE_CATEGORY_CONCENTRATION
-        List<Object[]> catRows = salesTransactionRepository.findCategorySalesContributionBetween(
-                workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+        List<Object[]> catRows = useMart
+                ? unifiedSalesMartRepository.findCategorySalesContributionBetween(workspaceId, filter.getStartDateTime(), filter.getEndDateTime())
+                : salesTransactionRepository.findCategorySalesContributionBetween(workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
         for (Object[] row : catRows) {
             String cat = (String) row[0];
             BigDecimal rev = (BigDecimal) row[1];
-            if (currRevenue.compareTo(BigDecimal.ZERO) > 0) {
+            if (currRevenue.compareTo(BigDecimal.ZERO) > 0 && rev != null) {
                 BigDecimal share = AnalyticsMathUtils.safePercentage(rev, currRevenue);
                 if (share.compareTo(BigDecimal.valueOf(50.0)) >= 0 && catRows.size() > 1) {
                     String ruleId = "RULE_CATEGORY_CONCENTRATION";
@@ -254,11 +232,13 @@ public class BusinessRecommendationService {
         }
 
         // 7. RULE_REPEAT_PURCHASE_LOW
-        long activeCustCount = salesTransactionRepository.countActiveCustomersBetween(
-                workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+        long activeCustCount = useMart
+                ? unifiedSalesMartRepository.countActiveCustomersBetween(workspaceId, filter.getStartDateTime(), filter.getEndDateTime())
+                : salesTransactionRepository.countActiveCustomersBetween(workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
         if (activeCustCount >= 10) {
-            List<String> returningIds = salesTransactionRepository.findReturningCustomerIdsBetween(
-                    workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+            List<String> returningIds = useMart
+                    ? unifiedSalesMartRepository.findReturningCustomerIdsBetween(workspaceId, filter.getStartDateTime(), filter.getEndDateTime())
+                    : salesTransactionRepository.findReturningCustomerIdsBetween(workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
             BigDecimal repeatRate = AnalyticsMathUtils.safePercentage(BigDecimal.valueOf(returningIds.size()), BigDecimal.valueOf(activeCustCount));
             if (repeatRate.compareTo(BigDecimal.valueOf(20.0)) < 0) {
                 String ruleId = "RULE_REPEAT_PURCHASE_LOW";
@@ -283,6 +263,55 @@ public class BusinessRecommendationService {
         }
 
         return businessRecommendationRepository.findByWorkspaceIdOrderByPriorityAscGeneratedAtDesc(workspaceId);
+    }
+
+    private void evaluateInventoryRules(Workspace workspace, Long workspaceId, String pId, String name,
+                                        int closing, int reorder, List<BusinessRecommendation> generated) {
+        if (closing <= reorder) {
+            String ruleId = "RULE_STOCKOUT_RISK";
+            if (!isAlreadyActive(workspaceId, ruleId, pId)) {
+                int suggested = Math.max((2 * reorder) - closing, Math.max(reorder, 10));
+                RecommendationSeverity severity = closing <= 0 ? RecommendationSeverity.CRITICAL : RecommendationSeverity.HIGH;
+                int priority = closing <= 0 ? 1 : 2;
+
+                BusinessRecommendation rec = new BusinessRecommendation(
+                        workspace,
+                        RecommendationCategory.INVENTORY,
+                        severity,
+                        priority,
+                        ruleId,
+                        "Replenish Stock: " + name,
+                        String.format("Product '%s' (SKU: %s) has closing stock of %d units, below safety threshold of %d units.",
+                                name, pId, closing, reorder),
+                        String.format("Place an immediate purchase order for %d units to prevent stockout and lost sales.", suggested),
+                        pId,
+                        String.valueOf(closing),
+                        String.valueOf(reorder)
+                );
+                generated.add(businessRecommendationRepository.save(rec));
+            }
+        }
+
+        if (reorder > 0 && closing > 3 * reorder) {
+            String ruleId = "RULE_OVERSTOCK_HOLDING_COST";
+            if (!isAlreadyActive(workspaceId, ruleId, pId)) {
+                BusinessRecommendation rec = new BusinessRecommendation(
+                        workspace,
+                        RecommendationCategory.INVENTORY,
+                        RecommendationSeverity.MEDIUM,
+                        4,
+                        ruleId,
+                        "Excess Inventory: " + name,
+                        String.format("Product '%s' (SKU: %s) has %d units in stock, exceeding 3x safety reorder level (%d units).",
+                                name, pId, closing, reorder),
+                        "Consider a promotional discount, feature display, or product bundle to improve inventory turnover.",
+                        pId,
+                        String.valueOf(closing),
+                        String.valueOf(reorder * 3)
+                );
+                generated.add(businessRecommendationRepository.save(rec));
+            }
+        }
     }
 
     private boolean isAlreadyActive(Long workspaceId, String ruleId, String metric) {

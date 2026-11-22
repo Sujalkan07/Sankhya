@@ -5,6 +5,8 @@ import com.sankhya.ai.gemini.GeminiInsightService;
 import com.sankhya.analytics.common.dto.AnalyticsReadinessResponse;
 import com.sankhya.analytics.common.dto.DateRangeFilter;
 import com.sankhya.analytics.common.enums.DatePreset;
+import com.sankhya.analytics.inventory.dto.InventoryIntelligenceResponse;
+import com.sankhya.analytics.inventory.service.InventoryIntelligenceService;
 import com.sankhya.analytics.overview.dto.ExecutiveOverviewResponse;
 import com.sankhya.analytics.overview.service.ExecutiveOverviewService;
 import com.sankhya.analytics.recommendations.entity.BusinessRecommendation;
@@ -37,6 +39,7 @@ public class AiInsightsController {
 
     private final WorkspaceService workspaceService;
     private final ExecutiveOverviewService executiveOverviewService;
+    private final InventoryIntelligenceService inventoryIntelligenceService;
     private final DatasetQueryService datasetQueryService;
     private final BusinessRecommendationRepository businessRecommendationRepository;
     private final MLJobService mlJobService;
@@ -50,6 +53,7 @@ public class AiInsightsController {
 
     public AiInsightsController(WorkspaceService workspaceService,
                                 ExecutiveOverviewService executiveOverviewService,
+                                InventoryIntelligenceService inventoryIntelligenceService,
                                 DatasetQueryService datasetQueryService,
                                 BusinessRecommendationRepository businessRecommendationRepository,
                                 MLJobService mlJobService,
@@ -62,6 +66,7 @@ public class AiInsightsController {
                                 DemandPredictionRepository demandPredictionRepository) {
         this.workspaceService = workspaceService;
         this.executiveOverviewService = executiveOverviewService;
+        this.inventoryIntelligenceService = inventoryIntelligenceService;
         this.datasetQueryService = datasetQueryService;
         this.businessRecommendationRepository = businessRecommendationRepository;
         this.mlJobService = mlJobService;
@@ -102,29 +107,42 @@ public class AiInsightsController {
         AnalyticsReadinessResponse readiness = datasetQueryService.getAnalyticsReadiness(wsId);
         model.addAttribute("readiness", readiness);
 
-        // Baseline telemetry for What-If simulator
-        BigDecimal baselineRevenue = BigDecimal.valueOf(4865000);
-        BigDecimal baselineMargin = BigDecimal.valueOf(18.3);
-        BigDecimal baselineWorkingCapital = BigDecimal.valueOf(320000);
+        // Baseline telemetry derived strictly from actual workspace analytics
+        BigDecimal baselineRevenue = BigDecimal.ZERO;
+        BigDecimal baselineMargin = BigDecimal.ZERO;
+        BigDecimal baselineWorkingCapital = BigDecimal.ZERO;
+        boolean simulatorReady = false;
 
         if (readiness.isSalesReady()) {
-            try {
-                ExecutiveOverviewResponse overview = executiveOverviewService.getExecutiveOverview(
+            ExecutiveOverviewResponse overview = executiveOverviewService.getExecutiveOverview(
+                    wsId, DateRangeFilter.of(DatePreset.LAST_30_DAYS, null, null));
+            if (overview.getTotalRevenue() == null
+                    || !(overview.getTotalRevenue().getCurrentValue() instanceof BigDecimal rev30)
+                    || rev30.compareTo(BigDecimal.ZERO) <= 0) {
+                overview = executiveOverviewService.getExecutiveOverview(
+                        wsId, DateRangeFilter.of(DatePreset.THIS_YEAR, null, null));
+            }
+            if (overview.getTotalRevenue() != null && overview.getTotalRevenue().getCurrentValue() instanceof BigDecimal revVal
+                    && revVal.compareTo(BigDecimal.ZERO) > 0) {
+                baselineRevenue = revVal;
+            }
+            if (overview.getGrossMarginPercentage() != null) {
+                baselineMargin = overview.getGrossMarginPercentage();
+            }
+            if (readiness.isInventoryReady()) {
+                InventoryIntelligenceResponse inv = inventoryIntelligenceService.getInventoryIntelligence(
                         wsId, DateRangeFilter.of(DatePreset.LAST_30_DAYS, null, null));
-                if (overview.getTotalRevenue() != null && overview.getTotalRevenue().getCurrentValue() instanceof BigDecimal revVal
-                        && revVal.compareTo(BigDecimal.ZERO) > 0) {
-                    baselineRevenue = revVal;
+                if (inv.getKpis() != null && inv.getKpis().getTotalCostValuation() != null) {
+                    baselineWorkingCapital = inv.getKpis().getTotalCostValuation();
                 }
-                if (overview.getGrossMarginPercentage() != null
-                        && overview.getGrossMarginPercentage().compareTo(BigDecimal.ZERO) > 0) {
-                    baselineMargin = overview.getGrossMarginPercentage();
-                }
-            } catch (Exception ignored) {}
+            }
+            simulatorReady = baselineRevenue.compareTo(BigDecimal.ZERO) > 0;
         }
 
         model.addAttribute("baselineRevenue", baselineRevenue);
         model.addAttribute("baselineMargin", baselineMargin);
         model.addAttribute("baselineWorkingCapital", baselineWorkingCapital);
+        model.addAttribute("simulatorReady", simulatorReady);
 
         // Fetch active recommendations
         List<BusinessRecommendation> activeRecs = businessRecommendationRepository.findActiveByWorkspaceId(wsId);

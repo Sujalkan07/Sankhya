@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<html xmlns:th="http://www.thymeleaf.org" th:fragment="html(content)" lang="en">
 <head th:replace="~{fragments/head :: head(${pageTitle})}"></head>
 <body class="bg-background text-on-surface font-body antialiased min-h-screen">
 
@@ -20,7 +20,7 @@
                 <div th:replace="~{fragments/alerts :: alerts}"></div>
 
                 <!-- Page Content Injected Here -->
-                <div th:insert="${content}"></div>
+                <div th:replace="${content}"></div>
             </div>
         </main>
     </div>

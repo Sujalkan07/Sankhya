@@ -1,7 +1,10 @@
 package com.sankhya.analytics.common.dto;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class AnalyticsReadinessResponse {
 
@@ -12,13 +15,24 @@ public class AnalyticsReadinessResponse {
     private boolean recommendationsReady;
     private boolean overallReady;
 
+    // ML module-specific readiness flags
+    private boolean aprioriReady;
+    private boolean kmeansReady;
+    private boolean randomForestReady;
+    private boolean linearRegressionReady;
+
+    private String dataSource = "NONE";
     private long salesRecordCount;
     private long productRecordCount;
     private long customerRecordCount;
     private long inventoryRecordCount;
+    private long distinctTransactionCount;
+    private LocalDateTime minTransactionDate;
+    private LocalDateTime maxTransactionDate;
 
     private List<String> missingDependencies = new ArrayList<>();
     private List<String> dataQualityWarnings = new ArrayList<>();
+    private Map<String, String> moduleBlockReasons = new LinkedHashMap<>();
 
     public AnalyticsReadinessResponse() {}
 
@@ -116,5 +130,77 @@ public class AnalyticsReadinessResponse {
 
     public void setDataQualityWarnings(List<String> dataQualityWarnings) {
         this.dataQualityWarnings = dataQualityWarnings;
+    }
+
+    public boolean isAprioriReady() {
+        return aprioriReady;
+    }
+
+    public void setAprioriReady(boolean aprioriReady) {
+        this.aprioriReady = aprioriReady;
+    }
+
+    public boolean isKmeansReady() {
+        return kmeansReady;
+    }
+
+    public void setKmeansReady(boolean kmeansReady) {
+        this.kmeansReady = kmeansReady;
+    }
+
+    public boolean isRandomForestReady() {
+        return randomForestReady;
+    }
+
+    public void setRandomForestReady(boolean randomForestReady) {
+        this.randomForestReady = randomForestReady;
+    }
+
+    public boolean isLinearRegressionReady() {
+        return linearRegressionReady;
+    }
+
+    public void setLinearRegressionReady(boolean linearRegressionReady) {
+        this.linearRegressionReady = linearRegressionReady;
+    }
+
+    public String getDataSource() {
+        return dataSource;
+    }
+
+    public void setDataSource(String dataSource) {
+        this.dataSource = dataSource;
+    }
+
+    public long getDistinctTransactionCount() {
+        return distinctTransactionCount;
+    }
+
+    public void setDistinctTransactionCount(long distinctTransactionCount) {
+        this.distinctTransactionCount = distinctTransactionCount;
+    }
+
+    public LocalDateTime getMinTransactionDate() {
+        return minTransactionDate;
+    }
+
+    public void setMinTransactionDate(LocalDateTime minTransactionDate) {
+        this.minTransactionDate = minTransactionDate;
+    }
+
+    public LocalDateTime getMaxTransactionDate() {
+        return maxTransactionDate;
+    }
+
+    public void setMaxTransactionDate(LocalDateTime maxTransactionDate) {
+        this.maxTransactionDate = maxTransactionDate;
+    }
+
+    public Map<String, String> getModuleBlockReasons() {
+        return moduleBlockReasons;
+    }
+
+    public void setModuleBlockReasons(Map<String, String> moduleBlockReasons) {
+        this.moduleBlockReasons = moduleBlockReasons;
     }
 }

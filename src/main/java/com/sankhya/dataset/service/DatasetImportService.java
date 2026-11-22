@@ -44,9 +44,14 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class DatasetImportService {
+
+    private static final Logger log = LoggerFactory.getLogger(DatasetImportService.class);
 
     private final DatasetImportRepository importRepository;
     private final DatasetRepository datasetRepository;
@@ -267,6 +272,8 @@ public class DatasetImportService {
 
         if (datasetImport.getDatasetType() == DatasetType.UNIFIED_MART) {
             importedCount = importUnifiedMart(workspace, dataset, datasetImport, diskFile, parser, canonicalToHeader, invalidRowNumbers, skipInvalidRows);
+            dataset.setRecordCount((int) unifiedSalesMartRepository.countByWorkspaceId(workspace.getId()));
+            datasetImport.setValidRows(importedCount);
         } else {
             ParsedFileData fullData = getFullData(datasetImport);
             switch (datasetImport.getDatasetType()) {
@@ -276,13 +283,17 @@ public class DatasetImportService {
                 case INVENTORY_STOCK -> importedCount = importInventory(workspace, dataset, datasetImport, fullData, canonicalToHeader, invalidRowNumbers, skipInvalidRows);
                 case UNIFIED_MART -> {}
             }
+            dataset.setRecordCount(dataset.getRecordCount() + importedCount);
         }
 
-        dataset.setRecordCount(dataset.getRecordCount() + importedCount);
         dataset.setLastUpdated(LocalDateTime.now());
         datasetRepository.save(dataset);
 
-        if (!invalidRowNumbers.isEmpty()) {
+        if (importedCount > 0 && workspace != null && !"COMPLETED".equals(workspace.getOnboardingStatus())) {
+            workspace.setOnboardingStatus("COMPLETED");
+        }
+
+        if (!invalidRowNumbers.isEmpty() || datasetImport.getStatus() == ImportStatus.COMPLETED_WITH_ERRORS) {
             datasetImport.setStatus(ImportStatus.COMPLETED_WITH_ERRORS);
         } else {
             datasetImport.setStatus(ImportStatus.COMPLETED);
@@ -311,7 +322,16 @@ public class DatasetImportService {
         """;
 
         LocalDateTime now = LocalDateTime.now();
-        int[] totalImported = new int[1];
+        // [0]=processedRows, [1]=skippedRows, [2]=insertedMartRows, [3]=failedInsertRows
+        int[] counters = new int[4];
+
+        // Pre-load existing workspace dimensions for idempotent upsert
+        Map<String, Product> existingProducts = productRepository.findByWorkspaceId(workspace.getId()).stream()
+                .collect(Collectors.toMap(Product::getProductId, p -> p, (a, b) -> a));
+        Map<String, Customer> existingCustomers = customerRepository.findByWorkspaceId(workspace.getId()).stream()
+                .collect(Collectors.toMap(Customer::getCustomerId, c -> c, (a, b) -> a));
+        Map<String, InventorySnapshot> existingSnapshots = inventorySnapshotRepository.findByWorkspaceId(workspace.getId()).stream()
+                .collect(Collectors.toMap(InventorySnapshot::getInventoryId, s -> s, (a, b) -> a));
 
         // Track distinct products, customers, and latest inventory for dimension synchronization
         Map<String, Product> distinctProducts = new LinkedHashMap<>();
@@ -323,9 +343,12 @@ public class DatasetImportService {
             List<Object[]> batchParams = new ArrayList<>(batch.size());
 
             for (Map<String, String> row : batch) {
-                totalImported[0]++;
-                long rowNum = totalImported[0] + 1; // Row 1 is header
-                if (invalidRows.contains(rowNum) && skipInvalid) continue;
+                counters[0]++; // processedRows
+                long rowNum = counters[0] + 1L; // Row 1 is header
+                if (invalidRows.contains(rowNum) && skipInvalid) {
+                    counters[1]++; // skippedRows
+                    continue;
+                }
 
                 String txId = getVal(row, mapping, "transaction_id");
                 String txDateRaw = getVal(row, mapping, "transaction_date");
@@ -338,6 +361,7 @@ public class DatasetImportService {
                 String sellingPriceRaw = getVal(row, mapping, "selling_price");
 
                 if (txId == null || txId.isBlank() || txDateRaw == null || prodId == null || prodName == null) {
+                    counters[1]++; // skippedRows
                     continue;
                 }
 
@@ -347,7 +371,10 @@ public class DatasetImportService {
                 BigDecimal unitCost = DataCleaningUtils.cleanDecimal(unitCostRaw);
                 BigDecimal sellingPrice = DataCleaningUtils.cleanDecimal(sellingPriceRaw);
 
-                if (txDate == null || quantity == null || unitPrice == null) continue;
+                if (txDate == null || quantity == null || quantity <= 0 || unitPrice == null) {
+                    counters[1]++; // skippedRows
+                    continue;
+                }
                 if (unitCost == null) unitCost = BigDecimal.ZERO;
                 if (sellingPrice == null) sellingPrice = unitPrice;
 
@@ -408,59 +435,88 @@ public class DatasetImportService {
                         now
                 });
 
-                // Deduplicated product tracking (only 1,000 SKUs)
-                if (!distinctProducts.containsKey(prodId.trim())) {
-                    Product p = new Product(workspace, dataset, prodId.trim(), prodName.trim());
+                // Upsert distinct Product dimension
+                String normalizedProdId = prodId.trim();
+                if (!distinctProducts.containsKey(normalizedProdId)) {
+                    Product p = existingProducts.getOrDefault(normalizedProdId,
+                            new Product(workspace, dataset, normalizedProdId, prodName.trim()));
+                    p.setProductName(prodName.trim());
                     p.setCategory(category.trim());
                     p.setSubcategory(subcategory);
                     p.setBrand(brand);
                     p.setUnitCost(unitCost);
                     p.setSellingPrice(sellingPrice);
+                    p.setDataset(dataset);
                     p.setDatasetImport(datasetImport);
-                    distinctProducts.put(prodId.trim(), p);
+                    distinctProducts.put(normalizedProdId, p);
                 }
 
-                // Deduplicated customer tracking (only 9,975 customers)
-                if (customerId != null && !customerId.isBlank() && !distinctCustomers.containsKey(customerId.trim())) {
-                    Customer c = new Customer(workspace, dataset, customerId.trim());
-                    c.setCustomerName(customerName != null ? customerName.trim() : customerId.trim());
-                    c.setCity(city);
-                    c.setCustomerSegment(customerSegment);
-                    c.setDatasetImport(datasetImport);
-                    distinctCustomers.put(customerId.trim(), c);
+                // Upsert distinct Customer dimension
+                if (customerId != null && !customerId.isBlank()) {
+                    String normalizedCustId = customerId.trim();
+                    if (!distinctCustomers.containsKey(normalizedCustId)) {
+                        Customer c = existingCustomers.getOrDefault(normalizedCustId,
+                                new Customer(workspace, dataset, normalizedCustId));
+                        c.setCustomerName(customerName != null ? customerName.trim() : normalizedCustId);
+                        c.setCity(city);
+                        c.setCustomerSegment(customerSegment);
+                        c.setDataset(dataset);
+                        c.setDatasetImport(datasetImport);
+                        distinctCustomers.put(normalizedCustId, c);
+                    }
                 }
 
-                // Deduplicated inventory tracking (1,000 items)
-                if (!distinctSnapshots.containsKey(prodId.trim()) && invDate != null && closingStock != null) {
-                    InventorySnapshot s = new InventorySnapshot(workspace, dataset, "INV_" + invDate + "_" + prodId.trim(), invDate, prodId.trim(), closingStock);
+                // Upsert distinct latest InventorySnapshot dimension
+                if (!distinctSnapshots.containsKey(normalizedProdId) && invDate != null && closingStock != null) {
+                    String snapshotId = "INV_" + invDate + "_" + normalizedProdId;
+                    InventorySnapshot s = existingSnapshots.getOrDefault(snapshotId,
+                            new InventorySnapshot(workspace, dataset, snapshotId, invDate, normalizedProdId, closingStock));
+                    s.setClosingStock(closingStock);
                     s.setUnitCost(unitCost);
                     s.setReorderLevel(reorderLevel != null ? reorderLevel : 0);
+                    s.setDataset(dataset);
                     s.setDatasetImport(datasetImport);
-                    distinctSnapshots.put(prodId.trim(), s);
+                    distinctSnapshots.put(normalizedProdId, s);
                 }
             }
 
             if (!batchParams.isEmpty()) {
-                jdbcTemplate.batchUpdate(sql, batchParams);
+                try {
+                    jdbcTemplate.batchUpdate(sql, batchParams);
+                    counters[2] += batchParams.size(); // insertedMartRows
+                } catch (Exception ex) {
+                    counters[3] += batchParams.size(); // failedInsertRows
+                    log.error("Batch insert failed during unified mart import for workspace {}: {}", workspace.getId(), ex.getMessage(), ex);
+                    throw ex;
+                }
             }
         });
 
-        // Sync operational dimension tables for backward compatibility
-        try {
-            if (!distinctProducts.isEmpty()) {
-                productRepository.saveAll(distinctProducts.values());
-            }
-            if (!distinctCustomers.isEmpty()) {
-                customerRepository.saveAll(distinctCustomers.values());
-            }
-            if (!distinctSnapshots.isEmpty()) {
-                inventorySnapshotRepository.saveAll(distinctSnapshots.values());
-            }
-        } catch (Exception ex) {
-            // Non-fatal dimension sync logging
+        // Synchronize normalized dimension tables cleanly inside transaction (no silent swallowing)
+        int syncedProducts = 0;
+        int syncedCustomers = 0;
+        int syncedSnapshots = 0;
+
+        if (!distinctProducts.isEmpty()) {
+            syncedProducts = productRepository.saveAll(distinctProducts.values()).size();
+        }
+        if (!distinctCustomers.isEmpty()) {
+            syncedCustomers = customerRepository.saveAll(distinctCustomers.values()).size();
+        }
+        if (!distinctSnapshots.isEmpty()) {
+            syncedSnapshots = inventorySnapshotRepository.saveAll(distinctSnapshots.values()).size();
         }
 
-        return totalImported[0];
+        String summaryMsg = String.format(
+                "Processed=%d, Inserted=%d, Skipped=%d, Failed=%d, Synced[Products=%d, Customers=%d, Inventory=%d]",
+                counters[0], counters[2], counters[1], counters[3], syncedProducts, syncedCustomers, syncedSnapshots);
+        datasetImport.setErrorSummary(summaryMsg);
+        if (counters[1] > 0 && counters[2] > 0) {
+            datasetImport.setStatus(ImportStatus.COMPLETED_WITH_ERRORS);
+        }
+        log.info("Unified Mart import summary for workspace {}: {}", workspace.getId(), summaryMsg);
+
+        return counters[2];
     }
 
     private int importProducts(Workspace workspace, Dataset dataset, DatasetImport datasetImport,

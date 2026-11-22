@@ -46,6 +46,9 @@ class AnalyticalReportingServiceTest {
     private SalesTransactionRepository salesTransactionRepository;
 
     @Mock
+    private com.sankhya.dataset.repository.UnifiedSalesMartRepository unifiedSalesMartRepository;
+
+    @Mock
     private ProductIntelligenceService productIntelligenceService;
 
     @Mock
@@ -63,6 +66,7 @@ class AnalyticalReportingServiceTest {
     void setUp() {
         analyticalReportingService = new AnalyticalReportingService(
                 salesTransactionRepository,
+                unifiedSalesMartRepository,
                 productIntelligenceService,
                 customerIntelligenceService,
                 inventoryIntelligenceService,

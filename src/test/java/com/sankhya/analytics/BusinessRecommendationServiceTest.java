@@ -57,6 +57,9 @@ class BusinessRecommendationServiceTest {
     @Mock
     private CustomerRepository customerRepository;
 
+    @Mock
+    private com.sankhya.dataset.repository.UnifiedSalesMartRepository unifiedSalesMartRepository;
+
     private BusinessRecommendationService businessRecommendationService;
 
     @BeforeEach
@@ -67,7 +70,8 @@ class BusinessRecommendationServiceTest {
                 salesTransactionRepository,
                 inventorySnapshotRepository,
                 productRepository,
-                customerRepository
+                customerRepository,
+                unifiedSalesMartRepository
         );
     }
 

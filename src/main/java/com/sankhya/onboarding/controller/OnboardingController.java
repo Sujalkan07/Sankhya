@@ -1,8 +1,10 @@
 package com.sankhya.onboarding.controller;
 
+import com.sankhya.analytics.common.dto.AnalyticsReadinessResponse;
 import com.sankhya.dataset.entity.Dataset;
 import com.sankhya.dataset.enums.DatasetType;
 import com.sankhya.dataset.schema.DatasetSchemaDefinition;
+import com.sankhya.dataset.service.DatasetQueryService;
 import com.sankhya.dataset.service.DatasetService;
 import com.sankhya.security.AuthenticationSuccessHandler;
 import com.sankhya.security.CustomUserDetails;
@@ -32,15 +34,18 @@ public class OnboardingController {
     private final WorkspaceRepository workspaceRepository;
     private final UserRepository userRepository;
     private final DatasetService datasetService;
+    private final DatasetQueryService datasetQueryService;
 
     public OnboardingController(WorkspaceService workspaceService,
                                 WorkspaceRepository workspaceRepository,
                                 UserRepository userRepository,
-                                DatasetService datasetService) {
+                                DatasetService datasetService,
+                                DatasetQueryService datasetQueryService) {
         this.workspaceService = workspaceService;
         this.workspaceRepository = workspaceRepository;
         this.userRepository = userRepository;
         this.datasetService = datasetService;
+        this.datasetQueryService = datasetQueryService;
     }
 
     // Step 2: Supermarket Setup Wizard
@@ -157,11 +162,23 @@ public class OnboardingController {
                                      RedirectAttributes redirectAttributes) {
         Workspace activeWorkspace = workspaceService.getActiveWorkspace(session, userDetails.getId());
         if (activeWorkspace != null) {
-            activeWorkspace.setOnboardingStatus("COMPLETED");
+            AnalyticsReadinessResponse readiness = datasetQueryService.getAnalyticsReadiness(activeWorkspace.getId());
+            if (readiness != null && readiness.isOverallReady()) {
+                activeWorkspace.setOnboardingStatus("COMPLETED");
+                redirectAttributes.addFlashAttribute("successMessage",
+                        "Onboarding completed successfully! Welcome to your Sankhya intelligence command center.");
+            } else if (readiness != null && (readiness.isSalesReady() || readiness.isProductReady()
+                    || readiness.isCustomerReady() || readiness.isInventoryReady())) {
+                activeWorkspace.setOnboardingStatus("PARTIALLY_COMPLETED");
+                redirectAttributes.addFlashAttribute("infoMessage",
+                        "Store setup completed with partial datasets. Upload complete datasets to unlock all analytics modules.");
+            } else {
+                activeWorkspace.setOnboardingStatus("COMPLETED_WITHOUT_DATA");
+                redirectAttributes.addFlashAttribute("infoMessage",
+                        "Store profile saved without datasets. Upload your Unified Sales Mart CSV from the Datasets page to activate analytics.");
+            }
             workspaceRepository.save(activeWorkspace);
         }
-        redirectAttributes.addFlashAttribute("successMessage",
-                "Onboarding completed successfully! Welcome to your Sankhya intelligence command center.");
         return "redirect:/dashboard";
     }
 
@@ -172,7 +189,7 @@ public class OnboardingController {
                                  RedirectAttributes redirectAttributes) {
         Workspace activeWorkspace = workspaceService.getActiveWorkspace(session, userDetails.getId());
         if (activeWorkspace != null) {
-            activeWorkspace.setOnboardingStatus("COMPLETED");
+            activeWorkspace.setOnboardingStatus("SKIPPED");
             workspaceRepository.save(activeWorkspace);
         }
         redirectAttributes.addFlashAttribute("infoMessage",

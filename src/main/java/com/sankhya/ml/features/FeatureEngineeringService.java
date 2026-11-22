@@ -3,6 +3,8 @@ package com.sankhya.ml.features;
 import com.sankhya.customers.entity.Customer;
 import com.sankhya.customers.repository.CustomerRepository;
 import com.sankhya.dataset.repository.UnifiedSalesMartRepository;
+import com.sankhya.inventory.entity.InventorySnapshot;
+import com.sankhya.inventory.repository.InventorySnapshotRepository;
 import com.sankhya.ml.enums.DemandClass;
 import com.sankhya.products.entity.Product;
 import com.sankhya.products.repository.ProductRepository;
@@ -25,23 +27,26 @@ public class FeatureEngineeringService {
     private final ProductRepository productRepository;
     private final SalesTransactionRepository salesTransactionRepository;
     private final UnifiedSalesMartRepository unifiedSalesMartRepository;
+    private final InventorySnapshotRepository inventorySnapshotRepository;
 
     public FeatureEngineeringService(CustomerRepository customerRepository,
                                      ProductRepository productRepository,
                                      SalesTransactionRepository salesTransactionRepository,
-                                     UnifiedSalesMartRepository unifiedSalesMartRepository) {
+                                     UnifiedSalesMartRepository unifiedSalesMartRepository,
+                                     InventorySnapshotRepository inventorySnapshotRepository) {
         this.customerRepository = customerRepository;
         this.productRepository = productRepository;
         this.salesTransactionRepository = salesTransactionRepository;
         this.unifiedSalesMartRepository = unifiedSalesMartRepository;
+        this.inventorySnapshotRepository = inventorySnapshotRepository;
     }
 
     @Transactional(readOnly = true)
     public List<CustomerFeatureVector> prepareCustomerFeatures(Long workspaceId) {
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime oneYearAgo = now.minusYears(1);
-
         boolean useMart = unifiedSalesMartRepository.countByWorkspaceId(workspaceId) > 0;
+        LocalDateTime maxTxDate = useMart ? unifiedSalesMartRepository.findMaxTransactionDateByWorkspaceId(workspaceId) : null;
+        LocalDateTime now = maxTxDate != null ? maxTxDate : LocalDateTime.now().plusDays(1);
+        LocalDateTime oneYearAgo = now.minusYears(1);
         List<CustomerFeatureVector> vectors = new ArrayList<>();
 
         if (useMart) {
@@ -119,10 +124,11 @@ public class FeatureEngineeringService {
 
     @Transactional(readOnly = true)
     public List<TimeSeriesFeatureVector> prepareTimeSeriesFeatures(Long workspaceId) {
-        LocalDateTime start = LocalDateTime.now().minusDays(365);
-        LocalDateTime end = LocalDateTime.now();
-
         boolean useMart = unifiedSalesMartRepository.countByWorkspaceId(workspaceId) > 0;
+        LocalDateTime maxTxDate = useMart ? unifiedSalesMartRepository.findMaxTransactionDateByWorkspaceId(workspaceId) : null;
+        LocalDateTime end = maxTxDate != null ? maxTxDate : LocalDateTime.now().plusDays(1);
+        LocalDateTime start = end.minusDays(365);
+
         List<Object[]> dailyRows = useMart
                 ? unifiedSalesMartRepository.findDailyAggregationsBetween(workspaceId, start, end)
                 : salesTransactionRepository.findDailyAggregationsBetween(workspaceId, start, end);
@@ -177,15 +183,24 @@ public class FeatureEngineeringService {
 
     @Transactional(readOnly = true)
     public List<ProductFeatureVector> prepareProductDemandFeatures(Long workspaceId) {
-        LocalDateTime start = LocalDateTime.now().minusDays(90);
-        LocalDateTime end = LocalDateTime.now();
-
         boolean useMart = unifiedSalesMartRepository.countByWorkspaceId(workspaceId) > 0;
+        LocalDateTime maxTxDate = useMart ? unifiedSalesMartRepository.findMaxTransactionDateByWorkspaceId(workspaceId) : null;
+        LocalDateTime end = maxTxDate != null ? maxTxDate : LocalDateTime.now().plusDays(1);
+        LocalDateTime start = end.minusDays(90);
+
         List<ProductFeatureVector> vectors = new ArrayList<>();
         double daysInPeriod = 90.0;
 
         if (useMart) {
             List<Object[]> perfRows = unifiedSalesMartRepository.findProductPerformanceBetween(workspaceId, start, end);
+            List<Object[]> latestInv = unifiedSalesMartRepository.findLatestInventoryPerProductByWorkspaceId(workspaceId);
+            Map<String, Object[]> invMap = new HashMap<>();
+            for (Object[] invRow : latestInv) {
+                if (invRow[0] != null) {
+                    invMap.put(invRow[0].toString(), invRow);
+                }
+            }
+
             long pseudoId = 1L;
             for (Object[] perf : perfRows) {
                 String pId = (String) perf[0];
@@ -193,7 +208,10 @@ public class FeatureEngineeringService {
                 String cat = perf[2] != null ? perf[2].toString() : "General";
                 double totalUnits = perf[3] != null ? ((Number) perf[3]).doubleValue() : 0.0;
                 double dailyVelocity = totalUnits / daysInPeriod;
-                double unitPrice = 50.0;
+
+                Object[] inv = invMap.get(pId);
+                double unitPrice = (inv != null && inv[4] != null) ? ((BigDecimal) inv[4]).doubleValue() : 0.0;
+                double currentStock = (inv != null && inv[6] != null) ? ((Number) inv[6]).doubleValue() : 0.0;
 
                 DemandClass label;
                 if (dailyVelocity >= 4.0) {
@@ -212,18 +230,26 @@ public class FeatureEngineeringService {
                         totalUnits,
                         dailyVelocity,
                         unitPrice,
-                        100.0,
+                        currentStock,
                         label
                 ));
             }
         } else {
             List<Product> products = productRepository.findByWorkspaceId(workspaceId);
             List<Object[]> perfRows = salesTransactionRepository.findProductPerformanceBetween(workspaceId, start, end);
+            List<InventorySnapshot> snapshots = inventorySnapshotRepository.findLatestSnapshotsByWorkspaceId(workspaceId);
 
             Map<String, Object[]> perfMap = new HashMap<>();
             for (Object[] row : perfRows) {
                 if (row[0] != null) {
                     perfMap.put(row[0].toString(), row);
+                }
+            }
+
+            Map<String, Integer> stockMap = new HashMap<>();
+            for (InventorySnapshot snap : snapshots) {
+                if (snap.getProductId() != null && snap.getClosingStock() != null) {
+                    stockMap.put(snap.getProductId(), snap.getClosingStock());
                 }
             }
 
@@ -237,8 +263,8 @@ public class FeatureEngineeringService {
                 }
 
                 double dailyVelocity = totalUnits / daysInPeriod;
-                double unitPrice = p.getSellingPrice() != null ? p.getSellingPrice().doubleValue() : 10.0;
-                double currentStock = 100.0;
+                double unitPrice = p.getSellingPrice() != null ? p.getSellingPrice().doubleValue() : 0.0;
+                double currentStock = stockMap.getOrDefault(pId, 0);
 
                 DemandClass label;
                 if (dailyVelocity >= 4.0) {

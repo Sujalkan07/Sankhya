@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layout/base :: html}"
+      th:replace="~{layout/base :: html(~{::content})}"
       lang="en">
 <body>
 <div th:fragment="content" class="flex flex-col gap-6">
@@ -217,68 +217,45 @@
             </div>
         </div>
 
-        <!-- CUSTOMER COHORT RETENTION ANALYSIS SECTION -->
+        <!-- CUSTOMER RETENTION & BEHAVIORAL SEGMENT BREAKDOWN (Real Workspace Data) -->
         <div id="cohort-retention" class="bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs">
-            <div class="flex items-center justify-between pb-3.5 mb-4 border-b border-[#E7E9E3]">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3.5 mb-4 border-b border-[#E7E9E3]">
                 <div>
-                    <h3 class="font-headline text-sm font-bold text-on-surface">Monthly Customer Cohort Retention</h3>
-                    <p class="text-[11px] text-on-surface-variant">Percentage of customer repeat store visits and basket checkout over subsequent months</p>
+                    <h3 class="font-headline text-sm font-bold text-on-surface">Customer Retention &amp; RFM Segment Economics</h3>
+                    <p class="text-[11px] text-on-surface-variant">Live behavioral cohort shares, repeat purchase rate, and spend concentration across your workspace dataset</p>
                 </div>
-                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-surface-container text-primary">Cohort Dynamics</span>
+                <div class="flex items-center gap-2 text-[11px] font-mono">
+                    <span class="px-2.5 py-1 rounded-full bg-surface-container text-primary font-bold"
+                          th:text="${'Repeat Rate: ' + (analytics.kpis.repeatPurchaseRate != null ? analytics.kpis.repeatPurchaseRate : 0) + '%'}">Repeat Rate: 0%</span>
+                    <span class="px-2.5 py-1 rounded-full bg-surface-container-low text-on-surface-variant font-semibold"
+                          th:text="${'Returning: ' + analytics.kpis.returningCustomers.formattedCurrent + ' / New: ' + analytics.kpis.newCustomers.formattedCurrent}">Returning / New</span>
+                </div>
             </div>
 
-            <div class="overflow-x-auto">
+            <div class="overflow-x-auto" th:if="${analytics.segmentSummaries != null and !analytics.segmentSummaries.isEmpty()}">
                 <table class="w-full text-left text-xs">
                     <thead>
                         <tr class="border-b border-[#E7E9E3] text-tertiary font-semibold">
-                            <th class="pb-2">Cohort Month</th>
-                            <th class="pb-2 text-right">Cohort Size</th>
-                            <th class="pb-2 text-center">Month 0</th>
-                            <th class="pb-2 text-center">Month 1</th>
-                            <th class="pb-2 text-center">Month 2</th>
-                            <th class="pb-2 text-center">Month 3</th>
-                            <th class="pb-2 text-center">Month 4</th>
+                            <th class="pb-2">RFM Segment</th>
+                            <th class="pb-2 text-right">Shoppers</th>
+                            <th class="pb-2 text-right">Base Share %</th>
+                            <th class="pb-2 text-right">Cumulative Revenue</th>
+                            <th class="pb-2 text-right">Avg Customer Spend</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-[#F1F3EE]">
-                        <tr>
-                            <td class="py-2.5 font-bold text-on-surface">July 2024</td>
-                            <td class="py-2.5 text-right font-mono">184 shoppers</td>
-                            <td class="py-2.5 text-center font-mono font-bold bg-emerald-100 text-emerald-900 rounded">100%</td>
-                            <td class="py-2.5 text-center font-mono font-semibold bg-emerald-50 text-emerald-800">42.4%</td>
-                            <td class="py-2.5 text-center font-mono font-semibold bg-emerald-50 text-emerald-800">38.1%</td>
-                            <td class="py-2.5 text-center font-mono font-semibold bg-emerald-50 text-emerald-800">34.8%</td>
-                            <td class="py-2.5 text-center font-mono font-semibold bg-emerald-50 text-emerald-800">31.2%</td>
-                        </tr>
-                        <tr>
-                            <td class="py-2.5 font-bold text-on-surface">August 2024</td>
-                            <td class="py-2.5 text-right font-mono">210 shoppers</td>
-                            <td class="py-2.5 text-center font-mono font-bold bg-emerald-100 text-emerald-900 rounded">100%</td>
-                            <td class="py-2.5 text-center font-mono font-semibold bg-emerald-50 text-emerald-800">46.2%</td>
-                            <td class="py-2.5 text-center font-mono font-semibold bg-emerald-50 text-emerald-800">40.5%</td>
-                            <td class="py-2.5 text-center font-mono font-semibold bg-emerald-50 text-emerald-800">36.7%</td>
-                            <td class="py-2.5 text-center font-mono text-tertiary">-</td>
-                        </tr>
-                        <tr>
-                            <td class="py-2.5 font-bold text-on-surface">September 2024</td>
-                            <td class="py-2.5 text-right font-mono">245 shoppers</td>
-                            <td class="py-2.5 text-center font-mono font-bold bg-emerald-100 text-emerald-900 rounded">100%</td>
-                            <td class="py-2.5 text-center font-mono font-semibold bg-emerald-50 text-emerald-800">48.9%</td>
-                            <td class="py-2.5 text-center font-mono font-semibold bg-emerald-50 text-emerald-800">41.6%</td>
-                            <td class="py-2.5 text-center font-mono text-tertiary">-</td>
-                            <td class="py-2.5 text-center font-mono text-tertiary">-</td>
-                        </tr>
-                        <tr>
-                            <td class="py-2.5 font-bold text-on-surface">October 2024 (Festive)</td>
-                            <td class="py-2.5 text-right font-mono">312 shoppers</td>
-                            <td class="py-2.5 text-center font-mono font-bold bg-emerald-100 text-emerald-900 rounded">100%</td>
-                            <td class="py-2.5 text-center font-mono font-semibold bg-emerald-50 text-emerald-800">54.2%</td>
-                            <td class="py-2.5 text-center font-mono text-tertiary">-</td>
-                            <td class="py-2.5 text-center font-mono text-tertiary">-</td>
-                            <td class="py-2.5 text-center font-mono text-tertiary">-</td>
+                        <tr th:each="seg : ${analytics.segmentSummaries}">
+                            <td class="py-2.5 font-bold text-on-surface" th:text="${seg.segmentName}">Champions</td>
+                            <td class="py-2.5 text-right font-mono" th:text="${seg.customerCount}">0</td>
+                            <td class="py-2.5 text-right font-mono font-semibold text-primary" th:text="${seg.percentageShare + '%'}">0%</td>
+                            <td class="py-2.5 text-right font-mono font-bold" th:text="${'₹' + #numbers.formatDecimal(seg.totalMonetary, 1, 'COMMA', 2, 'POINT')}">₹0.00</td>
+                            <td class="py-2.5 text-right font-mono text-tertiary" th:text="${'₹' + #numbers.formatDecimal(seg.avgMonetary, 1, 'COMMA', 2, 'POINT')}">₹0.00</td>
                         </tr>
                     </tbody>
                 </table>
+            </div>
+            <div th:unless="${analytics.segmentSummaries != null and !analytics.segmentSummaries.isEmpty()}" class="text-center py-6 text-tertiary text-xs">
+                No customer segment cohorts available for the selected date range.
             </div>
         </div>
 
@@ -408,8 +385,6 @@
 
     </div>
 
-</div>
-
 <!-- Chart.js & Filter Scripts -->
 <th:block th:fragment="scripts">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -468,5 +443,6 @@
         /*]]>*/
     </script>
 </th:block>
+</div>
 </body>
 </html>

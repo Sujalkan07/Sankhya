@@ -1,7 +1,9 @@
 package com.sankhya.onboarding;
 
+import com.sankhya.analytics.common.dto.AnalyticsReadinessResponse;
 import com.sankhya.dataset.entity.Dataset;
 import com.sankhya.dataset.enums.DatasetType;
+import com.sankhya.dataset.service.DatasetQueryService;
 import com.sankhya.dataset.service.DatasetService;
 import com.sankhya.onboarding.controller.OnboardingController;
 import com.sankhya.security.AuthenticationSuccessHandler;
@@ -50,6 +52,9 @@ class OnboardingControllerTest {
     @Mock
     private DatasetService datasetService;
 
+    @Mock
+    private DatasetQueryService datasetQueryService;
+
     private OnboardingController onboardingController;
 
     private User testUser;
@@ -63,7 +68,8 @@ class OnboardingControllerTest {
                 workspaceService,
                 workspaceRepository,
                 userRepository,
-                datasetService
+                datasetService,
+                datasetQueryService
         );
 
         testUser = new User();
@@ -179,9 +185,14 @@ class OnboardingControllerTest {
     }
 
     @Test
-    @DisplayName("completeOnboarding - updates status to COMPLETED and redirects to /dashboard")
+    @DisplayName("completeOnboarding - updates status to COMPLETED when data is ready and redirects to /dashboard")
     void testCompleteOnboarding_Success() {
         when(workspaceService.getActiveWorkspace(session, 10L)).thenReturn(testWorkspace);
+        AnalyticsReadinessResponse ready = new AnalyticsReadinessResponse();
+        ready.setOverallReady(true);
+        ready.setSalesReady(true);
+        ready.setProductReady(true);
+        when(datasetQueryService.getAnalyticsReadiness(100L)).thenReturn(ready);
         when(workspaceRepository.save(any(Workspace.class))).thenReturn(testWorkspace);
 
         RedirectAttributes redirectAttributes = new RedirectAttributesModelMap();
@@ -193,7 +204,22 @@ class OnboardingControllerTest {
     }
 
     @Test
-    @DisplayName("skipOnboarding - sets status to COMPLETED and redirects to /dashboard")
+    @DisplayName("completeOnboarding - updates status to COMPLETED_WITHOUT_DATA when no data imported")
+    void testCompleteOnboarding_WithoutData() {
+        when(workspaceService.getActiveWorkspace(session, 10L)).thenReturn(testWorkspace);
+        when(datasetQueryService.getAnalyticsReadiness(100L)).thenReturn(new AnalyticsReadinessResponse());
+        when(workspaceRepository.save(any(Workspace.class))).thenReturn(testWorkspace);
+
+        RedirectAttributes redirectAttributes = new RedirectAttributesModelMap();
+        String view = onboardingController.completeOnboarding(testUserDetails, session, redirectAttributes);
+
+        assertEquals("redirect:/dashboard", view);
+        assertEquals("COMPLETED_WITHOUT_DATA", testWorkspace.getOnboardingStatus());
+        verify(workspaceRepository).save(testWorkspace);
+    }
+
+    @Test
+    @DisplayName("skipOnboarding - sets status to SKIPPED and redirects to /dashboard")
     void testSkipOnboarding_Success() {
         when(workspaceService.getActiveWorkspace(session, 10L)).thenReturn(testWorkspace);
         when(workspaceRepository.save(any(Workspace.class))).thenReturn(testWorkspace);
@@ -202,7 +228,7 @@ class OnboardingControllerTest {
         String view = onboardingController.skipOnboarding(testUserDetails, session, redirectAttributes);
 
         assertEquals("redirect:/dashboard", view);
-        assertEquals("COMPLETED", testWorkspace.getOnboardingStatus());
+        assertEquals("SKIPPED", testWorkspace.getOnboardingStatus());
         verify(workspaceRepository).save(testWorkspace);
     }
 }

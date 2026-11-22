@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layout/base :: html}"
+      th:replace="~{layout/base :: html(~{::content})}"
       lang="en">
 <body>
 <div th:fragment="content" class="flex flex-col gap-6">
@@ -188,6 +188,32 @@
         </div>
     </section>
 
+    <!-- Verified Store Telemetry Baseline (Grounded in Workspace Database) -->
+    <section class="p-4 rounded-2xl bg-surface-container-lowest border border-[#E7E9E3] shadow-xs">
+        <div th:if="${simulatorReady == null or simulatorReady}" class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+            <div class="p-3 rounded-xl bg-surface-container-low border border-[#E7E9E3]/60">
+                <span class="text-[11px] font-semibold text-tertiary uppercase tracking-wider">Verified Period Revenue</span>
+                <div class="text-lg font-headline font-bold text-on-surface mt-0.5"
+                     th:text="${'₹' + #numbers.formatDecimal(baselineRevenue, 1, 'COMMA', 0, 'POINT')}">₹0</div>
+            </div>
+            <div class="p-3 rounded-xl bg-surface-container-low border border-[#E7E9E3]/60">
+                <span class="text-[11px] font-semibold text-tertiary uppercase tracking-wider">Verified Gross Margin</span>
+                <div class="text-lg font-headline font-bold text-primary mt-0.5"
+                     th:text="${#numbers.formatDecimal(baselineMargin, 1, 2) + '%'}">0.00%</div>
+            </div>
+            <div class="p-3 rounded-xl bg-surface-container-low border border-[#E7E9E3]/60">
+                <span class="text-[11px] font-semibold text-tertiary uppercase tracking-wider">Inventory Cost Capital</span>
+                <div class="text-lg font-headline font-bold text-on-surface mt-0.5"
+                     th:text="${'₹' + #numbers.formatDecimal(baselineWorkingCapital, 1, 'COMMA', 0, 'POINT')}">₹0</div>
+            </div>
+        </div>
+        <div th:if="${simulatorReady != null and !simulatorReady}"
+             class="p-3 rounded-xl bg-amber-50/70 border border-amber-200 text-xs text-amber-900 flex items-center gap-2">
+            <span class="material-symbols-outlined text-amber-600 text-[18px]">info</span>
+            <span>Workspace baseline telemetry is currently unavailable. Upload or synchronize a valid supermarket dataset to compute real revenue, margin, and inventory capital baselines.</span>
+        </div>
+    </section>
+
     <!-- SECTION 2: Google Gemini AI Executive Strategic Intelligence -->
     <section class="flex flex-col gap-4">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
@@ -195,8 +221,19 @@
                 <div class="flex items-center gap-2">
                     <span class="material-symbols-outlined text-primary text-[22px]">auto_awesome</span>
                     <h2 class="font-headline font-bold text-xl text-on-surface">Google Gemini Strategic Intelligence</h2>
-                    <span class="px-2.5 py-0.5 rounded-full bg-primary-container text-on-primary-container font-semibold text-xs">
-                        gemini-2.5-flash
+                    <span th:if="${executiveSummary != null and executiveSummary.geminiModelVersion != 'DETERMINISTIC_FALLBACK' and executiveSummary.geminiModelVersion != 'NOT_CONFIGURED'}"
+                          class="px-2.5 py-0.5 rounded-full bg-primary-container text-on-primary-container font-semibold text-xs"
+                          th:text="${'Gemini-Generated • ' + executiveSummary.geminiModelVersion}">
+                        Gemini-Generated
+                    </span>
+                    <span th:if="${executiveSummary != null and (executiveSummary.geminiModelVersion == 'DETERMINISTIC_FALLBACK' or executiveSummary.geminiModelVersion == 'NOT_CONFIGURED')}"
+                          class="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 font-semibold text-xs"
+                          th:text="${executiveSummary.geminiModelVersion == 'NOT_CONFIGURED' ? 'AI Not Configured' : 'Deterministic Heuristic Fallback'}">
+                        Deterministic Fallback
+                    </span>
+                    <span th:if="${executiveSummary == null}"
+                          class="px-2.5 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-semibold text-xs">
+                        Ready to Generate
                     </span>
                 </div>
                 <p class="text-xs text-tertiary mt-0.5">
@@ -241,7 +278,7 @@
                             Executive Business Intelligence Summary
                         </h3>
                         <span class="text-[11px] text-tertiary">
-                            Grounded in 30-day verified store telemetry • Zero PII transmitted
+                            Grounded in verified store telemetry &amp; persisted analytics • Zero PII transmitted
                         </span>
                     </div>
                 </div>

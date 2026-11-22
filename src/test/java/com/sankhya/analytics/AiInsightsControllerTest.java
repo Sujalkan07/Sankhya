@@ -51,6 +51,8 @@ class AiInsightsControllerTest {
     @Mock
     private ExecutiveOverviewService executiveOverviewService;
     @Mock
+    private com.sankhya.analytics.inventory.service.InventoryIntelligenceService inventoryIntelligenceService;
+    @Mock
     private DatasetQueryService datasetQueryService;
     @Mock
     private BusinessRecommendationRepository businessRecommendationRepository;
@@ -80,6 +82,7 @@ class AiInsightsControllerTest {
         controller = new AiInsightsController(
                 workspaceService,
                 executiveOverviewService,
+                inventoryIntelligenceService,
                 datasetQueryService,
                 businessRecommendationRepository,
                 mlJobService,
@@ -131,6 +134,9 @@ class AiInsightsControllerTest {
         assertEquals("analytics/ai-insights", view);
         assertEquals("ai-insights", model.getAttribute("currentPage"));
         assertEquals("AI Insights & Machine Learning Engine", model.getAttribute("pageTitle"));
+        assertEquals(BigDecimal.valueOf(5000000), model.getAttribute("baselineRevenue"));
+        assertEquals(BigDecimal.valueOf(19.5), model.getAttribute("baselineMargin"));
+        assertEquals(true, model.getAttribute("simulatorReady"));
         assertNotNull(model.getAttribute("mlCards"));
     }
 

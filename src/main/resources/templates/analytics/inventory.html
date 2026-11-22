@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layout/base :: html}"
+      th:replace="~{layout/base :: html(~{::content})}"
       lang="en">
 <body>
 <div th:fragment="content" class="flex flex-col gap-6">
@@ -225,7 +225,7 @@
                                 th:classappend="${r.currentStock <= 0 ? 'text-rose-600' : 'text-amber-600'}"
                                 th:text="${r.currentStock}">0</td>
                             <td class="py-2.5 text-right font-mono text-tertiary" th:text="${r.reorderLevel}">10</td>
-                            <td class="py-2.5 text-right font-mono font-bold text-primary" th:text="${r.suggestedOrderQuantity}">25</td>
+                            <td class="py-2.5 text-right font-mono font-bold text-primary" th:text="${r.suggestedQuantity}">25</td>
                             <td class="py-2.5 text-right font-mono text-on-surface font-semibold" th:text="${'₹' + r.estimatedRestockCost}">₹0.00</td>
                             <td class="py-2.5 text-center">
                                 <span class="px-2 py-0.5 rounded-full text-[10px] font-bold"
@@ -238,68 +238,49 @@
             </div>
         </div>
 
-        <!-- SLOW-MOVING INVENTORY AUDIT SECTION -->
+        <!-- SLOW-MOVING / LOW-VELOCITY INVENTORY AUDIT SECTION (ML Demand Driven) -->
         <div class="bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs">
             <div class="flex items-center justify-between pb-3.5 mb-4 border-b border-[#E7E9E3]">
                 <div>
-                    <h3 class="font-headline text-sm font-bold text-on-surface">Slow-Moving &amp; Dormant Inventory Audit</h3>
-                    <p class="text-[11px] text-on-surface-variant">SKUs with significant warehouse capital allocation and low sales velocity</p>
+                    <h3 class="font-headline text-sm font-bold text-on-surface">Low-Velocity &amp; Overstock Watchlist</h3>
+                    <p class="text-[11px] text-on-surface-variant">Actual workspace SKUs classified as LOW daily demand by the Random Forest velocity model</p>
                 </div>
-                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">Capital At-Risk</span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800"
+                      th:text="${analytics.stockHealth != null ? analytics.stockHealth.overstockedCount + ' Overstocked SKUs' : 'Live ML Telemetry'}">Live ML Telemetry</span>
             </div>
 
-            <div class="overflow-x-auto">
+            <div class="overflow-x-auto" th:if="${demandPredictions != null and !demandPredictions.isEmpty()}">
                 <table class="w-full text-left text-xs">
                     <thead>
                         <tr class="border-b border-[#E7E9E3] text-tertiary font-semibold">
                             <th class="pb-2">SKU ID</th>
                             <th class="pb-2">Product Name</th>
                             <th class="pb-2">Category</th>
-                            <th class="pb-2 text-right">Units on Hand</th>
-                            <th class="pb-2 text-right">Tied-Up Working Capital</th>
-                            <th class="pb-2 text-center">Recommended Strategy</th>
+                            <th class="pb-2 text-right">Daily Velocity</th>
+                            <th class="pb-2 text-right">7-Day Expected Units</th>
+                            <th class="pb-2 text-center">Demand Class</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-[#F1F3EE]">
-                        <tr>
-                            <td class="py-2.5 font-mono text-tertiary">SKU-2091</td>
-                            <td class="py-2.5 font-bold text-on-surface">Imported Olive Oil 1L (Extra Virgin)</td>
-                            <td class="py-2.5 text-on-surface-variant">Groceries</td>
-                            <td class="py-2.5 text-right font-mono font-bold text-blue-700">84 units</td>
-                            <td class="py-2.5 text-right font-mono font-bold text-on-surface">₹74,800</td>
+                        <tr th:each="dp : ${demandPredictions}"
+                            th:if="${dp.predictedDemandClass != null and dp.predictedDemandClass.name() == 'LOW'}">
+                            <td class="py-2.5 font-mono text-tertiary" th:text="${dp.productCode}">SKU-000</td>
+                            <td class="py-2.5 font-bold text-on-surface" th:text="${dp.productName}">Product Name</td>
+                            <td class="py-2.5 text-on-surface-variant" th:text="${dp.category}">Category</td>
+                            <td class="py-2.5 text-right font-mono text-blue-700" th:text="${#numbers.formatDecimal(dp.recentDailyVelocity, 1, 2) + '/day'}">0.00/day</td>
+                            <td class="py-2.5 text-right font-mono text-on-surface font-semibold" th:text="${#numbers.formatDecimal(dp.predictedUnitsNext7d, 1, 1) + ' units'}">0.0 units</td>
                             <td class="py-2.5 text-center">
-                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
-                                    Bundle Promotion (Atta / Pasta)
-                                </span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="py-2.5 font-mono text-tertiary">SKU-3104</td>
-                            <td class="py-2.5 font-bold text-on-surface">Artisanal Organic Green Tea (Tin 250g)</td>
-                            <td class="py-2.5 text-on-surface-variant">Beverages</td>
-                            <td class="py-2.5 text-right font-mono font-bold text-blue-700">62 units</td>
-                            <td class="py-2.5 text-right font-mono font-bold text-on-surface">₹31,000</td>
-                            <td class="py-2.5 text-center">
-                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-800 border border-purple-200">
-                                    Display Near Checkout Counter
-                                </span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="py-2.5 font-mono text-tertiary">SKU-4052</td>
-                            <td class="py-2.5 font-bold text-on-surface">Gourmet Dark Chocolate Bar 100g</td>
-                            <td class="py-2.5 text-on-surface-variant">Confectionery</td>
-                            <td class="py-2.5 text-right font-mono font-bold text-blue-700">95 units</td>
-                            <td class="py-2.5 text-right font-mono font-bold text-on-surface">₹23,750</td>
-                            <td class="py-2.5 text-center">
-                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                                    Diwali Festive Gift Box Inclusion
-                                </span>
+                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-200"
+                                      th:text="${dp.predictedDemandClass}">LOW</span>
                             </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
+            <div th:unless="${demandPredictions != null and !demandPredictions.isEmpty()}" class="text-center py-6 text-tertiary text-xs">
+                Run Random Forest Demand Classification below to inspect low-velocity SKUs from your dataset.
+            </div>
+        </div>
         <!-- Phase 5 ML Section: Predictive Demand & Stockout Risk Alerts -->
         <div id="stock-drift" class="bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs">
             <div class="flex items-center justify-between mb-4 pb-3 border-b border-[#E7E9E3]">
@@ -360,8 +341,6 @@
         </div>
 
     </div>
-
-</div>
 
 <!-- Chart.js & Filter Scripts -->
 <th:block th:fragment="scripts">
@@ -438,5 +417,6 @@
         /*]]>*/
     </script>
 </th:block>
+</div>
 </body>
 </html>

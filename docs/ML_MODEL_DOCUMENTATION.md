@@ -80,9 +80,9 @@ Given transaction database $\mathcal{D} = \{T_1, T_2, \dots, T_N\}$ where each t
      $$\text{Conf}(A \Rightarrow B) = \frac{\text{count}(A \cup B)}{\text{count}(A)} = P(B \mid A)$$
    - **Lift:**
      $$\text{Lift}(A \Rightarrow B) = \frac{\text{Conf}(A \Rightarrow B)}{\text{Supp}(B)} = \frac{P(A \cap B)}{P(A) \cdot P(B)}$$
-     - $\text{Lift} > 1.0$: Positive affinity (items co-occur more frequently than chance).
-     - $\text{Lift} = 1.0$: Independence.
-     - $\text{Lift} < 1.0$: Substitutes or negative affinity.
+     - $\text{Lift} > 1.0$: Positive affinity (items co-occur more frequently than expected under independence).
+     - $\text{Lift} = 1.0$: Statistical independence.
+     - $\text{Lift} < 1.0$: Negative association (items co-occur less often than expected under statistical independence; Lift alone does not prove product substitution without category/price elasticity verification).
    - **Conviction:**
      $$\text{Conv}(A \Rightarrow B) = \frac{1 - \text{Supp}(B)}{1 - \text{Conf}(A \Rightarrow B)}$$
 
@@ -102,8 +102,9 @@ For each product SKU:
 - Target label: `HIGH`, `MEDIUM`, `LOW`
 
 ### 4.3 Ensemble Architecture
-- **Number of Trees:** 30–50 decision trees.
-- **Tree Depth:** Maximum depth 5, minimum leaf split 2.
+- **Number of Trees:** `30` decision trees configured in standard workflow orchestration (`MLJobService.executeRandomForest` / `AiInsightsController`), parameterized in `ProductDemandClassificationService.trainAndClassify(workspaceId, numTrees)`.
+- **Tree Depth & Split Bounds:** `maxDepth = 5`, `minSamplesSplit = 2`.
+- **Train/Holdout Split:** 80% train / 20% test split evaluated in `ProductDemandClassificationService` (falls back to training set when `n == 1` / `testSize == 0`).
 - **Feature Subsampling:** $\lfloor \sqrt{p} \rfloor = 2$ features randomly selected at each split.
 - **Split Criterion (Gini Impurity):**
   $$I_G(S) = 1 - \sum_{c} p_c^2$$
@@ -138,6 +139,6 @@ Where $\lambda = 10^{-4}$. Solved natively via Gaussian elimination with partial
 ### 5.4 Recursive Multi-Step Forecasting & Confidence Bounds
 For horizon day $h = 1 \dots H$:
 $$\hat{y}_{t+h} = \mathbf{x}_{t+h}^T \boldsymbol{\beta}$$
-Autoregressive features ($y_{t-1}, y_{t-7}$, moving average) update recursively with newly predicted values.
-**95% Prediction Bounds:**
+Autoregressive features ($y_{t-1}, y_{t-7}$, moving average) update recursively with newly predicted values, and `SalesForecastingService` applies a `1.12` seasonal multiplier when `isWeekend > 0.5`. Model fit metrics (`RMSE`, `MAE`, `MAPE`, `R^2`) are computed in-sample (`lr.evaluate(X, y)`).
+**Empirical $\pm 1.96 \cdot \text{RMSE}$ Bounds:**
 $$\text{Lower} = \max\left(0, \, \hat{y} - 1.96 \cdot \text{RMSE}\right), \quad \text{Upper} = \hat{y} + 1.96 \cdot \text{RMSE}$$

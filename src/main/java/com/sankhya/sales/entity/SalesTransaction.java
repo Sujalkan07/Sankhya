@@ -1,5 +1,6 @@
 package com.sankhya.sales.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.sankhya.dataset.entity.Dataset;
 import com.sankhya.dataset.entity.DatasetImport;
 import com.sankhya.workspace.entity.Workspace;
@@ -23,6 +24,7 @@ public class SalesTransaction {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "workspace_id", nullable = false)
     private Workspace workspace;
@@ -63,10 +65,12 @@ public class SalesTransaction {
     @Column(name = "status", length = 50)
     private String status = "COMPLETED";
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "dataset_id")
     private Dataset dataset;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "dataset_import_id")
     private DatasetImport datasetImport;

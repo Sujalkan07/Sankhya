@@ -5,6 +5,8 @@ import com.sankhya.analytics.common.dto.DateRangeFilter;
 import com.sankhya.analytics.common.enums.DatePreset;
 import com.sankhya.analytics.sales.dto.SalesAnalyticsResponse;
 import com.sankhya.analytics.sales.service.SalesAnalyticsService;
+import com.sankhya.dataset.entity.UnifiedSalesMart;
+import com.sankhya.dataset.repository.UnifiedSalesMartRepository;
 import com.sankhya.dataset.service.DatasetQueryService;
 import com.sankhya.ml.entity.ForecastResultEntity;
 import com.sankhya.ml.repository.ForecastResultRepository;
@@ -39,17 +41,20 @@ public class SalesAnalyticsController {
     private final SalesAnalyticsService salesAnalyticsService;
     private final DatasetQueryService datasetQueryService;
     private final SalesTransactionRepository salesTransactionRepository;
+    private final UnifiedSalesMartRepository unifiedSalesMartRepository;
     private final ForecastResultRepository forecastResultRepository;
 
     public SalesAnalyticsController(WorkspaceService workspaceService,
                                     SalesAnalyticsService salesAnalyticsService,
                                     DatasetQueryService datasetQueryService,
                                     SalesTransactionRepository salesTransactionRepository,
+                                    UnifiedSalesMartRepository unifiedSalesMartRepository,
                                     ForecastResultRepository forecastResultRepository) {
         this.workspaceService = workspaceService;
         this.salesAnalyticsService = salesAnalyticsService;
         this.datasetQueryService = datasetQueryService;
         this.salesTransactionRepository = salesTransactionRepository;
+        this.unifiedSalesMartRepository = unifiedSalesMartRepository;
         this.forecastResultRepository = forecastResultRepository;
     }
 
@@ -89,11 +94,21 @@ public class SalesAnalyticsController {
                 SalesAnalyticsResponse response = salesAnalyticsService.getSalesAnalytics(wsId, filter);
                 model.addAttribute("analytics", response);
 
-                // Fetch recent transactions for drill-down inspection
-                List<SalesTransaction> recentTransactions = salesTransactionRepository.findByWorkspaceId(
-                        wsId,
-                        PageRequest.of(0, 15, Sort.by(Sort.Direction.DESC, "transactionDate"))
-                ).getContent();
+                // Fetch recent transactions for drill-down inspection (consistent source-of-truth)
+                List<SalesTransaction> recentTransactions;
+                if (unifiedSalesMartRepository.countByWorkspaceId(wsId) > 0) {
+                    recentTransactions = unifiedSalesMartRepository.findTransactionsInDateRange(
+                            wsId,
+                            filter.getStartDateTime(),
+                            filter.getEndDateTime(),
+                            PageRequest.of(0, 15, Sort.by(Sort.Direction.DESC, "transactionDate"))
+                    ).getContent().stream().map(this::toViewTransaction).toList();
+                } else {
+                    recentTransactions = salesTransactionRepository.findByWorkspaceId(
+                            wsId,
+                            PageRequest.of(0, 15, Sort.by(Sort.Direction.DESC, "transactionDate"))
+                    ).getContent();
+                }
                 model.addAttribute("recentTransactions", recentTransactions);
             }
 
@@ -130,8 +145,30 @@ public class SalesAnalyticsController {
             return ResponseEntity.badRequest().build();
         }
 
-        List<SalesTransaction> items = salesTransactionRepository.findByWorkspaceIdAndTransactionId(
-                activeWorkspace.getId(), transactionId);
+        Long wsId = activeWorkspace.getId();
+        List<SalesTransaction> items;
+        if (unifiedSalesMartRepository.countByWorkspaceId(wsId) > 0) {
+            items = unifiedSalesMartRepository.findByWorkspaceIdAndTransactionId(wsId, transactionId)
+                    .stream().map(this::toViewTransaction).toList();
+        } else {
+            items = salesTransactionRepository.findByWorkspaceIdAndTransactionId(wsId, transactionId);
+        }
         return ResponseEntity.ok(items);
+    }
+
+    private SalesTransaction toViewTransaction(UnifiedSalesMart m) {
+        SalesTransaction tx = new SalesTransaction();
+        tx.setTransactionId(m.getTransactionId());
+        tx.setTransactionDate(m.getTransactionDate());
+        tx.setCustomerId(m.getCustomerId());
+        tx.setProductId(m.getProductId());
+        tx.setQuantity(m.getQuantity());
+        tx.setUnitPrice(m.getUnitPrice());
+        tx.setDiscount(m.getDiscount());
+        tx.setRevenue(m.getRevenue());
+        tx.setPaymentMethod(m.getPaymentMethod());
+        tx.setCashierName(m.getCashierName());
+        tx.setStatus("COMPLETED");
+        return tx;
     }
 }

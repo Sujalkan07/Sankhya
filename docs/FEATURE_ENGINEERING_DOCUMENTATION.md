@@ -9,7 +9,7 @@
 
 ## 1. Overview & Pipeline Philosophy
 
-The machine learning models in Sankhya operate directly upon cleaned, deduplicated supermarket records in MySQL/H2 (populated during Phase 2 ingestion and Phase 3 analytics).
+The machine learning models in Sankhya operate primarily against the Unified Analytical Data Mart (`unified_sales_mart` via `UnifiedSalesMartRepository`) populated during ingestion/dev initialization, with seamless fallback to normalized domain tables (`sales_transactions`, `products`, `customers`, `inventory_snapshots`) when mart rows are absent. Observation windows are anchored to the workspace's latest transaction timestamp (`findMaxTransactionDateByWorkspaceId`) rather than wall-clock `LocalDateTime.now()`, ensuring historical datasets remain active across time.
 
 Feature engineering is managed by `com.sankhya.ml.features.FeatureEngineeringService`. The design adheres to three core engineering principles:
 1. **Zero Data Leakage:** Time-series and demand models adhere to strict temporal causal ordering. Future transaction dates are strictly excluded from historical rolling windows.
@@ -21,16 +21,16 @@ Feature engineering is managed by `com.sankhya.ml.features.FeatureEngineeringSer
 ## 2. Customer Behavioral Feature Pipeline (`CustomerFeatureVector`)
 
 ### 2.1 Domain Context & Aggregation
-To model customer purchasing dynamics for K-Means clustering, transactional history is extracted across a 365-day observation window:
+To model customer purchasing dynamics for K-Means clustering, transactional history is extracted across a 365-day observation window anchored to the workspace's latest transaction timestamp from `unified_sales_mart` (or fallback `customers` + `sales_transactions`):
 
 ```
-+---------------+     +-------------------------+     +-----------------------+
-| Customer Table| --> | SalesTransaction Table  | --> | CustomerFeatureVector |
-+---------------+     +-------------------------+     +-----------------------+
-                              |
-                     GROUP BY customerId
-                              |
-            [recency, frequency, monetary, ATV]
++--------------------------------------------+     +-----------------------+
+| unified_sales_mart (or customers + sales)  | --> | CustomerFeatureVector |
++--------------------------------------------+     +-----------------------+
+                      |
+             GROUP BY customerId
+                      |
+    [recency, frequency, monetary, ATV]
 ```
 
 ### 2.2 Feature Definitions & Math
@@ -53,11 +53,11 @@ Where if $\sigma < 10^{-6}$, $\sigma$ defaults to $1.0$.
 ## 3. Daily Sales Time Series Feature Pipeline (`TimeSeriesFeatureVector`)
 
 ### 3.1 Domain Context & Aggregation
-To forecast store revenue forward 7, 14, and 30 days, daily transactions are aggregated into a contiguous chronological series:
+To forecast store revenue forward 7, 14, and 30 days, daily transactions are aggregated into a contiguous chronological series (primary source: `unified_sales_mart`; fallback: `sales_transactions`):
 
 ```sql
 SELECT DATE(transaction_date), SUM(revenue), COUNT(DISTINCT transaction_id), SUM(quantity)
-FROM sales_transactions
+FROM unified_sales_mart
 WHERE workspace_id = :workspaceId
 GROUP BY DATE(transaction_date)
 ORDER BY DATE(transaction_date) ASC
@@ -84,11 +84,11 @@ During recursive multi-step forecasting ($h = 1 \dots H$):
 ## 4. Product SKU Demand Classification Pipeline (`ProductFeatureVector`)
 
 ### 4.1 Domain Context & Aggregation
-Extracted across a 90-day observation window from `sales_transactions` joined with `products` and `inventory_snapshots`:
+Extracted across a 90-day observation window anchored to the workspace's maximum transaction date (or today if empty), querying `unified_sales_mart` (or fallback `sales_transactions` + `products` + `inventory_snapshots`):
 - `totalUnitsSold`: 90-day volume.
 - `dailyVelocity`: $\text{totalUnitsSold} / 90.0$.
-- `unitPrice`: Product retail selling price (INR).
-- `currentStock`: Real on-hand warehouse inventory.
+- `unitPrice`: Real SKU selling price (`sellingPrice` from `unified_sales_mart` / `products`, INR; zero only when unpriced).
+- `currentStock`: Latest on-hand closing stock (`currentClosingStock` from `unified_sales_mart` / `inventory_snapshots`, INR-valued unit count).
 
 ### 4.2 Supervised Label Generation
 Ground-truth demand classes are assigned using calibrated supermarket velocity benchmarks:
@@ -102,12 +102,13 @@ Ground-truth demand classes are assigned using calibrated supermarket velocity b
 ## 5. Market Basket Multi-Item Transaction Matrix
 
 ### 5.1 Extraction Strategy
+Primary source (`unified_sales_mart`):
 ```sql
-SELECT s.transaction_id, s.product_id, COALESCE(p.product_name, s.product_id)
-FROM sales_transactions s
-LEFT JOIN products p ON s.product_id = p.product_id AND p.workspace_id = :workspaceId
-WHERE s.workspace.id = :workspaceId
-ORDER BY s.transaction_id
+SELECT transaction_id, product_id, product_name
+FROM unified_sales_mart
+WHERE workspace_id = :workspaceId
+ORDER BY transaction_id
 ```
+(Falls back to `sales_transactions` left-joined with `products` when `unified_sales_mart` is empty.)
 - Line items are aggregated into unique `Set<String>` sets by `transaction_id`.
 - Single-item baskets are pruned prior to candidate pair generation, maximizing efficiency for Apriori co-occurrence evaluation.

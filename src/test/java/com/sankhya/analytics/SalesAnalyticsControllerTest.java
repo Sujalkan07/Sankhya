@@ -53,6 +53,9 @@ class SalesAnalyticsControllerTest {
     private SalesTransactionRepository salesTransactionRepository;
 
     @Mock
+    private com.sankhya.dataset.repository.UnifiedSalesMartRepository unifiedSalesMartRepository;
+
+    @Mock
     private com.sankhya.ml.repository.ForecastResultRepository forecastResultRepository;
 
     private SalesAnalyticsController controller;
@@ -66,6 +69,7 @@ class SalesAnalyticsControllerTest {
                 salesAnalyticsService,
                 datasetQueryService,
                 salesTransactionRepository,
+                unifiedSalesMartRepository,
                 forecastResultRepository
         );
 

@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layout/base :: html}"
+      th:replace="~{layout/base :: html(~{::content})}"
       lang="en">
 <body>
 <div th:fragment="content" class="flex flex-col gap-6">
@@ -345,8 +345,6 @@
 
     </div>
 
-</div>
-
 <!-- Chart.js Initialization Scripts -->
 <th:block th:fragment="scripts">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -421,5 +419,6 @@
         /*]]>*/
     </script>
 </th:block>
+</div>
 </body>
 </html>

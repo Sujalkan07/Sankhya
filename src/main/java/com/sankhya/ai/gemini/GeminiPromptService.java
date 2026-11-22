@@ -5,6 +5,9 @@ import com.sankhya.analytics.common.dto.DateRangeFilter;
 import com.sankhya.analytics.common.enums.DatePreset;
 import com.sankhya.analytics.overview.dto.ExecutiveOverviewResponse;
 import com.sankhya.analytics.overview.service.ExecutiveOverviewService;
+import com.sankhya.dataset.entity.Dataset;
+import com.sankhya.dataset.repository.DatasetRepository;
+import com.sankhya.dataset.repository.UnifiedSalesMartRepository;
 import com.sankhya.ml.entity.AssociationRuleEntity;
 import com.sankhya.ml.entity.CustomerClusterAssignment;
 import com.sankhya.ml.entity.DemandPredictionEntity;
@@ -18,6 +21,7 @@ import com.sankhya.workspace.repository.WorkspaceRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -29,6 +33,8 @@ public class GeminiPromptService {
     private final ForecastResultRepository forecastResultRepository;
     private final DemandPredictionRepository demandPredictionRepository;
     private final WorkspaceRepository workspaceRepository;
+    private final DatasetRepository datasetRepository;
+    private final UnifiedSalesMartRepository unifiedSalesMartRepository;
     private final ObjectMapper objectMapper;
 
     public GeminiPromptService(ExecutiveOverviewService executiveOverviewService,
@@ -37,6 +43,8 @@ public class GeminiPromptService {
                                ForecastResultRepository forecastResultRepository,
                                DemandPredictionRepository demandPredictionRepository,
                                WorkspaceRepository workspaceRepository,
+                               DatasetRepository datasetRepository,
+                               UnifiedSalesMartRepository unifiedSalesMartRepository,
                                ObjectMapper objectMapper) {
         this.executiveOverviewService = executiveOverviewService;
         this.customerClusterAssignmentRepository = customerClusterAssignmentRepository;
@@ -44,6 +52,8 @@ public class GeminiPromptService {
         this.forecastResultRepository = forecastResultRepository;
         this.demandPredictionRepository = demandPredictionRepository;
         this.workspaceRepository = workspaceRepository;
+        this.datasetRepository = datasetRepository;
+        this.unifiedSalesMartRepository = unifiedSalesMartRepository;
         this.objectMapper = objectMapper;
     }
 
@@ -51,8 +61,8 @@ public class GeminiPromptService {
         return "You are Sankhya AI, an executive supermarket analytics and retail intelligence consultant. " +
                 "You provide data-grounded strategic insights, merchandise optimizations, and actionable advice to supermarket owners and category managers.\n" +
                 "GUIDELINES:\n" +
-                "1. STRICT GROUNDING: Rely strictly on the provided verified metrics, ML clusters, forecasts, and association rules. Do not hallucinate or invent imaginary numbers, brands, or customer contact details (email/phone are not present).\n" +
-                "2. DATA PROVENANCE DISCLOSURE: Note that the demonstration retail fact mart contains Instacart-derived basket topology with synthetic retail attributes and reconstructed calendar timing. Disclose this demonstration modeling context when discussing trends.\n" +
+                "1. STRICT GROUNDING: Rely strictly on the provided verified metrics, ML clusters, forecasts, and association rules. Do not hallucinate or invent imaginary numbers, brands, or customer contact details (email/phone are not present unless provided).\n" +
+                "2. DYNAMIC DATA PROVENANCE DISCLOSURE: Check `datasetProvenance`, `dataSource`, `dateRange`, and currency indicators from the workspace telemetry JSON. Accurately disclose whether the metrics come from uploaded operational POS files, synthetic demonstration data, or Instacart-derived test fixtures—never misrepresent synthetic data as live retail store data.\n" +
                 "3. STRUCTURE: Format your output with markdown headers (## Executive Takeaway, ### Analytical Findings, ### Actionable Merchandising Recommendations).\n" +
                 "4. ACCURACY: Always quote actual revenue numbers, percentages, lift metrics, and cluster attributes from the context.\n" +
                 "5. TONE: Professional, concise, executive, and commercially savvy.";
@@ -64,12 +74,46 @@ public class GeminiPromptService {
 
         Workspace ws = workspaceRepository.findById(workspaceId).orElse(null);
         telemetry.put("workspaceName", ws != null ? ws.getName() : "Supermarket");
+        telemetry.put("currency", "INR");
 
-        // 1. Overview KPIs (Last 30 Days)
+        // 0. Dataset Provenance Metadata (stored dynamically per workspace)
+        List<Dataset> datasets = datasetRepository.findByWorkspaceId(workspaceId);
+        long martCount = unifiedSalesMartRepository.countByWorkspaceId(workspaceId);
+        telemetry.put("dataSource", martCount > 0 ? "UNIFIED_SALES_MART" : "NORMALIZED_TABLES");
+        telemetry.put("totalMartRecords", martCount);
+
+        List<String> provenanceNotes = new ArrayList<>();
+        for (Dataset d : datasets) {
+            if (d.getRecordCount() != null && d.getRecordCount() > 0) {
+                provenanceNotes.add(d.getName() + (d.getDescription() != null && !d.getDescription().isBlank()
+                        ? " (" + d.getDescription() + ")" : ""));
+            }
+        }
+        telemetry.put("datasetProvenance", provenanceNotes.isEmpty()
+                ? "No active datasets loaded in workspace"
+                : String.join("; ", provenanceNotes));
+
+        if (martCount > 0) {
+            LocalDateTime minDate = unifiedSalesMartRepository.findMinTransactionDateByWorkspaceId(workspaceId);
+            LocalDateTime maxDate = unifiedSalesMartRepository.findMaxTransactionDateByWorkspaceId(workspaceId);
+            telemetry.put("minTransactionDate", minDate != null ? minDate.toString() : "N/A");
+            telemetry.put("maxTransactionDate", maxDate != null ? maxDate.toString() : "N/A");
+        }
+
+        // 1. Overview KPIs (Last 30 Days, fallback to This Year if 30d window empty)
         try {
             ExecutiveOverviewResponse overview = executiveOverviewService.getExecutiveOverview(
                     workspaceId, DateRangeFilter.of(DatePreset.LAST_30_DAYS, null, null));
+            String windowLabel = "LAST_30_DAYS";
+            if (overview != null && overview.getTotalRevenue() != null
+                    && overview.getTotalRevenue().getCurrentValue() instanceof java.math.BigDecimal rev30
+                    && rev30.compareTo(java.math.BigDecimal.ZERO) <= 0 && martCount > 0) {
+                overview = executiveOverviewService.getExecutiveOverview(
+                        workspaceId, DateRangeFilter.of(DatePreset.THIS_YEAR, null, null));
+                windowLabel = "THIS_YEAR";
+            }
             if (overview != null) {
+                telemetry.put("kpiWindow", windowLabel);
                 telemetry.put("totalRevenue", overview.getTotalRevenue() != null ? overview.getTotalRevenue().getCurrentValue() : 0);
                 telemetry.put("totalTransactions", overview.getTotalTransactions() != null ? overview.getTotalTransactions().getCurrentValue() : 0);
                 telemetry.put("averageTransactionValue", overview.getAverageTransactionValue() != null ? overview.getAverageTransactionValue().getCurrentValue() : 0);

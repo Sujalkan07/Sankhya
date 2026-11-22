@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layout/base :: html}"
+      th:replace="~{layout/base :: html(~{::content})}"
       lang="en">
 <body>
 <div th:fragment="content" class="flex flex-col gap-6">
@@ -130,13 +130,13 @@
                 <span class="text-xs font-semibold text-on-surface-variant">Units Sold</span>
                 <div class="mt-2">
                     <div class="text-xl font-bold font-headline text-on-surface"
-                         th:text="${analytics.kpis.totalQuantitySold.formattedCurrent}">0</div>
+                         th:text="${analytics.kpis.totalUnitsSold.formattedCurrent}">0</div>
                     <div class="flex items-center gap-1.5 mt-1 text-[11px]">
-                        <span th:classappend="${analytics.kpis.totalQuantitySold.direction.name() == 'UP' ? 'text-emerald-600' : (analytics.kpis.totalQuantitySold.direction.name() == 'DOWN' ? 'text-rose-600' : 'text-slate-500')}"
+                        <span th:classappend="${analytics.kpis.totalUnitsSold.direction.name() == 'UP' ? 'text-emerald-600' : (analytics.kpis.totalUnitsSold.direction.name() == 'DOWN' ? 'text-rose-600' : 'text-slate-500')}"
                               class="font-bold inline-flex items-center">
                             <span class="material-symbols-outlined text-[14px]"
-                                  th:text="${analytics.kpis.totalQuantitySold.direction.name() == 'UP' ? 'arrow_upward' : (analytics.kpis.totalQuantitySold.direction.name() == 'DOWN' ? 'arrow_downward' : 'remove')}"></span>
-                            <span th:text="${analytics.kpis.totalQuantitySold.percentageChange + '%'}">0%</span>
+                                  th:text="${analytics.kpis.totalUnitsSold.direction.name() == 'UP' ? 'arrow_upward' : (analytics.kpis.totalUnitsSold.direction.name() == 'DOWN' ? 'arrow_downward' : 'remove')}"></span>
+                            <span th:text="${analytics.kpis.totalUnitsSold.percentageChange + '%'}">0%</span>
                         </span>
                         <span class="text-tertiary">vs prior</span>
                     </div>
@@ -148,7 +148,7 @@
                 <span class="text-xs font-semibold text-on-surface-variant">Items per Basket</span>
                 <div class="mt-2">
                     <div class="text-xl font-bold font-headline text-primary"
-                         th:text="${analytics.kpis.averageUnitsPerTransaction}">0.0</div>
+                         th:text="${analytics.kpis.averageBasketSize.formattedCurrent}">0.0</div>
                     <span class="text-[11px] text-tertiary">Items / invoice</span>
                 </div>
             </div>
@@ -158,7 +158,7 @@
                 <span class="text-xs font-semibold text-on-surface-variant">Discounts Conceded</span>
                 <div class="mt-2">
                     <div class="text-xl font-bold font-headline text-amber-700"
-                         th:text="${'₹' + analytics.kpis.totalDiscounts}">₹0.00</div>
+                         th:text="${'₹' + analytics.kpis.totalDiscounts.formattedCurrent}">₹0.00</div>
                     <span class="text-[11px] text-tertiary">Promotional markdowns</span>
                 </div>
             </div>
@@ -459,8 +459,6 @@
         </div>
     </div>
 
-</div>
-
 <!-- Chart.js & Interactivity Scripts -->
 <th:block th:fragment="scripts">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -629,5 +627,6 @@
         /*]]>*/
     </script>
 </th:block>
+</div>
 </body>
 </html>

@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layout/base :: html}"
+      th:replace="~{layout/base :: html(~{::content})}"
       lang="en">
 <body>
 <div th:fragment="content" class="max-w-3xl mx-auto flex flex-col gap-6">
@@ -159,8 +159,6 @@
         </form>
     </div>
 
-</div>
-
 <!-- Chip Selection Script -->
 <script>
     function selectFormat(button, formatName) {
@@ -185,5 +183,6 @@
         }
     }
 </script>
+</div>
 </body>
 </html>

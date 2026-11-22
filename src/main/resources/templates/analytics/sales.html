@@ -50,18 +50,18 @@
     <div th:if="${readiness != null and !readiness.salesReady}"
          class="rounded-2xl border border-amber-200 bg-amber-50/70 p-8 text-center flex flex-col items-center justify-center gap-3">
         <span class="material-symbols-outlined text-amber-600 text-[48px]">receipt_long</span>
-        <h2 class="text-lg font-bold text-amber-900">No Sales Transactions Ingested</h2>
+        <h2 class="text-lg font-bold text-amber-900">No Sales Transactions In Window</h2>
         <p class="text-xs text-amber-800 max-w-md">
-            The sales analytics module requires completed POS transactions to calculate revenues, basket sizes, and hourly velocities.
+            No Naveen Store receipts found inside this timeframe. Select This Year to view the full 2025-11-22 to 2026-11-22 analytical mart.
         </p>
         <div class="flex items-center gap-3 mt-2">
-            <a th:href="@{/datasets/sample-generator}"
+            <a th:href="@{/analytics/sales(preset='THIS_YEAR')}"
                class="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs transition-colors">
-                Generate Synthetic Data
+                View This Year
             </a>
-            <a th:href="@{/datasets/upload}"
+            <a th:href="@{/analytics/ai-insights}"
                class="px-4 py-2 rounded-xl bg-white border border-amber-300 text-amber-800 hover:bg-amber-100 font-semibold text-xs transition-colors">
-                Upload Transactions CSV
+                Ask Naveen Store AI
             </a>
         </div>
     </div>
@@ -73,10 +73,10 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
             <!-- Total Revenue -->
             <div class="bg-surface-container-lowest rounded-2xl p-5 border border-[#E7E9E3] shadow-xs flex flex-col justify-between">
-                <span class="text-xs font-semibold text-on-surface-variant">Gross Revenue</span>
+                <span class="text-xs font-semibold text-on-surface-variant">Net Revenue</span>
                 <div class="mt-2">
                     <div class="text-xl font-bold font-headline text-on-surface"
-                         th:text="${'₹' + analytics.kpis.totalRevenue.formattedCurrent}">₹0.00</div>
+                         th:text="${analytics.kpis.totalRevenue.formattedCurrent}">₹0.00</div>
                     <div class="flex items-center gap-1.5 mt-1 text-[11px]">
                         <span th:classappend="${analytics.kpis.totalRevenue.direction.name() == 'UP' ? 'text-emerald-600' : (analytics.kpis.totalRevenue.direction.name() == 'DOWN' ? 'text-rose-600' : 'text-slate-500')}"
                               class="font-bold inline-flex items-center">
@@ -112,7 +112,7 @@
                 <span class="text-xs font-semibold text-on-surface-variant">Avg Ticket (ATV)</span>
                 <div class="mt-2">
                     <div class="text-xl font-bold font-headline text-on-surface"
-                         th:text="${'₹' + analytics.kpis.averageTransactionValue.formattedCurrent}">₹0.00</div>
+                         th:text="${analytics.kpis.averageTransactionValue.formattedCurrent}">₹0.00</div>
                     <div class="flex items-center gap-1.5 mt-1 text-[11px]">
                         <span th:classappend="${analytics.kpis.averageTransactionValue.direction.name() == 'UP' ? 'text-emerald-600' : (analytics.kpis.averageTransactionValue.direction.name() == 'DOWN' ? 'text-rose-600' : 'text-slate-500')}"
                               class="font-bold inline-flex items-center">
@@ -158,7 +158,7 @@
                 <span class="text-xs font-semibold text-on-surface-variant">Discounts Conceded</span>
                 <div class="mt-2">
                     <div class="text-xl font-bold font-headline text-amber-700"
-                         th:text="${'₹' + analytics.kpis.totalDiscounts.formattedCurrent}">₹0.00</div>
+                         th:text="${analytics.kpis.totalDiscounts.formattedCurrent}">₹0.00</div>
                     <span class="text-[11px] text-tertiary">Promotional markdowns</span>
                 </div>
             </div>
@@ -235,8 +235,8 @@
                             <tr th:each="cat : ${analytics.categoryPerformance}">
                                 <td class="py-2.5 font-bold text-on-surface" th:text="${cat.category}">Category</td>
                                 <td class="py-2.5 text-right font-mono" th:text="${cat.unitsSold}">0</td>
-                                <td class="py-2.5 text-right font-mono font-bold" th:text="${'₹' + cat.revenue}">₹0.00</td>
-                                <td class="py-2.5 text-right font-mono text-emerald-700" th:text="${'₹' + cat.grossProfit}">₹0.00</td>
+                                <td class="py-2.5 text-right font-mono font-bold" th:text="${inr.fmt(cat.revenue)}">₹0.00</td>
+                                <td class="py-2.5 text-right font-mono text-emerald-700" th:text="${inr.fmt(cat.grossProfit)}">₹0.00</td>
                                 <td class="py-2.5 text-right font-mono font-bold"
                                     th:classappend="${cat.grossMarginPercentage >= 25 ? 'text-emerald-700' : 'text-amber-700'}"
                                     th:text="${cat.grossMarginPercentage + '%'}">0%</td>
@@ -284,8 +284,8 @@
                             <td class="py-2.5 font-bold text-on-surface" th:text="${p.productName}">Product Name</td>
                             <td class="py-2.5 text-on-surface-variant" th:text="${p.category}">Category</td>
                             <td class="py-2.5 text-right font-mono" th:text="${p.unitsSold}">0</td>
-                            <td class="py-2.5 text-right font-mono font-bold" th:text="${'₹' + p.revenue}">₹0.00</td>
-                            <td class="py-2.5 text-right font-mono font-bold text-emerald-700" th:text="${'₹' + p.grossProfit}">₹0.00</td>
+                            <td class="py-2.5 text-right font-mono font-bold" th:text="${inr.fmt(p.revenue)}">₹0.00</td>
+                            <td class="py-2.5 text-right font-mono font-bold text-emerald-700" th:text="${inr.fmt(p.grossProfit)}">₹0.00</td>
                         </tr>
                     </tbody>
                 </table>
@@ -330,9 +330,9 @@
                             <td class="py-2.5 font-mono text-on-surface" th:text="${tx.customerId != null ? tx.customerId : 'Walk-in'}">CUST-101</td>
                             <td class="py-2.5 font-mono text-tertiary" th:text="${tx.productId}">SKU-1001</td>
                             <td class="py-2.5 text-right font-mono" th:text="${tx.quantity}">2</td>
-                            <td class="py-2.5 text-right font-mono" th:text="${'₹' + tx.unitPrice}">₹150.00</td>
-                            <td class="py-2.5 text-right font-mono text-tertiary" th:text="${'₹' + tx.discount}">₹0.00</td>
-                            <td class="py-2.5 text-right font-mono font-bold text-on-surface" th:text="${'₹' + tx.revenue}">₹300.00</td>
+                            <td class="py-2.5 text-right font-mono" th:text="${inr.fmt(tx.unitPrice)}">₹150.00</td>
+                            <td class="py-2.5 text-right font-mono text-tertiary" th:text="${inr.fmt(tx.discount)}">₹0.00</td>
+                            <td class="py-2.5 text-right font-mono font-bold text-on-surface" th:text="${inr.fmt(tx.revenue)}">₹300.00</td>
                             <td class="py-2.5">
                                 <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-surface-container text-on-surface"
                                       th:text="${tx.paymentMethod != null ? tx.paymentMethod : 'Cash'}">Cash</span>
@@ -424,8 +424,8 @@
                     <strong class="text-on-surface font-semibold" id="modal-cashier">Lane 02 (POS-1)</strong>
                 </div>
                 <div>
-                    <span class="text-[10px] text-tertiary block">Store ID</span>
-                    <strong class="text-on-surface font-semibold" id="modal-store">Vijayawada Hub</strong>
+                    <span class="text-[10px] text-tertiary block">Store</span>
+                    <strong class="text-on-surface font-semibold" id="modal-store">Naveen Store (STORE-001 • Lucknow)</strong>
                 </div>
                 <div>
                     <span class="text-[10px] text-tertiary block">Customer</span>

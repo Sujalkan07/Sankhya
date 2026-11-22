@@ -144,11 +144,11 @@ public class ExecutiveOverviewService {
 
         // 3. Populate Comparison Metrics
         response.setTotalRevenue(AnalyticsMathUtils.calculateComparison(
-                currRevenue, prevRevenue, "$" + AnalyticsMathUtils.roundMoney(currRevenue)));
+                currRevenue, prevRevenue, AnalyticsMathUtils.formatInr(currRevenue)));
         response.setTotalTransactions(AnalyticsMathUtils.calculateComparison(
                 BigDecimal.valueOf(currTxns), BigDecimal.valueOf(prevTxns), String.valueOf(currTxns)));
         response.setAverageTransactionValue(AnalyticsMathUtils.calculateComparison(
-                currAtv, prevAtv, "$" + AnalyticsMathUtils.roundMoney(currAtv)));
+                currAtv, prevAtv, AnalyticsMathUtils.formatInr(currAtv)));
         response.setActiveCustomers(AnalyticsMathUtils.calculateComparison(
                 BigDecimal.valueOf(currCustomers), BigDecimal.valueOf(prevCustomers), String.valueOf(currCustomers)));
 
@@ -189,21 +189,21 @@ public class ExecutiveOverviewService {
         List<String> insights = new ArrayList<>();
         if (currRevenue.compareTo(BigDecimal.ZERO) > 0) {
             String revDirection = response.getTotalRevenue().getPercentageChange().compareTo(BigDecimal.ZERO) >= 0 ? "increased" : "decreased";
-            insights.add(String.format("Total sales reached $%s (%s by %s%% compared to the previous period).",
-                    AnalyticsMathUtils.roundMoney(currRevenue), revDirection, response.getTotalRevenue().getPercentageChange().abs()));
+            insights.add(String.format("Total sales reached %s (%s by %s%% compared to the previous period).",
+                    AnalyticsMathUtils.formatInr(currRevenue), revDirection, response.getTotalRevenue().getPercentageChange().abs()));
         } else {
             insights.add("No sales recorded for the selected date window.");
         }
 
         if (currTxns > 0) {
-            insights.add(String.format("The supermarket recorded %d distinct customer transactions with an average basket value of $%s.",
-                    currTxns, AnalyticsMathUtils.roundMoney(currAtv)));
+            insights.add(String.format("The supermarket recorded %d distinct customer transactions with an average basket value of %s.",
+                    currTxns, AnalyticsMathUtils.formatInr(currAtv)));
         }
 
         if (topCategoryName != null && currRevenue.compareTo(BigDecimal.ZERO) > 0) {
             BigDecimal topCatShare = AnalyticsMathUtils.safePercentage(topCategoryRevenue, currRevenue);
-            insights.add(String.format("'%s' is the top revenue-generating category, contributing %s%% ($%s) of total sales.",
-                    topCategoryName, topCatShare, AnalyticsMathUtils.roundMoney(topCategoryRevenue)));
+            insights.add(String.format("'%s' is the top revenue-generating category, contributing %s%% (%s) of total sales.",
+                    topCategoryName, topCatShare, AnalyticsMathUtils.formatInr(topCategoryRevenue)));
         }
 
         if (lowStockCount > 0) {

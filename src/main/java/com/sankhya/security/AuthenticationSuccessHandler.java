@@ -40,25 +40,24 @@ public class AuthenticationSuccessHandler extends SavedRequestAwareAuthenticatio
             if (activeWorkspace == null) {
                 List<Workspace> accessible = workspaceRepository.findAllAccessibleByUserId(userDetails.getId());
                 if (!accessible.isEmpty()) {
-                    activeWorkspace = accessible.get(0);
+                    activeWorkspace = accessible.stream()
+                            .filter(w -> "STORE-001".equalsIgnoreCase(w.getStoreKey())
+                                    || "Naveen Store".equalsIgnoreCase(w.getName()))
+                            .findFirst()
+                            .orElse(accessible.get(0));
+                } else {
+                    activeWorkspace = workspaceRepository.findAll().stream()
+                            .filter(w -> "STORE-001".equalsIgnoreCase(w.getStoreKey())
+                                    || "Naveen Store".equalsIgnoreCase(w.getName()))
+                            .findFirst()
+                            .orElse(null);
+                }
+                if (activeWorkspace != null) {
                     session.setAttribute(ACTIVE_WORKSPACE_ID_SESSION_KEY, activeWorkspace.getId());
                 }
             }
-
-            if (activeWorkspace != null) {
-                if ("STORE_SETUP".equalsIgnoreCase(activeWorkspace.getOnboardingStatus())) {
-                    getRedirectStrategy().sendRedirect(request, response, "/onboarding/store-setup");
-                    return;
-                } else if ("DATASET_ONBOARDING".equalsIgnoreCase(activeWorkspace.getOnboardingStatus())) {
-                    getRedirectStrategy().sendRedirect(request, response, "/onboarding/datasets");
-                    return;
-                }
-            } else {
-                getRedirectStrategy().sendRedirect(request, response, "/onboarding/store-setup");
-                return;
-            }
         }
 
-        super.onAuthenticationSuccess(request, response, authentication);
+        getRedirectStrategy().sendRedirect(request, response, "/dashboard");
     }
 }

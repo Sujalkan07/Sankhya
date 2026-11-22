@@ -8,19 +8,32 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "unified_sales_mart",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_mart_workspace_store_row", columnNames = {"workspace_id", "store_id", "dataset_import_id", "row_number"})
+        },
         indexes = {
                 @Index(name = "idx_mart_workspace_date", columnList = "workspace_id, transaction_date"),
                 @Index(name = "idx_mart_workspace_tx", columnList = "workspace_id, transaction_id"),
                 @Index(name = "idx_mart_workspace_cust", columnList = "workspace_id, customer_id"),
                 @Index(name = "idx_mart_workspace_prod", columnList = "workspace_id, product_id"),
                 @Index(name = "idx_mart_workspace_cat", columnList = "workspace_id, category"),
-                @Index(name = "idx_mart_workspace_import", columnList = "workspace_id, dataset_import_id")
+                @Index(name = "idx_mart_workspace_import", columnList = "workspace_id, dataset_import_id"),
+                @Index(name = "idx_mart_store_date", columnList = "store_id, transaction_date")
         })
 public class UnifiedSalesMart {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "store_id", nullable = false, length = 50)
+    private String storeId = "STORE-001";
+
+    @Column(name = "store_name", nullable = false, length = 150)
+    private String storeName = "Naveen Store";
+
+    @Column(name = "store_owner", nullable = false, length = 150)
+    private String storeOwner = "Sujal Kansal";
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "workspace_id", nullable = false)
@@ -145,6 +158,30 @@ public class UnifiedSalesMart {
     // Getters and Setters
     public Long getId() {
         return id;
+    }
+
+    public String getStoreId() {
+        return storeId;
+    }
+
+    public void setStoreId(String storeId) {
+        this.storeId = storeId;
+    }
+
+    public String getStoreName() {
+        return storeName;
+    }
+
+    public void setStoreName(String storeName) {
+        this.storeName = storeName;
+    }
+
+    public String getStoreOwner() {
+        return storeOwner;
+    }
+
+    public void setStoreOwner(String storeOwner) {
+        this.storeOwner = storeOwner;
     }
 
     public void setId(Long id) {

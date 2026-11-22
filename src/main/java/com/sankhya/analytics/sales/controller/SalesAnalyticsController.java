@@ -101,7 +101,7 @@ public class SalesAnalyticsController {
                             wsId,
                             filter.getStartDateTime(),
                             filter.getEndDateTime(),
-                            PageRequest.of(0, 15, Sort.by(Sort.Direction.DESC, "transactionDate"))
+                            PageRequest.of(0, 15)
                     ).getContent().stream().map(this::toViewTransaction).toList();
                 } else {
                     recentTransactions = salesTransactionRepository.findByWorkspaceId(
@@ -167,6 +167,7 @@ public class SalesAnalyticsController {
         tx.setDiscount(m.getDiscount());
         tx.setRevenue(m.getRevenue());
         tx.setPaymentMethod(m.getPaymentMethod());
+        tx.setStoreId(m.getStoreId());
         tx.setCashierName(m.getCashierName());
         tx.setStatus("COMPLETED");
         return tx;

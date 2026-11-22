@@ -16,7 +16,7 @@ public class ComparisonMetric<T> {
     private String formattedCurrent;
 
     public ComparisonMetric(BigDecimal current, BigDecimal previous) {
-        this(current, previous, current != null ? "$" + AnalyticsMathUtils.roundMoney(current) : "$0.00");
+        this(current, previous, current != null ? AnalyticsMathUtils.formatInr(current) : "₹0.00");
     }
 
     public ComparisonMetric(BigDecimal current, BigDecimal previous, String formattedCurrent) {

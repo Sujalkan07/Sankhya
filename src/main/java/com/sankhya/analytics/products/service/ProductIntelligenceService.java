@@ -145,8 +145,11 @@ public class ProductIntelligenceService {
         response.setTopProductsByMargin(topByMargin);
 
         // 5. Category Profitability
-        List<Object[]> catRows = salesTransactionRepository.findCategorySalesContributionBetween(
-                workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+        List<Object[]> catRows = useMart
+                ? unifiedSalesMartRepository.findCategorySalesContributionBetween(
+                        workspaceId, filter.getStartDateTime(), filter.getEndDateTime())
+                : salesTransactionRepository.findCategorySalesContributionBetween(
+                        workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
 
         Map<String, Long> categoryCatalogCounts = new HashMap<>();
         List<Object[]> catSummary = productRepository.findCategoryProductSummaryByWorkspaceId(workspaceId);

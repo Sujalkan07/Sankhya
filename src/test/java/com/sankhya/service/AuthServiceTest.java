@@ -58,11 +58,13 @@ public class AuthServiceTest {
         assertThat(registered.getPasswordHash()).isNotEqualTo("Secret@123");
         assertThat(passwordEncoder.matches("Secret@123", registered.getPasswordHash())).isTrue();
 
-        // Verify initial workspace was auto-provisioned
+        // Verify user was attached to canonical single-store Naveen Store (STORE-001, Lucknow)
         List<Workspace> workspaces = workspaceRepository.findAllAccessibleByUserId(registered.getId());
         assertThat(workspaces).isNotEmpty();
-        assertThat(workspaces.get(0).getName()).contains("Sujal Patel Supermarket");
-        assertThat(workspaces.get(0).getOwner().getId()).isEqualTo(registered.getId());
+        assertThat(workspaces.get(0).getName()).isEqualTo("Naveen Store");
+        assertThat(workspaces.get(0).getStoreKey()).isEqualTo("STORE-001");
+        assertThat(workspaces.get(0).getCity()).isEqualTo("Lucknow");
+        assertThat(workspaces.get(0).getOnboardingStatus()).isEqualTo("COMPLETED");
     }
 
     @Test

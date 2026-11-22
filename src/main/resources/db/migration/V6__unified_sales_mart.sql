@@ -4,6 +4,9 @@
 CREATE TABLE IF NOT EXISTS unified_sales_mart (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     workspace_id BIGINT NOT NULL,
+    store_id VARCHAR(50) NOT NULL DEFAULT 'STORE-001',
+    store_name VARCHAR(150) NOT NULL DEFAULT 'Naveen Store',
+    store_owner VARCHAR(150) NOT NULL DEFAULT 'Sujal Kansal',
     dataset_import_id BIGINT,
     dataset_id BIGINT,
     row_number INT NOT NULL,
@@ -32,11 +35,13 @@ CREATE TABLE IF NOT EXISTS unified_sales_mart (
     current_reorder_level INT,
     current_inventory_status VARCHAR(50),
     created_at DATETIME NOT NULL,
+    CONSTRAINT uk_mart_workspace_store_row UNIQUE (workspace_id, store_id, dataset_import_id, row_number),
     INDEX idx_mart_workspace_date (workspace_id, transaction_date),
     INDEX idx_mart_workspace_tx (workspace_id, transaction_id),
     INDEX idx_mart_workspace_cust (workspace_id, customer_id),
     INDEX idx_mart_workspace_prod (workspace_id, product_id),
     INDEX idx_mart_workspace_cat (workspace_id, category),
     INDEX idx_mart_workspace_import (workspace_id, dataset_import_id),
+    INDEX idx_mart_store_date (store_id, transaction_date),
     CONSTRAINT fk_mart_workspace FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

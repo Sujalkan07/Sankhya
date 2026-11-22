@@ -55,19 +55,6 @@
                 <span class="material-symbols-outlined text-[18px]">donut_small</span>
                 <span>Category Breakdown</span>
             </a>
-            <div class="pt-2 my-1 border-t border-[#E7E9E3]">
-                <span class="text-[10px] font-bold uppercase tracking-wider text-tertiary px-2">Quick Pipeline</span>
-                <div class="mt-1 flex flex-col gap-1">
-                    <a th:href="@{/datasets/upload}" class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors">
-                        <span class="material-symbols-outlined text-[16px]">upload_file</span>
-                        <span>Upload Datasets</span>
-                    </a>
-                    <a th:href="@{/datasets/sample-generator}" class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors">
-                        <span class="material-symbols-outlined text-[16px]">auto_fix_high</span>
-                        <span>Synthetic Data Generator</span>
-                    </a>
-                </div>
-            </div>
         </nav>
 
         <!-- 2. SALES SUB-NAV -->
@@ -214,35 +201,7 @@
             </a>
         </nav>
 
-        <!-- 8. DATASETS SUB-NAV -->
-        <nav th:if="${activeModule == 'datasets'}" class="flex flex-col gap-1">
-            <a th:href="@{/datasets}"
-               th:classappend="${activeSubPage == 'overview' || activeSubPage == null ? 'bg-surface-container text-primary font-bold shadow-xs' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}"
-               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors">
-                <span class="material-symbols-outlined text-[18px]">table_chart</span>
-                <span>Pipeline Overview</span>
-            </a>
-            <a th:href="@{/datasets/upload}"
-               th:classappend="${activeSubPage == 'upload' ? 'bg-surface-container text-primary font-bold shadow-xs' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}"
-               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors">
-                <span class="material-symbols-outlined text-[18px]">upload_file</span>
-                <span>Upload Dataset</span>
-            </a>
-            <a th:href="@{/datasets/sample-generator}"
-               th:classappend="${activeSubPage == 'generator' ? 'bg-surface-container text-primary font-bold shadow-xs' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}"
-               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors">
-                <span class="material-symbols-outlined text-[18px]">auto_fix_high</span>
-                <span>Synthetic Generator</span>
-            </a>
-            <a th:href="@{/datasets/history}"
-               th:classappend="${activeSubPage == 'history' ? 'bg-surface-container text-primary font-bold shadow-xs' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}"
-               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors">
-                <span class="material-symbols-outlined text-[18px]">history</span>
-                <span>Ingestion History</span>
-            </a>
-        </nav>
-
-        <!-- 9. REPORTS SUB-NAV -->
+        <!-- 8. REPORTS SUB-NAV -->
         <nav th:if="${activeModule == 'reports'}" class="flex flex-col gap-1">
             <a th:href="@{/analytics/reports}"
                class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors bg-surface-container text-primary font-bold shadow-xs">
@@ -266,23 +225,7 @@
             </a>
         </nav>
 
-        <!-- 10. WORKSPACES SUB-NAV -->
-        <nav th:if="${activeModule == 'workspaces'}" class="flex flex-col gap-1">
-            <a th:href="@{/workspaces}"
-               th:classappend="${activeSubPage == 'list' ? 'bg-surface-container text-primary font-bold shadow-xs' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}"
-               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors">
-                <span class="material-symbols-outlined text-[18px]">storefront</span>
-                <span>Store Workspaces</span>
-            </a>
-            <a th:href="@{/workspaces/create}"
-               th:classappend="${activeSubPage == 'create' ? 'bg-surface-container text-primary font-bold shadow-xs' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'}"
-               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors">
-                <span class="material-symbols-outlined text-[18px]">add_business</span>
-                <span>Provision New Store</span>
-            </a>
-        </nav>
-
-        <!-- 11. SETTINGS SUB-NAV -->
+        <!-- 9. SETTINGS SUB-NAV -->
         <nav th:if="${activeModule == 'settings'}" class="flex flex-col gap-1">
             <a th:href="@{/settings}"
                class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors bg-surface-container text-primary font-bold shadow-xs">
@@ -297,26 +240,29 @@
         </nav>
     </div>
 
-    <!-- Bottom Section: Store Setup Status & System Actions -->
+    <!-- Bottom Section: Store Info & System Actions -->
     <div class="px-3 flex flex-col gap-2 pt-2 border-t border-[#E7E9E3]">
-        <!-- Store Setup / Onboarding Status Card -->
-        <a th:href="@{/onboarding/datasets}"
-           class="p-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container flex flex-col gap-1 text-[11px] border border-[#E7E9E3] transition-colors">
-            <div class="flex items-center gap-1.5 text-primary font-bold">
-                <span class="material-symbols-outlined text-[15px]">checklist</span>
-                <span>Dataset Onboarding</span>
+        <!-- Single-Store Identity Card -->
+        <div class="p-2.5 rounded-xl bg-surface-container-low flex flex-col gap-1 text-[11px] border border-[#E7E9E3]">
+            <div class="flex items-center justify-between gap-1.5 text-primary font-bold">
+                <span class="flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[15px]">storefront</span>
+                    <span th:text="${activeWorkspace != null ? activeWorkspace.name : 'Naveen Store'}">Naveen Store</span>
+                </span>
+                <span class="font-mono text-[10px] px-1.5 py-0.5 rounded bg-surface-container"
+                      th:text="${activeWorkspace != null && activeWorkspace.storeKey != null ? activeWorkspace.storeKey : 'STORE-001'}">STORE-001</span>
             </div>
             <p class="text-[10px] text-tertiary leading-tight"
-               th:text="${activeWorkspace != null ? activeWorkspace.name + ' (' + activeWorkspace.storeFormat + ')' : 'Store setup wizard'}">
-                Green Basket Supermarket
+               th:text="${activeWorkspace != null && activeWorkspace.ownerName != null ? 'Owner: ' + activeWorkspace.ownerName + ' • INR (₹)' : 'Owner: Sujal Kansal • INR (₹)'}">
+                Owner: Sujal Kansal • INR (₹)
             </p>
-        </a>
+        </div>
 
-        <!-- Workspace Manager Link -->
-        <a th:href="@{/workspaces}"
-           class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors">
-            <span class="material-symbols-outlined text-[18px]">workspaces</span>
-            <span>Switch Store</span>
+        <!-- Ask Naveen Store AI Shortcut -->
+        <a th:href="@{/analytics/ai-insights}"
+           class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs text-primary font-semibold hover:bg-surface-container-low transition-colors">
+            <span class="material-symbols-outlined text-[18px]">psychology</span>
+            <span>Ask Naveen Store AI</span>
         </a>
 
         <!-- Settings Link -->

@@ -50,18 +50,18 @@
     <div th:if="${readiness != null and (!readiness.productReady and !readiness.salesReady)}"
          class="rounded-2xl border border-amber-200 bg-amber-50/70 p-8 text-center flex flex-col items-center justify-center gap-3">
         <span class="material-symbols-outlined text-amber-600 text-[48px]">category</span>
-        <h2 class="text-lg font-bold text-amber-900">Product &amp; Sales Data Required</h2>
+        <h2 class="text-lg font-bold text-amber-900">Product &amp; Sales Data Unavailable</h2>
         <p class="text-xs text-amber-800 max-w-md">
-            Product intelligence links product catalog costs and selling prices with transactional sales volumes to calculate unit economics and gross margins.
+            No product sales data is loaded for the active window. Switch to a wider preset such as This Year or inspect Executive Overview.
         </p>
         <div class="flex items-center gap-3 mt-2">
-            <a th:href="@{/datasets/sample-generator}"
+            <a th:href="@{/analytics/products(preset='THIS_YEAR')}"
                class="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs transition-colors">
-                Generate Synthetic Data
+                View This Year
             </a>
-            <a th:href="@{/datasets/upload}"
+            <a th:href="@{/dashboard}"
                class="px-4 py-2 rounded-xl bg-white border border-amber-300 text-amber-800 hover:bg-amber-100 font-semibold text-xs transition-colors">
-                Upload Product Catalog
+                Return to Overview
             </a>
         </div>
     </div>
@@ -200,9 +200,9 @@
                             <td class="py-2.5 font-bold text-on-surface" th:text="${c.category}">Beverages</td>
                             <td class="py-2.5 text-right font-mono" th:text="${c.skuCount}">0</td>
                             <td class="py-2.5 text-right font-mono" th:text="${c.quantitySold}">0</td>
-                            <td class="py-2.5 text-right font-mono font-bold" th:text="${'₹' + c.revenue}">₹0.00</td>
-                            <td class="py-2.5 text-right font-mono text-tertiary" th:text="${'₹' + c.cogs}">₹0.00</td>
-                            <td class="py-2.5 text-right font-mono font-bold text-emerald-700" th:text="${'₹' + c.grossProfit}">₹0.00</td>
+                            <td class="py-2.5 text-right font-mono font-bold" th:text="${inr.fmt(c.revenue)}">₹0.00</td>
+                            <td class="py-2.5 text-right font-mono text-tertiary" th:text="${inr.fmt(c.cogs)}">₹0.00</td>
+                            <td class="py-2.5 text-right font-mono font-bold text-emerald-700" th:text="${inr.fmt(c.grossProfit)}">₹0.00</td>
                             <td class="py-2.5 text-right font-mono font-bold"
                                 th:classappend="${c.grossMarginPercentage >= 25 ? 'text-emerald-700' : 'text-amber-700'}"
                                 th:text="${c.grossMarginPercentage + '%'}">0%</td>
@@ -259,9 +259,9 @@
                             <td class="py-2.5 font-bold text-on-surface sku-name" th:text="${p.productName}">Product Name</td>
                             <td class="py-2.5 text-on-surface-variant" th:text="${p.category}">Category</td>
                             <td class="py-2.5 text-right font-mono" th:text="${p.quantitySold}">0</td>
-                            <td class="py-2.5 text-right font-mono font-bold" th:text="${'₹' + p.revenue}">₹0.00</td>
-                            <td class="py-2.5 text-right font-mono text-tertiary" th:text="${'₹' + p.cogs}">₹0.00</td>
-                            <td class="py-2.5 text-right font-mono font-bold text-emerald-700" th:text="${'₹' + p.grossProfit}">₹0.00</td>
+                            <td class="py-2.5 text-right font-mono font-bold" th:text="${inr.fmt(p.revenue)}">₹0.00</td>
+                            <td class="py-2.5 text-right font-mono text-tertiary" th:text="${inr.fmt(p.cogs)}">₹0.00</td>
+                            <td class="py-2.5 text-right font-mono font-bold text-emerald-700" th:text="${inr.fmt(p.grossProfit)}">₹0.00</td>
                             <td class="py-2.5 text-right font-mono font-bold"
                                 th:classappend="${p.grossMarginPercentage >= 25 ? 'text-emerald-700' : 'text-amber-700'}"
                                 th:text="${p.grossMarginPercentage + '%'}">0%</td>
@@ -287,7 +287,7 @@
                     <span class="material-symbols-outlined text-primary text-[22px]">shopping_basket</span>
                     <div>
                         <h3 class="font-headline font-bold text-base text-on-surface">Apriori Market Basket Association Rules</h3>
-                        <p class="text-xs text-tertiary">Mined co-occurrence patterns across multi-item customer checkout baskets.</p>
+                        <p class="text-xs text-tertiary">Mined co-occurrence patterns across multi-item Naveen Store baskets (Instacart-derived top-1,000 filtered product view; synthetic INR pricing).</p>
                     </div>
                 </div>
                 <form th:action="@{/analytics/ai-insights/train/APRIORI}" method="post">

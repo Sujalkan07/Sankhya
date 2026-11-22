@@ -38,12 +38,14 @@ public class SalesAnalyticsService {
         BigDecimal currRevenue;
         long currTxns;
         long currUnits;
+        long currLines = 0;
         BigDecimal currDiscounts;
 
         DateRangeFilter prevFilter = filter.getPrecedingComparisonFilter();
         BigDecimal prevRevenue;
         long prevTxns;
         long prevUnits;
+        long prevLines = 0;
         BigDecimal prevDiscounts;
 
         List<Object[]> dailyData;
@@ -60,6 +62,9 @@ public class SalesAnalyticsService {
             currTxns = unifiedSalesMartRepository.countDistinctTransactionsBetween(
                     workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
 
+            currLines = unifiedSalesMartRepository.countLinesBetween(
+                    workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+
             Long currUnitsLong = unifiedSalesMartRepository.sumQuantityBetween(
                     workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
             currUnits = currUnitsLong != null ? currUnitsLong : 0L;
@@ -73,6 +78,9 @@ public class SalesAnalyticsService {
             if (prevRevenue == null) prevRevenue = BigDecimal.ZERO;
 
             prevTxns = unifiedSalesMartRepository.countDistinctTransactionsBetween(
+                    workspaceId, prevFilter.getStartDateTime(), prevFilter.getEndDateTime());
+
+            prevLines = unifiedSalesMartRepository.countLinesBetween(
                     workspaceId, prevFilter.getStartDateTime(), prevFilter.getEndDateTime());
 
             Long prevUnitsLong = unifiedSalesMartRepository.sumQuantityBetween(
@@ -149,7 +157,9 @@ public class SalesAnalyticsService {
                 : BigDecimal.ZERO;
 
         BigDecimal currBasketSize = currTxns > 0
-                ? AnalyticsMathUtils.safeDivide(BigDecimal.valueOf(currUnits), BigDecimal.valueOf(currTxns))
+                ? AnalyticsMathUtils.safeDivide(
+                        BigDecimal.valueOf(useMart ? currLines : currUnits),
+                        BigDecimal.valueOf(currTxns))
                 : BigDecimal.ZERO;
 
         BigDecimal prevAtv = prevTxns > 0
@@ -157,23 +167,25 @@ public class SalesAnalyticsService {
                 : BigDecimal.ZERO;
 
         BigDecimal prevBasketSize = prevTxns > 0
-                ? AnalyticsMathUtils.safeDivide(BigDecimal.valueOf(prevUnits), BigDecimal.valueOf(prevTxns))
+                ? AnalyticsMathUtils.safeDivide(
+                        BigDecimal.valueOf(useMart ? prevLines : prevUnits),
+                        BigDecimal.valueOf(prevTxns))
                 : BigDecimal.ZERO;
 
         // 3. Assemble KPIs
         SalesKpiResponse kpis = new SalesKpiResponse();
         kpis.setTotalRevenue(AnalyticsMathUtils.calculateComparison(
-                currRevenue, prevRevenue, "$" + AnalyticsMathUtils.roundMoney(currRevenue)));
+                currRevenue, prevRevenue, AnalyticsMathUtils.formatInr(currRevenue)));
         kpis.setTotalTransactions(AnalyticsMathUtils.calculateComparison(
                 BigDecimal.valueOf(currTxns), BigDecimal.valueOf(prevTxns), String.valueOf(currTxns)));
         kpis.setTotalUnitsSold(AnalyticsMathUtils.calculateComparison(
                 BigDecimal.valueOf(currUnits), BigDecimal.valueOf(prevUnits), String.valueOf(currUnits)));
         kpis.setAverageTransactionValue(AnalyticsMathUtils.calculateComparison(
-                currAtv, prevAtv, "$" + AnalyticsMathUtils.roundMoney(currAtv)));
+                currAtv, prevAtv, AnalyticsMathUtils.formatInr(currAtv)));
         kpis.setAverageBasketSize(AnalyticsMathUtils.calculateComparison(
                 currBasketSize, prevBasketSize, AnalyticsMathUtils.roundMoney(currBasketSize) + " items"));
         kpis.setTotalDiscounts(AnalyticsMathUtils.calculateComparison(
-                currDiscounts, prevDiscounts, "$" + AnalyticsMathUtils.roundMoney(currDiscounts)));
+                currDiscounts, prevDiscounts, AnalyticsMathUtils.formatInr(currDiscounts)));
         response.setKpis(kpis);
 
         // 4. Daily Sales Trend Chart

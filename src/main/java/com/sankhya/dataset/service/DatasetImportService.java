@@ -310,7 +310,7 @@ public class DatasetImportService {
 
         String sql = """
             INSERT INTO unified_sales_mart (
-                workspace_id, dataset_import_id, dataset_id, row_number,
+                workspace_id, store_id, store_name, store_owner, dataset_import_id, dataset_id, row_number,
                 transaction_id, transaction_date, payment_method, cashier_name,
                 customer_id, customer_name, city, customer_segment,
                 product_id, product_name, category, subcategory, brand,
@@ -318,7 +318,7 @@ public class DatasetImportService {
                 revenue, gross_profit,
                 latest_inventory_snapshot_date, current_closing_stock, current_reorder_level, current_inventory_status,
                 created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """;
 
         LocalDateTime now = LocalDateTime.now();
@@ -397,6 +397,9 @@ public class DatasetImportService {
                 String subcategory = getVal(row, mapping, "subcategory");
                 String brand = getVal(row, mapping, "brand");
 
+                String storeId = getValOrDefault(row, mapping, "store_id", workspace.getStoreKey());
+                String storeName = getValOrDefault(row, mapping, "store_name", workspace.getName());
+                String storeOwner = getValOrDefault(row, mapping, "store_owner", workspace.getOwnerName());
                 String invDateRaw = getVal(row, mapping, "latest_inventory_snapshot_date");
                 LocalDate invDate = invDateRaw != null ? DataCleaningUtils.cleanDate(invDateRaw) : null;
                 Integer closingStock = DataCleaningUtils.cleanInteger(getVal(row, mapping, "current_closing_stock"));
@@ -405,6 +408,9 @@ public class DatasetImportService {
 
                 batchParams.add(new Object[]{
                         workspace.getId(),
+                        storeId,
+                        storeName,
+                        storeOwner,
                         datasetImport.getId(),
                         dataset.getId(),
                         (int) rowNum,

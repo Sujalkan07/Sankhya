@@ -51,9 +51,12 @@ public class InventoryIntelligenceService {
         BigDecimal totalRetailValuation = BigDecimal.ZERO;
 
         List<ReorderRecommendationDto> reorders = new ArrayList<>();
+        List<InventoryIntelligenceResponse.SnapshotSkuDto> snapshotItems = new ArrayList<>();
+        String latestSnapDate = null;
+        long belowReorderThresholdCount = 0;
 
         if (useMart) {
-            // Deduplicated inventory position directly from canonical mart
+            // Deduplicated inventory position directly from canonical mart (single latest snapshot)
             List<Object[]> martInv = unifiedSalesMartRepository.findLatestInventoryPerProductByWorkspaceId(workspaceId);
 
             for (Object[] row : martInv) {
@@ -62,31 +65,60 @@ public class InventoryIntelligenceService {
                 String category = row[2] != null ? row[2].toString() : "General";
                 BigDecimal unitCost = row[3] != null ? (BigDecimal) row[3] : BigDecimal.ZERO;
                 BigDecimal sellingPrice = row[4] != null ? (BigDecimal) row[4] : BigDecimal.ZERO;
+                String snapDate = row[5] != null ? row[5].toString() : "2026-11-22";
+                if (latestSnapDate == null || snapDate.compareTo(latestSnapDate) > 0) {
+                    latestSnapDate = snapDate;
+                }
                 int closing = row[6] != null ? ((Number) row[6]).intValue() : 0;
                 int reorder = row[7] != null ? ((Number) row[7]).intValue() : 0;
+                String rawStatus = row[8] != null ? row[8].toString().trim().toUpperCase() : "";
 
+                BigDecimal skuCostValuation = closing > 0
+                        ? unitCost.multiply(BigDecimal.valueOf(closing))
+                        : BigDecimal.ZERO;
                 if (closing > 0) {
-                    totalCostValuation = totalCostValuation.add(unitCost.multiply(BigDecimal.valueOf(closing)));
+                    totalCostValuation = totalCostValuation.add(skuCostValuation);
                     totalRetailValuation = totalRetailValuation.add(sellingPrice.multiply(BigDecimal.valueOf(closing)));
                 }
 
-                if (closing <= 0) {
+                String resolvedStatus;
+                if (!rawStatus.isEmpty()) {
+                    resolvedStatus = switch (rawStatus) {
+                        case "OUT_OF_STOCK" -> { outOfStockCount++; yield "OUT_OF_STOCK"; }
+                        case "LOW_STOCK" -> { lowStockCount++; yield "LOW_STOCK"; }
+                        case "OVERSTOCK" -> { overstockedCount++; yield "OVERSTOCK"; }
+                        default -> { healthyCount++; yield "HEALTHY"; }
+                    };
+                } else if (closing <= 0) {
                     outOfStockCount++;
+                    resolvedStatus = "OUT_OF_STOCK";
                 } else if (closing <= reorder) {
                     lowStockCount++;
+                    resolvedStatus = "LOW_STOCK";
                 } else if (reorder > 0 && closing > 3 * reorder) {
                     overstockedCount++;
+                    resolvedStatus = "OVERSTOCK";
                 } else {
                     healthyCount++;
+                    resolvedStatus = "HEALTHY";
                 }
 
                 if (closing <= reorder) {
+                    belowReorderThresholdCount++;
+                }
+
+                snapshotItems.add(new InventoryIntelligenceResponse.SnapshotSkuDto(
+                        pId, name, category, closing, reorder, unitCost, sellingPrice,
+                        skuCostValuation, resolvedStatus, snapDate));
+
+                boolean isExplicitLowOrOut = "LOW_STOCK".equals(resolvedStatus) || "OUT_OF_STOCK".equals(resolvedStatus);
+                if (isExplicitLowOrOut || closing <= reorder) {
                     int suggested = Math.max((2 * reorder) - closing, Math.max(reorder, 10));
                     BigDecimal restockCost = unitCost.multiply(BigDecimal.valueOf(suggested));
                     String urgency;
-                    if (closing <= 0) {
+                    if (closing <= 0 || "OUT_OF_STOCK".equals(resolvedStatus)) {
                         urgency = "CRITICAL";
-                    } else if (closing <= Math.max(1, reorder / 2)) {
+                    } else if ("LOW_STOCK".equals(resolvedStatus) || closing <= Math.max(1, reorder / 2)) {
                         urgency = "HIGH";
                     } else {
                         urgency = "MEDIUM";
@@ -180,8 +212,9 @@ public class InventoryIntelligenceService {
         response.setStockHealthChart(healthChart);
 
         // 5. Inventory Turnover Ratio
-        BigDecimal cogs = salesTransactionRepository.sumEstimatedCogsBetween(
-                workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
+        BigDecimal cogs = useMart
+                ? unifiedSalesMartRepository.sumEstimatedCogsBetween(workspaceId, filter.getStartDateTime(), filter.getEndDateTime())
+                : salesTransactionRepository.sumEstimatedCogsBetween(workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
         if (cogs == null) cogs = BigDecimal.ZERO;
 
         BigDecimal turnover = totalCostValuation.compareTo(BigDecimal.ZERO) > 0
@@ -198,38 +231,53 @@ public class InventoryIntelligenceService {
         kpis.setInventoryTurnoverRatio(turnover);
         response.setKpis(kpis);
 
-        // 7. Daily Stock Movement Trends
-        LocalDate startDate = filter.getStartDateTime().toLocalDate();
-        LocalDate endDate = filter.getEndDateTime().toLocalDate();
-        List<Object[]> dailyMovements = inventorySnapshotRepository.findDailyMovementTotalsBetween(
-                workspaceId, startDate, endDate);
+        // 7. Single-snapshot honesty vs legacy daily stock movement trends
+        if (useMart) {
+            response.setSingleSnapshotLimitation(true);
+            response.setLatestSnapshotDate(latestSnapDate != null ? latestSnapDate : "2026-11-22");
+            response.setBelowReorderThresholdCount(belowReorderThresholdCount);
+            response.setStockMovements(Collections.emptyList());
+            response.setStockMovementChart(null);
+            snapshotItems.sort(Comparator
+                    .comparing((InventoryIntelligenceResponse.SnapshotSkuDto s) ->
+                            "OUT_OF_STOCK".equals(s.getStatus()) ? 0 :
+                                    ("LOW_STOCK".equals(s.getStatus()) ? 1 :
+                                            ("OVERSTOCK".equals(s.getStatus()) ? 2 : 3)))
+                    .thenComparingInt(InventoryIntelligenceResponse.SnapshotSkuDto::getClosingStock));
+            response.setSnapshotItems(snapshotItems);
+        } else {
+            LocalDate startDate = filter.getStartDateTime().toLocalDate();
+            LocalDate endDate = filter.getEndDateTime().toLocalDate();
+            List<Object[]> dailyMovements = inventorySnapshotRepository.findDailyMovementTotalsBetween(
+                    workspaceId, startDate, endDate);
 
-        List<DailyStockMovementDto> movements = new ArrayList<>();
-        ChartDataResponse moveChart = new ChartDataResponse();
-        List<BigDecimal> closingValues = new ArrayList<>();
-        List<BigDecimal> receivedValues = new ArrayList<>();
-        List<BigDecimal> soldValues = new ArrayList<>();
+            List<DailyStockMovementDto> movements = new ArrayList<>();
+            ChartDataResponse moveChart = new ChartDataResponse();
+            List<BigDecimal> closingValues = new ArrayList<>();
+            List<BigDecimal> receivedValues = new ArrayList<>();
+            List<BigDecimal> soldValues = new ArrayList<>();
 
-        for (Object[] row : dailyMovements) {
-            String date = row[0].toString();
-            long opening = ((Number) row[1]).longValue();
-            long received = ((Number) row[2]).longValue();
-            long sold = ((Number) row[3]).longValue();
-            long closing = ((Number) row[4]).longValue();
+            for (Object[] row : dailyMovements) {
+                String date = row[0].toString();
+                long opening = ((Number) row[1]).longValue();
+                long received = ((Number) row[2]).longValue();
+                long sold = ((Number) row[3]).longValue();
+                long closing = ((Number) row[4]).longValue();
 
-            movements.add(new DailyStockMovementDto(date, opening, received, sold, closing));
-            moveChart.getLabels().add(date);
-            closingValues.add(BigDecimal.valueOf(closing));
-            receivedValues.add(BigDecimal.valueOf(received));
-            soldValues.add(BigDecimal.valueOf(sold));
+                movements.add(new DailyStockMovementDto(date, opening, received, sold, closing));
+                moveChart.getLabels().add(date);
+                closingValues.add(BigDecimal.valueOf(closing));
+                receivedValues.add(BigDecimal.valueOf(received));
+                soldValues.add(BigDecimal.valueOf(sold));
+            }
+
+            moveChart.addDataset("Closing Stock", closingValues);
+            moveChart.addDataset("Received Stock", receivedValues);
+            moveChart.addDataset("Sold Stock", soldValues);
+
+            response.setStockMovements(movements);
+            response.setStockMovementChart(moveChart);
         }
-
-        moveChart.addDataset("Closing Stock", closingValues);
-        moveChart.addDataset("Received Stock", receivedValues);
-        moveChart.addDataset("Sold Stock", soldValues);
-
-        response.setStockMovements(movements);
-        response.setStockMovementChart(moveChart);
 
         return response;
     }

@@ -133,7 +133,7 @@ class AiInsightsControllerTest {
 
         assertEquals("analytics/ai-insights", view);
         assertEquals("ai-insights", model.getAttribute("currentPage"));
-        assertEquals("AI Insights & Machine Learning Engine", model.getAttribute("pageTitle"));
+        assertEquals("Ask Naveen Store AI", model.getAttribute("pageTitle"));
         assertEquals(BigDecimal.valueOf(5000000), model.getAttribute("baselineRevenue"));
         assertEquals(BigDecimal.valueOf(19.5), model.getAttribute("baselineMargin"));
         assertEquals(true, model.getAttribute("simulatorReady"));
@@ -141,13 +141,24 @@ class AiInsightsControllerTest {
     }
 
     @Test
-    @DisplayName("chatWithGemini returns copilot reply")
+    @DisplayName("chatWithGemini returns structured Ask Naveen Store AI payload")
     void testChatWithGemini() {
         MockHttpSession session = new MockHttpSession();
         when(workspaceService.getActiveWorkspace(eq(session), eq(1L))).thenReturn(workspace);
 
-        when(geminiChatService.chat(10L, "Hello"))
-                .thenReturn(new GeminiChatService.ChatResponse(true, "Store revenue is healthy.", "gemini-2.5-flash", null));
+        when(geminiChatService.chatWithContext(eq(10L), eq("Hello"), any()))
+                .thenReturn(new GeminiChatService.StructuredChatResponse(
+                        true,
+                        "Store revenue is ₹18,25,42,617.45.",
+                        "gemini-3.5-flash-lite",
+                        "STORE_OVERVIEW",
+                        "2025-11-22 to 2026-11-22",
+                        Collections.emptyList(),
+                        null,
+                        null,
+                        Map.of("storeKey", "STORE-001", "currency", "INR (₹)"),
+                        null
+                ));
 
         ResponseEntity<Map<String, Object>> response = controller.chatWithGemini(
                 Map.of("message", "Hello"), userDetails, session);
@@ -155,7 +166,8 @@ class AiInsightsControllerTest {
         assertNotNull(response);
         assertEquals(200, response.getStatusCode().value());
         assertTrue((Boolean) response.getBody().get("success"));
-        assertEquals("Store revenue is healthy.", response.getBody().get("reply"));
+        assertEquals("Store revenue is ₹18,25,42,617.45.", response.getBody().get("reply"));
+        assertEquals("STORE_OVERVIEW", response.getBody().get("intent"));
     }
 
     @Test

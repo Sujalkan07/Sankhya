@@ -52,16 +52,16 @@
         <span class="material-symbols-outlined text-amber-600 text-[48px]">group</span>
         <h2 class="text-lg font-bold text-amber-900">Customer Data Not Available</h2>
         <p class="text-xs text-amber-800 max-w-md">
-            Customer intelligence requires customer profiles or POS transactions with customer identifiers to compute RFM quintiles and repeat purchase rates.
+            Customer telemetry is currently unavailable for the selected date window. Switch to a broader preset such as This Year or contact your Naveen Store administrator.
         </p>
         <div class="flex items-center gap-3 mt-2">
-            <a th:href="@{/datasets/sample-generator}"
+            <a th:href="@{/analytics/customers(preset='THIS_YEAR')}"
                class="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs transition-colors">
-                Generate Synthetic Data
+                View This Year
             </a>
-            <a th:href="@{/datasets/upload}"
+            <a th:href="@{/analytics/ai-insights}"
                class="px-4 py-2 rounded-xl bg-white border border-amber-300 text-amber-800 hover:bg-amber-100 font-semibold text-xs transition-colors">
-                Upload Customer CSV
+                Ask Naveen Store AI
             </a>
         </div>
     </div>
@@ -135,7 +135,7 @@
                 <span class="text-xs font-semibold text-on-surface-variant">Avg Customer Spend</span>
                 <div class="mt-2">
                     <div class="text-xl font-bold font-headline text-on-surface"
-                         th:text="${'₹' + analytics.kpis.averageRevenuePerUser}">₹0.00</div>
+                         th:text="${inr.fmt(analytics.kpis.averageRevenuePerUser)}">₹0.00</div>
                     <span class="text-[11px] text-tertiary">ARPU in window</span>
                 </div>
             </div>
@@ -175,8 +175,8 @@
                                 </td>
                                 <td class="py-2.5 text-right font-mono" th:text="${seg.customerCount}">0</td>
                                 <td class="py-2.5 text-right font-mono text-tertiary" th:text="${seg.percentageShare + '%'}">0%</td>
-                                <td class="py-2.5 text-right font-mono font-bold" th:text="${'₹' + seg.totalMonetary}">₹0.00</td>
-                                <td class="py-2.5 text-right font-mono text-emerald-700" th:text="${'₹' + seg.avgMonetary}">₹0.00</td>
+                                <td class="py-2.5 text-right font-mono font-bold" th:text="${inr.fmt(seg.totalMonetary)}">₹0.00</td>
+                                <td class="py-2.5 text-right font-mono text-emerald-700" th:text="${inr.fmt(seg.avgMonetary)}">₹0.00</td>
                             </tr>
                         </tbody>
                     </table>
@@ -207,7 +207,7 @@
                                 </div>
                             </div>
                             <div class="text-right">
-                                <div class="font-mono font-bold text-emerald-700 text-sm" th:text="${'₹' + c.monetary}">₹0.00</div>
+                                <div class="font-mono font-bold text-emerald-700 text-sm" th:text="${inr.fmt(c.monetary)}">₹0.00</div>
                                 <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-surface-container-lowest border border-[#E7E9E3] text-primary"
                                       th:text="${c.segment}">Champions</span>
                             </div>
@@ -312,7 +312,7 @@
                             <td class="py-2.5 font-bold text-on-surface rfm-name" th:text="${c.customerName}">Customer Name</td>
                             <td class="py-2.5 text-right font-mono" th:text="${c.recencyDays + 'd'}">5d</td>
                             <td class="py-2.5 text-right font-mono" th:text="${c.frequency}">4</td>
-                            <td class="py-2.5 text-right font-mono font-bold" th:text="${'₹' + c.monetary}">₹0.00</td>
+                            <td class="py-2.5 text-right font-mono font-bold" th:text="${inr.fmt(c.monetary)}">₹0.00</td>
                             <td class="py-2.5 text-center font-bold text-primary" th:text="${c.rScore}">5</td>
                             <td class="py-2.5 text-center font-bold text-primary" th:text="${c.fScore}">4</td>
                             <td class="py-2.5 text-center font-bold text-primary" th:text="${c.mScore}">5</td>

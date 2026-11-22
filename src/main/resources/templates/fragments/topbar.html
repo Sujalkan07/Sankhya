@@ -27,64 +27,23 @@
                 </div>
             </a>
 
-            <!-- Active Store Selector Pill with Accessible Click Dropdown -->
-            <div class="relative dropdown-container">
-                <button type="button" id="store-selector-btn"
-                        class="dropdown-toggle flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface text-xs font-semibold border border-[#E7E9E3] transition-all cursor-pointer">
-                    <span class="material-symbols-outlined text-[16px] text-primary">storefront</span>
-                    <span class="truncate max-w-[130px] sm:max-w-[200px]"
-                          th:text="${activeWorkspace != null ? activeWorkspace.name : 'Select Store'}">
-                        Green Basket Supermarket
-                    </span>
-                    <span class="hidden md:inline text-tertiary">|</span>
-                    <span class="hidden md:inline text-primary font-bold"
-                          th:text="${activeWorkspace != null && activeWorkspace.storeFormat != null ? activeWorkspace.storeFormat : 'Active Store'}">
-                        Active Store
-                    </span>
-                    <span class="material-symbols-outlined text-[16px] text-on-surface-variant transition-transform dropdown-icon">expand_more</span>
-                </button>
-
-                <!-- Workspace Switcher Dropdown Menu -->
-                <div id="store-selector-menu"
-                     class="dropdown-menu absolute left-0 top-full mt-1.5 w-72 rounded-xl bg-surface-container-lowest border border-[#E7E9E3] shadow-xl p-2.5 hidden z-50">
-                    <div class="flex items-center justify-between px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-tertiary">
-                        <span>Switch Supermarket Store</span>
-                        <span th:text="${workspaces != null ? workspaces.size() + ' stores' : '1 store'}">1 store</span>
-                    </div>
-
-                    <div class="flex flex-col gap-1 max-h-56 overflow-y-auto my-1.5" th:if="${workspaces != null}">
-                        <div th:each="ws : ${workspaces}" class="w-full">
-                            <form th:action="@{'/workspaces/' + ${ws.id} + '/select'}" method="post">
-                                <button type="submit"
-                                        th:classappend="${ws.active ? 'bg-surface-container text-primary font-bold border border-primary/20' : 'text-on-surface hover:bg-surface-container-low'}"
-                                        class="w-full text-left px-2.5 py-2 rounded-lg text-xs flex items-center justify-between transition-colors cursor-pointer">
-                                    <div class="flex items-center gap-2 truncate">
-                                        <span class="material-symbols-outlined text-[16px]"
-                                              th:classappend="${ws.active ? 'text-primary' : 'text-outline'}">store</span>
-                                        <div class="truncate">
-                                            <div class="truncate font-semibold" th:text="${ws.name}">Store Name</div>
-                                            <div class="text-[10px] text-tertiary font-normal" th:text="${ws.storeFormat}">Format</div>
-                                        </div>
-                                    </div>
-                                    <span th:if="${ws.active}" class="material-symbols-outlined text-[16px] text-primary">check_circle</span>
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-
-                    <div class="border-t border-[#E7E9E3] pt-2 mt-1 flex flex-col gap-1">
-                        <a th:href="@{/workspaces/create}"
-                           class="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-surface-container-low hover:bg-surface-container text-primary transition-colors">
-                            <span class="material-symbols-outlined text-[16px]">add</span>
-                            <span>Provision New Store</span>
-                        </a>
-                        <a th:href="@{/onboarding/store-setup}"
-                           class="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-tertiary hover:text-on-surface hover:bg-surface-container-low transition-colors">
-                            <span class="material-symbols-outlined text-[16px]">tune</span>
-                            <span>Edit Store Profile</span>
-                        </a>
-                    </div>
-                </div>
+            <!-- Single-Store Naveen Store Context Badge -->
+            <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-container-low text-on-surface text-xs font-semibold border border-[#E7E9E3]">
+                <span class="material-symbols-outlined text-[16px] text-primary">storefront</span>
+                <span class="truncate max-w-[140px] sm:max-w-[200px]"
+                      th:text="${activeWorkspace != null ? activeWorkspace.name : 'Naveen Store'}">
+                    Naveen Store
+                </span>
+                <span class="hidden md:inline text-tertiary">•</span>
+                <span class="hidden md:inline font-mono text-[11px] font-bold text-primary"
+                      th:text="${activeWorkspace != null && activeWorkspace.storeKey != null ? activeWorkspace.storeKey : 'STORE-001'}">
+                    STORE-001
+                </span>
+                <span class="hidden xl:inline text-tertiary">|</span>
+                <span class="hidden xl:inline text-[11px] text-on-surface-variant"
+                      th:text="${activeWorkspace != null && activeWorkspace.ownerName != null ? 'Owner: ' + activeWorkspace.ownerName : 'Owner: Sujal Kansal'}">
+                    Owner: Sujal Kansal
+                </span>
             </div>
         </div>
 
@@ -150,13 +109,6 @@
                 </div>
             </div>
 
-            <!-- Dataset Pipeline Quick Link -->
-            <a th:href="@{/datasets}"
-               class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container border border-[#E7E9E3] transition-colors text-xs font-semibold">
-                <span class="material-symbols-outlined text-[16px] text-primary">sync</span>
-                <span>Dataset Pipeline</span>
-            </a>
-
             <!-- User Profile Avatar & Menu with Accessible Click Dropdown -->
             <div class="relative dropdown-container">
                 <button type="button" id="user-profile-btn" aria-label="User Account Menu"
@@ -179,17 +131,9 @@
                         <p class="text-xs font-bold text-on-surface truncate" th:text="${currentUser != null ? currentUser.fullName : 'User'}">User</p>
                         <p class="text-[10px] text-tertiary truncate" th:text="${currentUser != null ? currentUser.username : 'email@store.com'}">email@store.com</p>
                     </div>
-                    <a th:href="@{/onboarding/store-setup}" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-on-surface hover:bg-surface-container-low transition-colors">
-                        <span class="material-symbols-outlined text-[16px]">tune</span>
-                        <span>Store Setup Wizard</span>
-                    </a>
-                    <a th:href="@{/onboarding/datasets}" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-on-surface hover:bg-surface-container-low transition-colors">
-                        <span class="material-symbols-outlined text-[16px]">checklist</span>
-                        <span>Dataset Onboarding</span>
-                    </a>
-                    <a th:href="@{/workspaces}" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-on-surface hover:bg-surface-container-low transition-colors">
-                        <span class="material-symbols-outlined text-[16px]">workspaces</span>
-                        <span>Manage Workspaces</span>
+                    <a th:href="@{/analytics/ai-insights}" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-primary font-semibold hover:bg-surface-container-low transition-colors">
+                        <span class="material-symbols-outlined text-[16px]">psychology</span>
+                        <span>Ask Naveen Store AI</span>
                     </a>
                     <a th:href="@{/settings}" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-on-surface hover:bg-surface-container-low transition-colors">
                         <span class="material-symbols-outlined text-[16px]">settings</span>
@@ -257,23 +201,15 @@
                 <span>Recommendations</span>
             </a>
 
-            <!-- 7. AI Insights & Copilot -->
+            <!-- 7. Ask Naveen Store AI -->
             <a th:href="@{/analytics/ai-insights}"
                th:classappend="${activeModule == 'ai-insights' || currentPage == 'ai-insights' ? 'bg-surface-container-highest text-primary font-bold shadow-xs' : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container'}"
                class="px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5">
                 <span class="material-symbols-outlined text-[16px]">psychology</span>
-                <span>AI Insights</span>
+                <span>Ask Naveen Store AI</span>
             </a>
 
-            <!-- 8. Dataset Management -->
-            <a th:href="@{/datasets}"
-               th:classappend="${activeModule == 'datasets' || currentPage == 'dataset-management' ? 'bg-surface-container-highest text-primary font-bold shadow-xs' : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container'}"
-               class="px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5">
-                <span class="material-symbols-outlined text-[16px]">table_chart</span>
-                <span>Datasets</span>
-            </a>
-
-            <!-- 9. Reports -->
+            <!-- 8. Reports -->
             <a th:href="@{/analytics/reports}"
                th:classappend="${activeModule == 'reports' || currentPage == 'reports' ? 'bg-surface-container-highest text-primary font-bold shadow-xs' : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container'}"
                class="px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5">

@@ -79,6 +79,8 @@ public class AiInsightsController {
         this.demandPredictionRepository = demandPredictionRepository;
     }
 
+    public static final String CHAT_HISTORY_SESSION_KEY = "NAVEEN_AI_CHAT_HISTORY";
+
     @GetMapping
     public String showAiInsights(@AuthenticationPrincipal CustomUserDetails userDetails,
                                  HttpSession session,
@@ -95,7 +97,8 @@ public class AiInsightsController {
         model.addAttribute("activeModule", "ai-insights");
         model.addAttribute("activeSubPage", "overview");
         model.addAttribute("currentPage", "ai-insights");
-        model.addAttribute("pageTitle", "AI Insights & Machine Learning Engine");
+        model.addAttribute("pageTitle", "Ask Naveen Store AI");
+        model.addAttribute("chatHistory", getOrCreateHistory(session));
 
         if (activeWorkspace == null) {
             return "analytics/ai-insights";
@@ -291,14 +294,49 @@ public class AiInsightsController {
         }
 
         String message = request.getOrDefault("message", "");
-        GeminiChatService.ChatResponse resp = geminiChatService.chat(activeWorkspace.getId(), message);
+        List<Map<String, String>> history = getOrCreateHistory(session);
+        GeminiChatService.StructuredChatResponse resp =
+                geminiChatService.chatWithContext(activeWorkspace.getId(), message, history);
 
-        Map<String, Object> body = new HashMap<>();
+        if (resp.success() && message != null && !message.isBlank()) {
+            history.add(Map.of("role", "user", "text", message.trim()));
+            history.add(Map.of("role", "assistant", "text", resp.reply() != null ? resp.reply() : ""));
+            while (history.size() > 20) {
+                history.remove(0);
+            }
+            session.setAttribute(CHAT_HISTORY_SESSION_KEY, history);
+        }
+
+        Map<String, Object> body = new LinkedHashMap<>();
         body.put("success", resp.success());
         body.put("reply", resp.reply());
         body.put("modelVersion", resp.modelVersion());
+        body.put("intent", resp.intent());
+        body.put("timeWindow", resp.timeWindow());
+        body.put("kpis", resp.kpis());
+        body.put("table", resp.table());
+        body.put("chart", resp.chart());
+        body.put("meta", resp.meta());
         body.put("error", resp.error());
         return ResponseEntity.ok(body);
+    }
+
+    @PostMapping("/chat/clear")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> clearChatHistory(HttpSession session) {
+        session.removeAttribute(CHAT_HISTORY_SESSION_KEY);
+        return ResponseEntity.ok(Map.of("success", true));
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Map<String, String>> getOrCreateHistory(HttpSession session) {
+        Object attr = session.getAttribute(CHAT_HISTORY_SESSION_KEY);
+        if (attr instanceof List<?> list) {
+            return (List<Map<String, String>>) list;
+        }
+        List<Map<String, String>> fresh = new ArrayList<>();
+        session.setAttribute(CHAT_HISTORY_SESSION_KEY, fresh);
+        return fresh;
     }
 
     @GetMapping("/api/status")

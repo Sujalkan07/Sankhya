@@ -46,13 +46,25 @@
                     <span>Export Reports</span>
                 </a>
 
-                <a th:href="@{/datasets}"
+                <a th:href="@{/analytics/ai-insights}"
                    class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-primary hover:bg-primary-hover text-on-primary font-headline text-xs font-bold shadow-xs transition-all">
-                    <span class="material-symbols-outlined text-[16px]">sync</span>
-                    <span>Datasets</span>
+                    <span class="material-symbols-outlined text-[16px]">psychology</span>
+                    <span>Ask Naveen Store AI</span>
                 </a>
             </form>
         </div>
+    </div>
+
+    <!-- Naveen Store Single-Store Lucknow Scope & Provenance Banner -->
+    <div class="rounded-xl border border-primary/20 bg-[#EFF9E9]/70 px-4 py-3 text-xs text-on-surface flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-xs">
+        <div class="flex items-center gap-2.5">
+            <span class="material-symbols-outlined text-primary text-[18px] shrink-0">verified_user</span>
+            <div>
+                <span class="font-bold">Naveen Store (STORE-001 • Lucknow, Uttar Pradesh)</span>
+                <span class="text-on-surface-variant"> — Owner: Sujal Kansal • 500,000 sales lines • 83,439 receipts • 9,978 Lucknow customers • 1,000 SKUs (19 categories) • Reconstructed dates 2025-11-22 to 2026-11-22 • Synthetic INR (₹) financials &amp; latest stock snapshot (2026-11-22).</span>
+            </div>
+        </div>
+        <span class="font-mono text-[11px] font-bold text-primary shrink-0">INR (₹)</span>
     </div>
 
     <!-- Data Readiness Alert (Module 8) -->
@@ -61,7 +73,7 @@
         <div class="flex items-center gap-3">
             <span class="material-symbols-outlined text-amber-600 text-[22px]">warning</span>
             <div>
-                <p class="font-bold">Analytics Data Pipeline Incomplete</p>
+                <p class="font-bold">Naveen Store Data Unavailable for Window</p>
                 <p class="text-[11px] text-amber-800">
                     <span th:each="msg, iter : ${readiness.missingDependencies}">
                         <span th:text="${msg}">Missing dataset</span><span th:if="${!iter.last}"> • </span>
@@ -70,13 +82,13 @@
             </div>
         </div>
         <div class="flex items-center gap-2 shrink-0">
-            <a th:href="@{/datasets/sample-generator}"
+            <a th:href="@{/dashboard(preset='THIS_YEAR')}"
                class="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs transition-colors">
-                Generate Synthetic Data
+                View Full Year
             </a>
-            <a th:href="@{/datasets/upload}"
+            <a th:href="@{/analytics/ai-insights}"
                class="px-3 py-1.5 rounded-lg bg-white border border-amber-300 text-amber-800 hover:bg-amber-100 font-semibold text-xs transition-colors">
-                Upload CSV
+                Ask Naveen Store AI
             </a>
         </div>
     </div>
@@ -93,8 +105,8 @@
             </div>
             <div>
                 <div class="text-xl font-bold font-headline text-on-surface"
-                     th:text="${overview.totalRevenue != null ? overview.totalRevenue.formattedCurrent : '$0.00'}">
-                    $0.00
+                     th:text="${overview.totalRevenue != null ? overview.totalRevenue.formattedCurrent : '₹0.00'}">
+                    ₹0.00
                 </div>
                 <div class="flex items-center gap-1.5 mt-1 text-[11px]" th:if="${overview.totalRevenue != null}">
                     <span th:classappend="${overview.totalRevenue.direction.name() == 'UP' ? 'text-emerald-600' : (overview.totalRevenue.direction.name() == 'DOWN' ? 'text-rose-600' : 'text-slate-500')}"
@@ -143,8 +155,8 @@
             </div>
             <div>
                 <div class="text-xl font-bold font-headline text-on-surface"
-                     th:text="${overview.averageTransactionValue != null ? overview.averageTransactionValue.formattedCurrent : '$0.00'}">
-                    $0.00
+                     th:text="${overview.averageTransactionValue != null ? overview.averageTransactionValue.formattedCurrent : '₹0.00'}">
+                    ₹0.00
                 </div>
                 <div class="flex items-center gap-1.5 mt-1 text-[11px]" th:if="${overview.averageTransactionValue != null}">
                     <span th:classappend="${overview.averageTransactionValue.direction.name() == 'UP' ? 'text-emerald-600' : (overview.averageTransactionValue.direction.name() == 'DOWN' ? 'text-rose-600' : 'text-slate-500')}"
@@ -360,7 +372,7 @@
                 data: {
                     labels: trendData.labels || [],
                     datasets: [{
-                        label: 'Daily Sales ($)',
+                        label: 'Daily Sales (₹)',
                         data: (trendData.datasets && trendData.datasets[0]) ? trendData.datasets[0].data : [],
                         borderColor: '#1C6B00',
                         backgroundColor: 'rgba(28, 107, 0, 0.08)',

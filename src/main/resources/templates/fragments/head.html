@@ -3,6 +3,8 @@
 <head th:fragment="head(pageTitle)">
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta th:if="${_csrf != null}" name="_csrf" th:content="${_csrf.token}"/>
+    <meta th:if="${_csrf != null}" name="_csrf_header" th:content="${_csrf.headerName}"/>
     <title th:text="${pageTitle != null ? pageTitle + ' — Sankhya Supermarket Analytics' : 'Sankhya — Supermarket Analytics'}">Sankhya — Supermarket Analytics</title>
 
     <!-- Google Fonts: Plus Jakarta Sans & Inter -->

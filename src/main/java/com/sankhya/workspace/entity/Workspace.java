@@ -32,6 +32,12 @@ public class Workspace {
     @Column(name = "store_format", length = 50)
     private String storeFormat = "Supermarket";
 
+    @Column(name = "store_key", length = 50)
+    private String storeKey = "STORE-001";
+
+    @Column(name = "owner_name", length = 150)
+    private String ownerName = "Sujal Kansal";
+
     @Column(name = "city", length = 100)
     private String city;
 
@@ -142,6 +148,25 @@ public class Workspace {
 
     public void setStoreFormat(String storeFormat) {
         this.storeFormat = storeFormat;
+    }
+
+    public String getStoreKey() {
+        return storeKey != null ? storeKey : "STORE-001";
+    }
+
+    public void setStoreKey(String storeKey) {
+        this.storeKey = storeKey;
+    }
+
+    public String getOwnerName() {
+        if (ownerName != null && !ownerName.isBlank()) {
+            return ownerName;
+        }
+        return owner != null ? owner.getFullName() : "Sujal Kansal";
+    }
+
+    public void setOwnerName(String ownerName) {
+        this.ownerName = ownerName;
     }
 
     public String getCity() {

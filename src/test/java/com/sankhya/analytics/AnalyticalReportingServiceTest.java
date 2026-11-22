@@ -87,7 +87,7 @@ class AnalyticalReportingServiceTest {
         analyticalReportingService.exportSalesTransactionsCsv(workspaceId, filter, writer);
 
         String csv = writer.toString();
-        assertTrue(csv.startsWith("Transaction ID,Date,Product ID,Quantity,Unit Price,Discount,Revenue,Payment Method,Customer ID,Status"));
+        assertTrue(csv.startsWith("Transaction ID,Date,Product ID,Quantity,Unit Price (INR),Discount (INR),Revenue (INR),Payment Method,Customer ID,Status"));
     }
 
     @Test

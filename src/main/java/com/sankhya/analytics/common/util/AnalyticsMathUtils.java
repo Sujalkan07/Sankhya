@@ -73,4 +73,40 @@ public final class AnalyticsMathUtils {
         if (amount == null) return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
         return amount.setScale(2, RoundingMode.HALF_UP);
     }
+
+    /**
+     * Formats an amount using Indian numbering (lakh/crore grouping) and the ₹ symbol.
+     * Example: 182542617.45 -> ₹18,25,42,617.45
+     */
+    public static String formatInr(BigDecimal amount) {
+        if (amount == null) {
+            amount = BigDecimal.ZERO;
+        }
+        BigDecimal rounded = amount.setScale(2, RoundingMode.HALF_UP);
+        boolean negative = rounded.signum() < 0;
+        String plain = rounded.abs().toPlainString();
+        int dotIdx = plain.indexOf('.');
+        String intPart = dotIdx >= 0 ? plain.substring(0, dotIdx) : plain;
+        String decPart = dotIdx >= 0 ? plain.substring(dotIdx) : ".00";
+        return (negative ? "-₹" : "₹") + formatIndianDigits(intPart) + decPart;
+    }
+
+    private static String formatIndianDigits(String digits) {
+        int len = digits.length();
+        if (len <= 3) {
+            return digits;
+        }
+        String lastThree = digits.substring(len - 3);
+        String rest = digits.substring(0, len - 3);
+        StringBuilder sb = new StringBuilder();
+        int rLen = rest.length();
+        for (int i = 0; i < rLen; i++) {
+            sb.append(rest.charAt(i));
+            int remaining = rLen - i - 1;
+            if (remaining > 0 && remaining % 2 == 0) {
+                sb.append(',');
+            }
+        }
+        return sb + "," + lastThree;
+    }
 }

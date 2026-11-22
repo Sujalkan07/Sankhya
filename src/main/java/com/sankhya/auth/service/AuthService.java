@@ -44,20 +44,31 @@ public class AuthService {
         User user = new User(request.getFullName().trim(), normalizedEmail, encodedPassword, UserRole.ROLE_USER);
         User savedUser = userRepository.save(user);
 
-        // Provision an initial default supermarket workspace for the new user (marked in STORE_SETUP for onboarding wizard)
-        String defaultWorkspaceName = request.getFullName().trim() + " Supermarket";
-        Workspace initialWorkspace = new Workspace(
-                defaultWorkspaceName,
-                "Primary supermarket workspace for " + request.getFullName().trim() + ".",
-                savedUser
-        );
-        initialWorkspace.setStoreFormat("Supermarket");
-        initialWorkspace.setOnboardingStatus("STORE_SETUP");
-        Workspace savedWorkspace = workspaceRepository.save(initialWorkspace);
+        // Attach new users to the canonical single-store Naveen Store workspace
+        Workspace canonicalStore = workspaceRepository.findAll().stream()
+                .filter(w -> "STORE-001".equalsIgnoreCase(w.getStoreKey())
+                        || "Naveen Store".equalsIgnoreCase(w.getName()))
+                .findFirst()
+                .orElse(null);
 
-        // Add user as OWNER membership
-        WorkspaceMembership membership = new WorkspaceMembership(savedWorkspace, savedUser, WorkspaceRole.OWNER);
-        membershipRepository.save(membership);
+        if (canonicalStore == null) {
+            Workspace initialWorkspace = new Workspace(
+                    "Naveen Store",
+                    "Primary single-store analytics workspace for Naveen Store (STORE-001 • Lucknow, UP).",
+                    savedUser
+            );
+            initialWorkspace.setStoreKey("STORE-001");
+            initialWorkspace.setOwnerName("Sujal Kansal");
+            initialWorkspace.setStoreFormat("Supermarket");
+            initialWorkspace.setCity("Lucknow");
+            initialWorkspace.setState("Uttar Pradesh");
+            initialWorkspace.setCountry("India");
+            initialWorkspace.setOnboardingStatus("COMPLETED");
+            Workspace savedWorkspace = workspaceRepository.save(initialWorkspace);
+            membershipRepository.save(new WorkspaceMembership(savedWorkspace, savedUser, WorkspaceRole.OWNER));
+        } else {
+            membershipRepository.save(new WorkspaceMembership(canonicalStore, savedUser, WorkspaceRole.MEMBER));
+        }
 
         return savedUser;
     }

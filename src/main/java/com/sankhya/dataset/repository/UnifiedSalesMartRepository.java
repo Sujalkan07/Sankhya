@@ -203,6 +203,23 @@ public interface UnifiedSalesMartRepository extends JpaRepository<UnifiedSalesMa
 
     List<UnifiedSalesMart> findByWorkspaceIdAndTransactionId(Long workspaceId, String transactionId);
 
+    @Query("SELECT COUNT(m) FROM UnifiedSalesMart m " +
+            "WHERE m.workspace.id = :workspaceId AND m.transactionDate BETWEEN :startDate AND :endDate")
+    long countLinesBetween(
+            @Param("workspaceId") Long workspaceId,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate);
+
+    @Query("SELECT COALESCE(SUM(m.unitPrice * m.quantity), 0) FROM UnifiedSalesMart m " +
+            "WHERE m.workspace.id = :workspaceId AND m.transactionDate BETWEEN :startDate AND :endDate")
+    BigDecimal sumGrossRevenueBetween(
+            @Param("workspaceId") Long workspaceId,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate);
+
+    @Query("SELECT COUNT(DISTINCT m.category) FROM UnifiedSalesMart m WHERE m.workspace.id = :workspaceId")
+    long countDistinctCategoriesByWorkspaceId(@Param("workspaceId") Long workspaceId);
+
     @Query("SELECT MIN(m.transactionDate) FROM UnifiedSalesMart m WHERE m.workspace.id = :workspaceId")
     LocalDateTime findMinTransactionDateByWorkspaceId(@Param("workspaceId") Long workspaceId);
 

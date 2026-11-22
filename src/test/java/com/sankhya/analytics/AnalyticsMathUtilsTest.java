@@ -74,4 +74,15 @@ class AnalyticsMathUtilsTest {
         assertEquals(TrendDirection.FLAT, AnalyticsMathUtils.determineDirection(0.02));
         assertEquals(TrendDirection.FLAT, AnalyticsMathUtils.determineDirection(-0.02));
     }
+
+    @Test
+    @DisplayName("formatInr formats Indian rupee numbering accurately with lakh and crore separators")
+    void testFormatInr() {
+        assertEquals("₹0.00", AnalyticsMathUtils.formatInr(null));
+        assertEquals("₹0.00", AnalyticsMathUtils.formatInr(BigDecimal.ZERO));
+        assertEquals("₹1,250.00", AnalyticsMathUtils.formatInr(new BigDecimal("1250")));
+        assertEquals("₹1,25,000.00", AnalyticsMathUtils.formatInr(new BigDecimal("125000")));
+        assertEquals("₹18,25,42,617.45", AnalyticsMathUtils.formatInr(new BigDecimal("182542617.45")));
+        assertEquals("-₹50,000.50", AnalyticsMathUtils.formatInr(new BigDecimal("-50000.50")));
+    }
 }

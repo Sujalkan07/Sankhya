@@ -52,7 +52,7 @@ public class AnalyticalReportingService {
 
     @Transactional(readOnly = true)
     public void exportSalesTransactionsCsv(Long workspaceId, DateRangeFilter filter, Writer writer) throws IOException {
-        writer.write("Transaction ID,Date,Product ID,Quantity,Unit Price,Discount,Revenue,Payment Method,Customer ID,Status\n");
+        writer.write("Transaction ID,Date,Product ID,Quantity,Unit Price (INR),Discount (INR),Revenue (INR),Payment Method,Customer ID,Status\n");
 
         boolean useMart = unifiedSalesMartRepository.countByWorkspaceId(workspaceId) > 0;
         int pageNumber = 0;
@@ -109,7 +109,7 @@ public class AnalyticalReportingService {
 
     @Transactional(readOnly = true)
     public void exportProductPerformanceCsv(Long workspaceId, DateRangeFilter filter, Writer writer) throws IOException {
-        writer.write("Product ID,Product Name,Category,Units Sold,Total Revenue,Estimated COGS,Gross Profit,Gross Margin %,Performance Quadrant\n");
+        writer.write("Product ID,Product Name,Category,Units Sold,Total Revenue (INR),Estimated COGS (INR),Gross Profit (INR),Gross Margin %,Performance Quadrant\n");
 
         ProductIntelligenceResponse response = productIntelligenceService.getProductIntelligence(workspaceId, filter);
         for (ProductPerformanceDto p : response.getAllProducts()) {
@@ -130,7 +130,7 @@ public class AnalyticalReportingService {
 
     @Transactional(readOnly = true)
     public void exportCustomerIntelligenceCsv(Long workspaceId, DateRangeFilter filter, Writer writer) throws IOException {
-        writer.write("Customer ID,Customer Name,Recency (Days),Frequency,Monetary Spend ($),R Score,F Score,M Score,RFM Code,Assigned Segment\n");
+        writer.write("Customer ID,Customer Name,Recency (Days),Frequency,Monetary Spend (INR),R Score,F Score,M Score,RFM Code,Assigned Segment\n");
 
         CustomerIntelligenceResponse response = customerIntelligenceService.getCustomerIntelligence(workspaceId, filter);
         for (RfmCustomerDto c : response.getRfmCustomers()) {
@@ -152,7 +152,7 @@ public class AnalyticalReportingService {
 
     @Transactional(readOnly = true)
     public void exportInventoryHealthCsv(Long workspaceId, DateRangeFilter filter, Writer writer) throws IOException {
-        writer.write("Product ID,Product Name,Category,Current Stock,Safety Reorder Level,Suggested Restock Order,Unit Cost,Estimated Restock Cost,Urgency\n");
+        writer.write("Product ID,Product Name,Category,Current Stock,Safety Reorder Level,Suggested Restock Order,Unit Cost (INR),Estimated Restock Cost (INR),Urgency\n");
 
         InventoryIntelligenceResponse response = inventoryIntelligenceService.getInventoryIntelligence(workspaceId, filter);
         for (ReorderRecommendationDto r : response.getReorderRecommendations()) {

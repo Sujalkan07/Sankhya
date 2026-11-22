@@ -1,5 +1,6 @@
 package com.sankhya.analytics.recommendations.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.sankhya.analytics.recommendations.enums.RecommendationCategory;
 import com.sankhya.analytics.recommendations.enums.RecommendationSeverity;
 import com.sankhya.analytics.recommendations.enums.RecommendationStatus;
@@ -21,6 +22,7 @@ public class BusinessRecommendation {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "workspace_id", nullable = false)
     private Workspace workspace;

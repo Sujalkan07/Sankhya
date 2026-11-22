@@ -9,8 +9,14 @@ public class DatasetSchemaDefinition {
     private static final Map<DatasetType, List<CanonicalField>> SCHEMAS = new EnumMap<>(DatasetType.class);
 
     static {
-        // 0. Unified Sales & Analytics Mart (Lean Upload Edition - 22 Columns)
+        // 0. Unified Sales & Analytics Mart (Naveen Store Canonical Schema - 25 Columns)
         SCHEMAS.put(DatasetType.UNIFIED_MART, List.of(
+                new CanonicalField("store_id", "Store ID", "STRING", false, "Store identifier (e.g. STORE-001)",
+                        List.of("store_key", "branch_id", "outlet_id")),
+                new CanonicalField("store_name", "Store Name", "STRING", false, "Display store name (e.g. Naveen Store)",
+                        List.of("mart_name", "branch_name", "outlet_name")),
+                new CanonicalField("store_owner", "Store Owner", "STRING", false, "Store owner name (e.g. Sujal Kansal)",
+                        List.of("owner_name", "owner")),
                 new CanonicalField("transaction_id", "Transaction ID", "STRING", true, "Receipt / bill number",
                         List.of("tx_id", "bill_no", "invoice_no", "order_id", "bill_id", "receipt_id")),
                 new CanonicalField("transaction_date", "Transaction Date", "DATETIME", true, "Date and timestamp of purchase",

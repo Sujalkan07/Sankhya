@@ -10,10 +10,13 @@ import com.sankhya.inventory.repository.InventorySnapshotRepository;
 import com.sankhya.products.entity.Product;
 import com.sankhya.products.repository.ProductRepository;
 import com.sankhya.sales.repository.SalesTransactionRepository;
+import com.sankhya.common.cache.AnalyticsCacheService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -25,19 +28,40 @@ public class InventoryIntelligenceService {
     private final ProductRepository productRepository;
     private final SalesTransactionRepository salesTransactionRepository;
     private final UnifiedSalesMartRepository unifiedSalesMartRepository;
+    private final AnalyticsCacheService cacheService;
 
     public InventoryIntelligenceService(InventorySnapshotRepository inventorySnapshotRepository,
                                         ProductRepository productRepository,
                                         SalesTransactionRepository salesTransactionRepository,
                                         UnifiedSalesMartRepository unifiedSalesMartRepository) {
+        this(inventorySnapshotRepository, productRepository, salesTransactionRepository,
+             unifiedSalesMartRepository, new AnalyticsCacheService());
+    }
+
+    @Autowired
+    public InventoryIntelligenceService(InventorySnapshotRepository inventorySnapshotRepository,
+                                        ProductRepository productRepository,
+                                        SalesTransactionRepository salesTransactionRepository,
+                                        UnifiedSalesMartRepository unifiedSalesMartRepository,
+                                        AnalyticsCacheService cacheService) {
         this.inventorySnapshotRepository = inventorySnapshotRepository;
         this.productRepository = productRepository;
         this.salesTransactionRepository = salesTransactionRepository;
         this.unifiedSalesMartRepository = unifiedSalesMartRepository;
+        this.cacheService = cacheService != null ? cacheService : new AnalyticsCacheService();
     }
 
     @Transactional(readOnly = true)
     public InventoryIntelligenceResponse getInventoryIntelligence(Long workspaceId, DateRangeFilter filter) {
+        if (workspaceId == null || filter == null) {
+            return computeInventoryIntelligence(workspaceId, filter);
+        }
+        String key = "ws-" + workspaceId + ":" + filter.getPreset() + ":" + filter.getStartDate() + ":" + filter.getEndDate();
+        return cacheService.getOrCompute("inventory", key, Duration.ofMinutes(10),
+                () -> computeInventoryIntelligence(workspaceId, filter));
+    }
+
+    private InventoryIntelligenceResponse computeInventoryIntelligence(Long workspaceId, DateRangeFilter filter) {
         InventoryIntelligenceResponse response = new InventoryIntelligenceResponse();
 
         boolean useMart = unifiedSalesMartRepository.countByWorkspaceId(workspaceId) > 0;
@@ -57,7 +81,8 @@ public class InventoryIntelligenceService {
 
         if (useMart) {
             // Deduplicated inventory position directly from canonical mart (single latest snapshot)
-            List<Object[]> martInv = unifiedSalesMartRepository.findLatestInventoryPerProductByWorkspaceId(workspaceId);
+            List<Object[]> martInv = cacheService.getOrCompute("inventoryLatest", "ws-" + workspaceId, Duration.ofMinutes(15),
+                    () -> unifiedSalesMartRepository.findLatestInventoryPerProductByWorkspaceId(workspaceId));
 
             for (Object[] row : martInv) {
                 String pId = (String) row[0];

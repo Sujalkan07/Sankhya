@@ -8,9 +8,12 @@ import com.sankhya.dataset.repository.DatasetRepository;
 import com.sankhya.inventory.repository.InventorySnapshotRepository;
 import com.sankhya.products.repository.ProductRepository;
 import com.sankhya.sales.repository.SalesTransactionRepository;
+import com.sankhya.common.cache.AnalyticsCacheService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -28,6 +31,7 @@ public class DatasetQueryService {
     private final CustomerRepository customerRepository;
     private final InventorySnapshotRepository inventorySnapshotRepository;
     private final com.sankhya.dataset.repository.UnifiedSalesMartRepository unifiedSalesMartRepository;
+    private final AnalyticsCacheService cacheService;
 
     public DatasetQueryService(DatasetRepository datasetRepository,
                                SalesTransactionRepository salesTransactionRepository,
@@ -35,12 +39,25 @@ public class DatasetQueryService {
                                CustomerRepository customerRepository,
                                InventorySnapshotRepository inventorySnapshotRepository,
                                com.sankhya.dataset.repository.UnifiedSalesMartRepository unifiedSalesMartRepository) {
+        this(datasetRepository, salesTransactionRepository, productRepository, customerRepository,
+             inventorySnapshotRepository, unifiedSalesMartRepository, new AnalyticsCacheService());
+    }
+
+    @Autowired
+    public DatasetQueryService(DatasetRepository datasetRepository,
+                               SalesTransactionRepository salesTransactionRepository,
+                               ProductRepository productRepository,
+                               CustomerRepository customerRepository,
+                               InventorySnapshotRepository inventorySnapshotRepository,
+                               com.sankhya.dataset.repository.UnifiedSalesMartRepository unifiedSalesMartRepository,
+                               AnalyticsCacheService cacheService) {
         this.datasetRepository = datasetRepository;
         this.salesTransactionRepository = salesTransactionRepository;
         this.productRepository = productRepository;
         this.customerRepository = customerRepository;
         this.inventorySnapshotRepository = inventorySnapshotRepository;
         this.unifiedSalesMartRepository = unifiedSalesMartRepository;
+        this.cacheService = cacheService != null ? cacheService : new AnalyticsCacheService();
     }
 
     @Transactional(readOnly = true)
@@ -106,7 +123,16 @@ public class DatasetQueryService {
 
     @Transactional(readOnly = true)
     public AnalyticsReadinessResponse getAnalyticsReadiness(Long workspaceId) {
+        if (workspaceId == null) {
+            return computeAnalyticsReadiness(null);
+        }
+        return cacheService.getOrCompute("readiness", "ws-" + workspaceId, Duration.ofMinutes(15),
+                () -> computeAnalyticsReadiness(workspaceId));
+    }
+
+    private AnalyticsReadinessResponse computeAnalyticsReadiness(Long workspaceId) {
         AnalyticsReadinessResponse response = new AnalyticsReadinessResponse();
+        if (workspaceId == null) return response;
 
         long martCount = unifiedSalesMartRepository.countByWorkspaceId(workspaceId);
         long salesCount;
@@ -124,13 +150,11 @@ public class DatasetQueryService {
             distinctTxCount = unifiedSalesMartRepository.countDistinctTransactionsByWorkspaceId(workspaceId);
             productCount = unifiedSalesMartRepository.countTotalProductsByWorkspaceId(workspaceId);
             customerCount = unifiedSalesMartRepository.countTotalCustomersByWorkspaceId(workspaceId);
-            inventoryCount = unifiedSalesMartRepository.findLatestInventoryPerProductByWorkspaceId(workspaceId)
-                    .stream().filter(r -> r[6] != null).count();
+            inventoryCount = unifiedSalesMartRepository.countInventoryObservationsByWorkspaceId(workspaceId) > 0 ? productCount : 0L;
             minDate = unifiedSalesMartRepository.findMinTransactionDateByWorkspaceId(workspaceId);
             maxDate = unifiedSalesMartRepository.findMaxTransactionDateByWorkspaceId(workspaceId);
-            if (minDate != null && maxDate != null) {
-                dailyBucketCount = unifiedSalesMartRepository.findDailyAggregationsBetween(
-                        workspaceId, minDate, maxDate).size();
+            if (minDate != null && maxDate != null && ChronoUnit.DAYS.between(minDate.toLocalDate(), maxDate.toLocalDate()) >= 7) {
+                dailyBucketCount = 7;
             }
         } else {
             salesCount = salesTransactionRepository.countByWorkspaceId(workspaceId);

@@ -27,11 +27,13 @@ import com.sankhya.workspace.entity.Workspace;
 import com.sankhya.workspace.entity.WorkspaceMembership;
 import com.sankhya.workspace.repository.WorkspaceMembershipRepository;
 import com.sankhya.workspace.repository.WorkspaceRepository;
+import com.sankhya.common.cache.AnalyticsCacheService;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -75,6 +77,9 @@ public class DevDataInitializer implements ApplicationRunner {
 
     @Value("${sankhya.auth.dev-default-password:Password@123}")
     private String devDefaultPassword;
+
+    @Autowired(required = false)
+    private AnalyticsCacheService analyticsCacheService;
 
     private final UserRepository userRepository;
     private final WorkspaceRepository workspaceRepository;
@@ -419,6 +424,10 @@ public class DevDataInitializer implements ApplicationRunner {
             martDataset.setDescription("SHA-256: " + sha256 + " | Verified rows: " + verifiedCount);
             martDataset.setLastUpdated(LocalDateTime.now());
             datasetRepository.save(martDataset);
+
+            if (analyticsCacheService != null) {
+                analyticsCacheService.invalidateWorkspace(workspace.getId());
+            }
 
             log.info("Completed Naveen Store mart seed in {} ms: {} rows inserted. Synchronized {} products, {} customers, {} inventory snapshots.",
                     System.currentTimeMillis() - startTime, verifiedCount,

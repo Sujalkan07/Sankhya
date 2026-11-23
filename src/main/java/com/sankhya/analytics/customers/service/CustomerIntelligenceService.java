@@ -9,6 +9,8 @@ import com.sankhya.customers.entity.Customer;
 import com.sankhya.customers.repository.CustomerRepository;
 import com.sankhya.dataset.repository.UnifiedSalesMartRepository;
 import com.sankhya.sales.repository.SalesTransactionRepository;
+import com.sankhya.common.cache.AnalyticsCacheService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,17 +26,36 @@ public class CustomerIntelligenceService {
     private final SalesTransactionRepository salesTransactionRepository;
     private final CustomerRepository customerRepository;
     private final UnifiedSalesMartRepository unifiedSalesMartRepository;
+    private final AnalyticsCacheService cacheService;
 
     public CustomerIntelligenceService(SalesTransactionRepository salesTransactionRepository,
                                        CustomerRepository customerRepository,
                                        UnifiedSalesMartRepository unifiedSalesMartRepository) {
+        this(salesTransactionRepository, customerRepository, unifiedSalesMartRepository, new AnalyticsCacheService());
+    }
+
+    @Autowired
+    public CustomerIntelligenceService(SalesTransactionRepository salesTransactionRepository,
+                                       CustomerRepository customerRepository,
+                                       UnifiedSalesMartRepository unifiedSalesMartRepository,
+                                       AnalyticsCacheService cacheService) {
         this.salesTransactionRepository = salesTransactionRepository;
         this.customerRepository = customerRepository;
         this.unifiedSalesMartRepository = unifiedSalesMartRepository;
+        this.cacheService = cacheService != null ? cacheService : new AnalyticsCacheService();
     }
 
     @Transactional(readOnly = true)
     public CustomerIntelligenceResponse getCustomerIntelligence(Long workspaceId, DateRangeFilter filter) {
+        if (workspaceId == null || filter == null) {
+            return computeCustomerIntelligence(workspaceId, filter);
+        }
+        String key = "ws-" + workspaceId + ":" + filter.getPreset() + ":" + filter.getStartDate() + ":" + filter.getEndDate();
+        return cacheService.getOrCompute("customers", key, Duration.ofMinutes(10),
+                () -> computeCustomerIntelligence(workspaceId, filter));
+    }
+
+    private CustomerIntelligenceResponse computeCustomerIntelligence(Long workspaceId, DateRangeFilter filter) {
         CustomerIntelligenceResponse response = new CustomerIntelligenceResponse();
 
         boolean useMart = unifiedSalesMartRepository.countByWorkspaceId(workspaceId) > 0;

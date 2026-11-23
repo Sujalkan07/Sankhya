@@ -245,7 +245,7 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-[#F1F3EE]">
-                        <tr th:each="p : ${analytics.allProducts}" class="sku-row"
+                        <tr th:each="p, iter : ${analytics.allProducts}" th:if="${iter.index < 100}" class="sku-row"
                             th:data-sku="${p.productId}"
                             th:data-name="${p.productName}"
                             th:data-cat="${p.category}"
@@ -279,6 +279,10 @@
                         </tr>
                     </tbody>
                 </table>
+                <div th:if="${analytics.allProducts != null and #lists.size(analytics.allProducts) > 100}"
+                     class="py-2 text-center text-xs text-tertiary bg-surface-container-low border-t border-[#E7E9E3]">
+                    Showing top 100 of <span th:text="${#lists.size(analytics.allProducts)}" class="font-bold"></span> catalog SKUs in scroll view.
+                </div>
             </div>
         <!-- Phase 5 ML Section: Apriori Market Basket Association Rules -->
         <div class="bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs">

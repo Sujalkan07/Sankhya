@@ -11,10 +11,13 @@ import com.sankhya.analytics.recommendations.repository.BusinessRecommendationRe
 import com.sankhya.dataset.repository.UnifiedSalesMartRepository;
 import com.sankhya.inventory.repository.InventorySnapshotRepository;
 import com.sankhya.sales.repository.SalesTransactionRepository;
+import com.sankhya.common.cache.AnalyticsCacheService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,19 +29,40 @@ public class ExecutiveOverviewService {
     private final InventorySnapshotRepository inventorySnapshotRepository;
     private final BusinessRecommendationRepository businessRecommendationRepository;
     private final UnifiedSalesMartRepository unifiedSalesMartRepository;
+    private final AnalyticsCacheService cacheService;
 
     public ExecutiveOverviewService(SalesTransactionRepository salesTransactionRepository,
                                     InventorySnapshotRepository inventorySnapshotRepository,
                                     BusinessRecommendationRepository businessRecommendationRepository,
                                     UnifiedSalesMartRepository unifiedSalesMartRepository) {
+        this(salesTransactionRepository, inventorySnapshotRepository, businessRecommendationRepository,
+             unifiedSalesMartRepository, new AnalyticsCacheService());
+    }
+
+    @Autowired
+    public ExecutiveOverviewService(SalesTransactionRepository salesTransactionRepository,
+                                    InventorySnapshotRepository inventorySnapshotRepository,
+                                    BusinessRecommendationRepository businessRecommendationRepository,
+                                    UnifiedSalesMartRepository unifiedSalesMartRepository,
+                                    AnalyticsCacheService cacheService) {
         this.salesTransactionRepository = salesTransactionRepository;
         this.inventorySnapshotRepository = inventorySnapshotRepository;
         this.businessRecommendationRepository = businessRecommendationRepository;
         this.unifiedSalesMartRepository = unifiedSalesMartRepository;
+        this.cacheService = cacheService != null ? cacheService : new AnalyticsCacheService();
     }
 
     @Transactional(readOnly = true)
     public ExecutiveOverviewResponse getExecutiveOverview(Long workspaceId, DateRangeFilter filter) {
+        if (workspaceId == null || filter == null) {
+            return computeExecutiveOverview(workspaceId, filter);
+        }
+        String key = "ws-" + workspaceId + ":" + filter.getPreset() + ":" + filter.getStartDate() + ":" + filter.getEndDate();
+        return cacheService.getOrCompute("overview", key, Duration.ofMinutes(10),
+                () -> computeExecutiveOverview(workspaceId, filter));
+    }
+
+    private ExecutiveOverviewResponse computeExecutiveOverview(Long workspaceId, DateRangeFilter filter) {
         ExecutiveOverviewResponse response = new ExecutiveOverviewResponse();
 
         boolean useMart = unifiedSalesMartRepository.countByWorkspaceId(workspaceId) > 0;
@@ -82,7 +106,8 @@ public class ExecutiveOverviewService {
             prevCustomers = unifiedSalesMartRepository.countActiveCustomersBetween(
                     workspaceId, prevFilter.getStartDateTime(), prevFilter.getEndDateTime());
 
-            List<Object[]> invList = unifiedSalesMartRepository.findLatestInventoryPerProductByWorkspaceId(workspaceId);
+            List<Object[]> invList = cacheService.getOrCompute("inventoryLatest", "ws-" + workspaceId, Duration.ofMinutes(15),
+                    () -> unifiedSalesMartRepository.findLatestInventoryPerProductByWorkspaceId(workspaceId));
             lowStockCount = invList.stream().filter(row -> {
                 Number closing = (Number) row[6];
                 Number reorder = (Number) row[7];

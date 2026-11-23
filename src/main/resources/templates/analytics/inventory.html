@@ -215,7 +215,7 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-[#F1F3EE]">
-                            <tr th:each="sku : ${analytics.snapshotItems}" class="snapshot-sku-row">
+                            <tr th:each="sku, iter : ${analytics.snapshotItems}" th:if="${iter.index < 100}" class="snapshot-sku-row">
                                 <td class="py-2 px-3 font-mono text-tertiary snap-sku" th:text="${sku.productId}">SKU-0001</td>
                                 <td class="py-2 px-2 font-semibold text-on-surface snap-name" th:text="${sku.productName}">Item</td>
                                 <td class="py-2 px-2 text-right font-mono" th:text="${sku.closingStock}">0</td>
@@ -229,6 +229,10 @@
                             </tr>
                         </tbody>
                     </table>
+                    <div th:if="${analytics.snapshotItems != null and #lists.size(analytics.snapshotItems) > 100}"
+                         class="py-2 text-center text-xs text-tertiary bg-surface-container-low border-t border-[#E7E9E3]">
+                        Showing top 100 of <span th:text="${#lists.size(analytics.snapshotItems)}" class="font-bold"></span> snapshot items in scroll view.
+                    </div>
                 </div>
             </div>
 

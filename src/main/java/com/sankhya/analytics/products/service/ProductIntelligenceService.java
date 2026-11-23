@@ -7,10 +7,13 @@ import com.sankhya.analytics.products.dto.*;
 import com.sankhya.dataset.repository.UnifiedSalesMartRepository;
 import com.sankhya.products.repository.ProductRepository;
 import com.sankhya.sales.repository.SalesTransactionRepository;
+import com.sankhya.common.cache.AnalyticsCacheService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -20,17 +23,36 @@ public class ProductIntelligenceService {
     private final SalesTransactionRepository salesTransactionRepository;
     private final ProductRepository productRepository;
     private final UnifiedSalesMartRepository unifiedSalesMartRepository;
+    private final AnalyticsCacheService cacheService;
 
     public ProductIntelligenceService(SalesTransactionRepository salesTransactionRepository,
                                       ProductRepository productRepository,
                                       UnifiedSalesMartRepository unifiedSalesMartRepository) {
+        this(salesTransactionRepository, productRepository, unifiedSalesMartRepository, new AnalyticsCacheService());
+    }
+
+    @Autowired
+    public ProductIntelligenceService(SalesTransactionRepository salesTransactionRepository,
+                                      ProductRepository productRepository,
+                                      UnifiedSalesMartRepository unifiedSalesMartRepository,
+                                      AnalyticsCacheService cacheService) {
         this.salesTransactionRepository = salesTransactionRepository;
         this.productRepository = productRepository;
         this.unifiedSalesMartRepository = unifiedSalesMartRepository;
+        this.cacheService = cacheService != null ? cacheService : new AnalyticsCacheService();
     }
 
     @Transactional(readOnly = true)
     public ProductIntelligenceResponse getProductIntelligence(Long workspaceId, DateRangeFilter filter) {
+        if (workspaceId == null || filter == null) {
+            return computeProductIntelligence(workspaceId, filter);
+        }
+        String key = "ws-" + workspaceId + ":" + filter.getPreset() + ":" + filter.getStartDate() + ":" + filter.getEndDate();
+        return cacheService.getOrCompute("products", key, Duration.ofMinutes(10),
+                () -> computeProductIntelligence(workspaceId, filter));
+    }
+
+    private ProductIntelligenceResponse computeProductIntelligence(Long workspaceId, DateRangeFilter filter) {
         ProductIntelligenceResponse response = new ProductIntelligenceResponse();
 
         boolean useMart = unifiedSalesMartRepository.countByWorkspaceId(workspaceId) > 0;

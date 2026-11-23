@@ -8,12 +8,15 @@ import com.sankhya.analytics.sales.dto.*;
 import com.sankhya.dataset.repository.UnifiedSalesMartRepository;
 import com.sankhya.sales.entity.SalesTransaction;
 import com.sankhya.sales.repository.SalesTransactionRepository;
+import com.sankhya.common.cache.AnalyticsCacheService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.util.*;
 
 @Service
@@ -21,15 +24,33 @@ public class SalesAnalyticsService {
 
     private final SalesTransactionRepository salesTransactionRepository;
     private final UnifiedSalesMartRepository unifiedSalesMartRepository;
+    private final AnalyticsCacheService cacheService;
 
     public SalesAnalyticsService(SalesTransactionRepository salesTransactionRepository,
                                  UnifiedSalesMartRepository unifiedSalesMartRepository) {
+        this(salesTransactionRepository, unifiedSalesMartRepository, new AnalyticsCacheService());
+    }
+
+    @Autowired
+    public SalesAnalyticsService(SalesTransactionRepository salesTransactionRepository,
+                                 UnifiedSalesMartRepository unifiedSalesMartRepository,
+                                 AnalyticsCacheService cacheService) {
         this.salesTransactionRepository = salesTransactionRepository;
         this.unifiedSalesMartRepository = unifiedSalesMartRepository;
+        this.cacheService = cacheService != null ? cacheService : new AnalyticsCacheService();
     }
 
     @Transactional(readOnly = true)
     public SalesAnalyticsResponse getSalesAnalytics(Long workspaceId, DateRangeFilter filter) {
+        if (workspaceId == null || filter == null) {
+            return computeSalesAnalytics(workspaceId, filter);
+        }
+        String key = "ws-" + workspaceId + ":" + filter.getPreset() + ":" + filter.getStartDate() + ":" + filter.getEndDate();
+        return cacheService.getOrCompute("sales", key, Duration.ofMinutes(10),
+                () -> computeSalesAnalytics(workspaceId, filter));
+    }
+
+    private SalesAnalyticsResponse computeSalesAnalytics(Long workspaceId, DateRangeFilter filter) {
         SalesAnalyticsResponse response = new SalesAnalyticsResponse();
 
         boolean useMart = unifiedSalesMartRepository.countByWorkspaceId(workspaceId) > 0;

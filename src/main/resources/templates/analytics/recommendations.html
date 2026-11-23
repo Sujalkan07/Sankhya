@@ -144,7 +144,7 @@
 
     <!-- RECOMMENDATIONS CARDS LIST -->
     <div class="space-y-4" id="recommendations-container" th:if="${recommendations != null and !recommendations.isEmpty()}">
-        <div th:each="rec : ${recommendations}"
+        <div th:each="rec, iter : ${recommendations}" th:if="${iter.index < 40}"
              class="recommendation-card bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs flex flex-col md:flex-row items-start justify-between gap-6 transition-all hover:shadow-sm">
 
             <div class="flex-1 space-y-2.5">
@@ -219,6 +219,11 @@
                     </button>
                 </form>
             </div>
+        </div>
+
+        <!-- Capping Indicator Banner -->
+        <div th:if="${recommendations.size() > 40}" class="text-xs text-center py-2.5 px-4 bg-surface-container-low rounded-xl text-tertiary border border-[#E7E9E3]">
+            Showing top 40 prioritized directives out of <span class="font-bold text-on-surface" th:text="${recommendations.size()}">100</span>. Use category and status filters above to refine directives.
         </div>
     </div>
 

@@ -307,7 +307,7 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-[#F1F3EE]">
-                        <tr th:each="c : ${analytics.rfmCustomers}" class="rfm-row" th:data-segment="${c.segment}">
+                        <tr th:each="c, iter : ${analytics.rfmCustomers}" th:if="${iter.index < 100}" class="rfm-row" th:data-segment="${c.segment}">
                             <td class="py-2.5 font-mono text-tertiary rfm-cid" th:text="${c.customerId}">CUST-001</td>
                             <td class="py-2.5 font-bold text-on-surface rfm-name" th:text="${c.customerName}">Customer Name</td>
                             <td class="py-2.5 text-right font-mono" th:text="${c.recencyDays + 'd'}">5d</td>
@@ -325,6 +325,10 @@
                         </tr>
                     </tbody>
                 </table>
+                <div th:if="${analytics.rfmCustomers != null and #lists.size(analytics.rfmCustomers) > 100}"
+                     class="py-2 text-center text-xs text-tertiary bg-surface-container-low border-t border-[#E7E9E3]">
+                    Showing top 100 of <span th:text="${#lists.size(analytics.rfmCustomers)}" class="font-bold"></span> active customer profiles in scroll view.
+                </div>
             </div>
         <!-- Phase 5 Machine Learning — K-Means Customer Clusters Section -->
         <div id="customer-clusters" class="bg-surface-container-lowest rounded-2xl p-6 border border-[#E7E9E3] shadow-xs">

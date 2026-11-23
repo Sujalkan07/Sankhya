@@ -1,0 +1,62 @@
+{
+  "Dashboard (initial)": {
+    "mean_ms": 34973.22,
+    "median_ms": 34929.38,
+    "min_ms": 31360.1,
+    "max_ms": 38630.18
+  },
+  "Inventory": {
+    "mean_ms": 34212.82,
+    "median_ms": 33465.5,
+    "min_ms": 31654.86,
+    "max_ms": 37518.09
+  },
+  "Sales": {
+    "mean_ms": 25095.92,
+    "median_ms": 27718.72,
+    "min_ms": 12461.86,
+    "max_ms": 35107.19
+  },
+  "Customers": {
+    "mean_ms": 22723.56,
+    "median_ms": 25226.64,
+    "min_ms": 15027.23,
+    "max_ms": 27916.81
+  },
+  "Products": {
+    "mean_ms": 25477.4,
+    "median_ms": 25858.6,
+    "min_ms": 13222.24,
+    "max_ms": 37351.36
+  },
+  "AI Insights": {
+    "mean_ms": 40866.23,
+    "median_ms": 48961.71,
+    "min_ms": 23068.12,
+    "max_ms": 50568.86
+  },
+  "Dashboard (return)": {
+    "mean_ms": 27019.36,
+    "median_ms": 32142.66,
+    "min_ms": 15295.8,
+    "max_ms": 33619.62
+  },
+  "Recommendations": {
+    "mean_ms": 22203.68,
+    "median_ms": 22639.1,
+    "min_ms": 20819.9,
+    "max_ms": 23152.04
+  },
+  "Reports": {
+    "mean_ms": 21950.87,
+    "median_ms": 21208.6,
+    "min_ms": 20785.54,
+    "max_ms": 23858.46
+  },
+  "Settings": {
+    "mean_ms": 25.69,
+    "median_ms": 27.71,
+    "min_ms": 17.25,
+    "max_ms": 32.1
+  }
+}

@@ -61,7 +61,7 @@ class NaveenStoreDataQueryServiceTest {
         naveenStore.setName("Naveen Store");
         naveenStore.setStoreKey("STORE-001");
         naveenStore.setOwnerName("Sujal Kansal");
-        when(workspaceRepository.findById(1L)).thenReturn(Optional.of(naveenStore));
+        org.mockito.Mockito.lenient().when(workspaceRepository.findById(1L)).thenReturn(Optional.of(naveenStore));
     }
 
     @Test
@@ -143,5 +143,32 @@ class NaveenStoreDataQueryServiceTest {
         assertEquals(NaveenStoreDataQueryService.QueryIntent.FREQUENTLY_BOUGHT_TOGETHER, result.intent());
         assertTrue(result.deterministicNarrative().contains("Limes"));
         assertTrue(result.deterministicNarrative().contains("Organic Cilantro"));
+    }
+
+    @Test
+    @DisplayName("Intent classification: 'profit trend' correctly routes to SALES_CHANGE_AND_TREND")
+    void testProfitTrendIntentClassification() {
+        assertEquals(NaveenStoreDataQueryService.QueryIntent.SALES_CHANGE_AND_TREND,
+                service.classifyIntent("What is the profit trend for Naveen Store?"));
+        assertEquals(NaveenStoreDataQueryService.QueryIntent.SALES_CHANGE_AND_TREND,
+                service.classifyIntent("How did sales and revenue change recently?"));
+    }
+
+    @Test
+    @DisplayName("Intent classification: 'below' keyword alone does not trigger BELOW_REORDER_INVENTORY")
+    void testBelowKeywordDoesNotTriggerInventoryReorder() {
+        assertNotEquals(NaveenStoreDataQueryService.QueryIntent.BELOW_REORDER_INVENTORY,
+                service.classifyIntent("Show products priced below 50 rupees"));
+        assertEquals(NaveenStoreDataQueryService.QueryIntent.BELOW_REORDER_INVENTORY,
+                service.classifyIntent("Which items are below reorder level in inventory?"));
+    }
+
+    @Test
+    @DisplayName("Intent classification: 'lowest' keyword alone does not trigger CATEGORY_MARGINS")
+    void testLowestKeywordDoesNotTriggerCategoryMarginsWithoutMarginContext() {
+        assertNotEquals(NaveenStoreDataQueryService.QueryIntent.CATEGORY_MARGINS,
+                service.classifyIntent("Which product has the lowest price?"));
+        assertEquals(NaveenStoreDataQueryService.QueryIntent.CATEGORY_MARGINS,
+                service.classifyIntent("Which categories have the lowest profit margins?"));
     }
 }

@@ -27,6 +27,8 @@ server:
 
 # Reserved for future phases / ML & AI
 sankhya:
+  auth:
+    dev-default-password: ${DEV_DEFAULT_PASSWORD:Password@123}
   ai:
     gemini:
       api-key: ${GEMINI_API_KEY:}

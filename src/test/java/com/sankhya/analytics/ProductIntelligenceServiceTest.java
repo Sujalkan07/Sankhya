@@ -95,4 +95,38 @@ class ProductIntelligenceServiceTest {
         assertEquals("Dairy", response.getCategoryProfitability().get(0).getCategory());
         assertEquals(new BigDecimal("1420.00"), response.getCategoryProfitability().get(0).getGrossProfit());
     }
+
+    @Test
+    @DisplayName("getProductIntelligence uses unified sales mart category SKU counts when mart is active")
+    void testGetProductIntelligenceWithMartActive() {
+        Long workspaceId = 1L;
+        DateRangeFilter filter = DateRangeFilter.of(DatePreset.LAST_30_DAYS, null, null);
+
+        when(unifiedSalesMartRepository.countByWorkspaceId(workspaceId)).thenReturn(500_000L);
+        when(unifiedSalesMartRepository.countTotalProductsByWorkspaceId(workspaceId)).thenReturn(1000L);
+
+        List<Object[]> rawProds = List.<Object[]>of(
+                new Object[]{"PROD-A", "Premium Organic Ghee", "Dairy", 100L, new BigDecimal("2000.00"), new BigDecimal("1000.00")}
+        );
+        when(unifiedSalesMartRepository.findProductPerformanceBetween(eq(workspaceId), any(), any()))
+                .thenReturn(rawProds);
+
+        when(unifiedSalesMartRepository.findCategorySalesContributionBetween(eq(workspaceId), any(), any()))
+                .thenReturn(List.<Object[]>of(
+                        new Object[]{"Dairy", new BigDecimal("2000.00"), 100L, 50L, new BigDecimal("1000.00")}
+                ));
+
+        when(unifiedSalesMartRepository.findCategoryProductCountsByWorkspaceId(workspaceId))
+                .thenReturn(List.<Object[]>of(
+                        new Object[]{"Dairy", 150L}
+                ));
+
+        ProductIntelligenceResponse response = productIntelligenceService.getProductIntelligence(workspaceId, filter);
+
+        assertNotNull(response);
+        assertEquals(1000L, response.getKpis().getTotalCatalogProducts());
+        assertEquals(1, response.getCategoryProfitability().size());
+        assertEquals("Dairy", response.getCategoryProfitability().get(0).getCategory());
+        assertEquals(150L, response.getCategoryProfitability().get(0).getSkuCount());
+    }
 }

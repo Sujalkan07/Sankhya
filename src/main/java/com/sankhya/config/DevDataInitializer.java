@@ -15,6 +15,7 @@ import com.sankhya.dataset.repository.DatasetRepository;
 import com.sankhya.dataset.repository.UnifiedSalesMartRepository;
 import com.sankhya.inventory.entity.InventorySnapshot;
 import com.sankhya.inventory.repository.InventorySnapshotRepository;
+import com.sankhya.ml.enums.ExecutionStatus;
 import com.sankhya.ml.execution.MLJobService;
 import com.sankhya.ml.repository.GeminiInsightRepository;
 import com.sankhya.ml.repository.MLModelExecutionRepository;
@@ -31,6 +32,7 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Profile;
@@ -61,7 +63,7 @@ import java.util.stream.Collectors;
  * and ensures all analytics, ML models, and store metadata originate from a single source of truth.
  */
 @Component
-@Profile({"dev", "default", "prod"})
+@Profile({"dev", "default"})
 public class DevDataInitializer implements ApplicationRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DevDataInitializer.class);
@@ -70,6 +72,9 @@ public class DevDataInitializer implements ApplicationRunner {
     public static final String STORE_NAME = "Naveen Store";
     public static final String STORE_OWNER = "Sujal Kansal";
     public static final long EXPECTED_MART_ROWS = 500_000L;
+
+    @Value("${sankhya.auth.dev-default-password:Password@123}")
+    private String devDefaultPassword;
 
     private final UserRepository userRepository;
     private final WorkspaceRepository workspaceRepository;
@@ -183,10 +188,12 @@ public class DevDataInitializer implements ApplicationRunner {
 
     private User ensureUser(String email, String fullName) {
         return userRepository.findByEmail(email).orElseGet(() -> {
+            String password = (devDefaultPassword != null && !devDefaultPassword.isBlank())
+                    ? devDefaultPassword : "Password@123";
             User user = new User(
                     fullName,
                     email,
-                    passwordEncoder.encode("Password@123"),
+                    passwordEncoder.encode(password),
                     UserRole.ROLE_ADMIN
             );
             return userRepository.save(user);
@@ -202,8 +209,13 @@ public class DevDataInitializer implements ApplicationRunner {
 
     private void seedUnifiedMart(Workspace workspace, long existingRows) {
         File martFile = resolveMartFile();
-        if (martFile == null) {
-            log.warn("naveen_store_unified_mart.csv not found on disk; skipping seed.");
+        if (martFile == null || !martFile.exists() || !martFile.canRead() || martFile.length() < 1024) {
+            log.warn("naveen_store_unified_mart.csv not found, unreadable, or invalid on disk; preserving existing data and skipping seed.");
+            return;
+        }
+
+        if (!validateMartCsvHeader(martFile)) {
+            log.error("naveen_store_unified_mart.csv failed schema/header validation; preserving existing data and aborting seed.");
             return;
         }
 
@@ -294,7 +306,10 @@ public class DevDataInitializer implements ApplicationRunner {
                 if (sellingPrice == null) sellingPrice = BigDecimal.ZERO;
 
                 Integer quantity = DataCleaningUtils.cleanInteger(record.get("quantity"));
-                if (quantity == null || quantity <= 0) quantity = 1;
+                if (quantity == null || quantity <= 0) {
+                    log.warn("Row {}: non-positive or invalid quantity '{}', skipping row.", totalInserted, record.get("quantity"));
+                    continue;
+                }
 
                 BigDecimal unitPrice = DataCleaningUtils.cleanDecimal(record.get("unit_price"));
                 if (unitPrice == null) unitPrice = sellingPrice;
@@ -449,7 +464,7 @@ public class DevDataInitializer implements ApplicationRunner {
         }
 
         try {
-            if (mlModelExecutionRepository.count() == 0) {
+            if (mlModelExecutionRepository.countByWorkspaceIdAndStatus(wsId, ExecutionStatus.COMPLETED) == 0) {
                 log.info("Executing ML pipelines (K-Means, Apriori, Random Forest, Linear Regression) on Naveen Store mart...");
                 mlJobService.executeKMeans(wsId, 4);
                 mlJobService.executeApriori(wsId, 0.005, 0.15, 1.05);
@@ -487,7 +502,7 @@ public class DevDataInitializer implements ApplicationRunner {
 
         log.info("================================================================================");
         log.info("SANKHYA — NAVEEN STORE (STORE-001) RUNTIME & RECONCILIATION DIAGNOSTICS");
-        log.info("Local URL        : http://localhost:8080/ (admin@sankhya.com / Password@123)");
+        log.info("Local URL        : http://localhost:8080/ (Store Owner: {})", naveenStore.getOwnerName());
         log.info("Store & Owner    : {} ({}) | Owner: {}", naveenStore.getName(), naveenStore.getStoreKey(), naveenStore.getOwnerName());
         log.info("Active Profiles  : {} | DB: {} | URL: {}", activeProfiles, dbProduct, sanitizedUrl);
         log.info("Gemini Config    : configured={}, model={}", geminiConfigured, geminiModel);
@@ -497,6 +512,25 @@ public class DevDataInitializer implements ApplicationRunner {
         log.info("ML & AI Counts   : MLExecutions={}, GeminiInsights={}",
                 mlModelExecutionRepository.count(), geminiInsightRepository.count());
         log.info("================================================================================");
+    }
+
+    private boolean validateMartCsvHeader(File martFile) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(martFile), StandardCharsets.UTF_8), 8192);
+             CSVParser parser = CSVFormat.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).setIgnoreHeaderCase(true).setTrim(true).build().parse(reader)) {
+            List<String> headerNames = parser.getHeaderNames();
+            Set<String> lowerHeaders = headerNames.stream().map(h -> h.toLowerCase(Locale.ROOT).trim()).collect(Collectors.toSet());
+            List<String> required = List.of("transaction_id", "transaction_date", "product_id", "quantity", "revenue");
+            for (String col : required) {
+                if (!lowerHeaders.contains(col)) {
+                    log.error("CSV validation failed: missing required column '{}'. Found headers: {}", col, headerNames);
+                    return false;
+                }
+            }
+            return true;
+        } catch (Exception e) {
+            log.error("Failed to validate CSV header: {}", e.getMessage());
+            return false;
+        }
     }
 
     private File resolveMartFile() {

@@ -210,7 +210,7 @@ public class FeatureEngineeringService {
                 double dailyVelocity = totalUnits / daysInPeriod;
 
                 Object[] inv = invMap.get(pId);
-                double unitPrice = (inv != null && inv[4] != null) ? ((BigDecimal) inv[4]).doubleValue() : 0.0;
+                double unitPrice = (inv != null && inv[4] != null) ? ((Number) inv[4]).doubleValue() : 0.0;
                 double currentStock = (inv != null && inv[6] != null) ? ((Number) inv[6]).doubleValue() : 0.0;
 
                 DemandClass label;

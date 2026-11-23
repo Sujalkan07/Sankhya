@@ -14,4 +14,5 @@ public interface MLModelExecutionRepository extends JpaRepository<MLModelExecuti
     List<MLModelExecution> findByModelIdOrderByStartedAtDesc(Long modelId);
     Optional<MLModelExecution> findFirstByModelIdAndStatusOrderByStartedAtDesc(Long modelId, ExecutionStatus status);
     Optional<MLModelExecution> findFirstByWorkspaceIdAndStatusOrderByStartedAtDesc(Long workspaceId, ExecutionStatus status);
+    long countByWorkspaceIdAndStatus(Long workspaceId, ExecutionStatus status);
 }

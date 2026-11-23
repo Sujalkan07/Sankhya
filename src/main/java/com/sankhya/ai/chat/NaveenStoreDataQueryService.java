@@ -154,8 +154,8 @@ public class NaveenStoreDataQueryService {
         }
 
         // Exact & near matches for the 6 core analytical questions + key retail topics
-        if ((lower.contains("changed") || lower.contains("recent") || lower.contains("trend") || lower.contains("growth") || lower.contains("month"))
-                && (lower.contains("sale") || lower.contains("revenue") || lower.contains("week") || lower.contains("recent") || lower.contains("drop") || lower.contains("change"))) {
+        if ((lower.contains("changed") || lower.contains("recent") || lower.contains("trend") || lower.contains("growth") || lower.contains("month") || lower.contains("weekly") || lower.contains("daily"))
+                && (lower.contains("sale") || lower.contains("revenue") || lower.contains("profit") || lower.contains("turnover") || lower.contains("week") || lower.contains("month") || lower.contains("drop") || lower.contains("change") || lower.contains("trend"))) {
             return QueryIntent.SALES_CHANGE_AND_TREND;
         }
         if ((lower.contains("highest") || lower.contains("top") || lower.contains("best") || lower.contains("most"))
@@ -163,7 +163,8 @@ public class NaveenStoreDataQueryService {
                 && !lower.contains("bought together")) {
             return QueryIntent.TOP_PRODUCTS;
         }
-        if (lower.contains("margin") || lower.contains("categor") || lower.contains("department") || lower.contains("lowest")) {
+        if (lower.contains("margin") || lower.contains("categor") || lower.contains("department")
+                || (lower.contains("lowest") && (lower.contains("margin") || lower.contains("profit") || lower.contains("categor") || lower.contains("department")))) {
             return QueryIntent.CATEGORY_MARGINS;
         }
         if ((lower.contains("top") || lower.contains("best") || lower.contains("most") || lower.contains("who"))
@@ -173,8 +174,9 @@ public class NaveenStoreDataQueryService {
         if (lower.contains("segment") || lower.contains("rfm") || lower.contains("cluster") || lower.contains("churn") || lower.contains("loyal")) {
             return QueryIntent.CUSTOMER_SEGMENTS;
         }
-        if (lower.contains("reorder") || lower.contains("below") || lower.contains("low stock")
-                || lower.contains("stockout") || lower.contains("out of stock") || lower.contains("inventory") || lower.contains("stock")) {
+        if (lower.contains("reorder") || lower.contains("low stock") || lower.contains("stockout") || lower.contains("out of stock")
+                || (lower.contains("below") && (lower.contains("reorder") || lower.contains("stock") || lower.contains("threshold") || lower.contains("level") || lower.contains("safety")))
+                || ((lower.contains("inventory") || lower.contains("stock")) && !lower.contains("daily") && !lower.contains("history"))) {
             return QueryIntent.BELOW_REORDER_INVENTORY;
         }
         if (lower.contains("together") || lower.contains("bundle") || lower.contains("basket")

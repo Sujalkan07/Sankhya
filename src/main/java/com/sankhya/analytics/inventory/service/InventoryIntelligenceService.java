@@ -63,8 +63,8 @@ public class InventoryIntelligenceService {
                 String pId = (String) row[0];
                 String name = row[1] != null ? row[1].toString() : pId;
                 String category = row[2] != null ? row[2].toString() : "General";
-                BigDecimal unitCost = row[3] != null ? (BigDecimal) row[3] : BigDecimal.ZERO;
-                BigDecimal sellingPrice = row[4] != null ? (BigDecimal) row[4] : BigDecimal.ZERO;
+                BigDecimal unitCost = row[3] instanceof BigDecimal bd ? bd : (row[3] instanceof Number n ? BigDecimal.valueOf(n.doubleValue()) : BigDecimal.ZERO);
+                BigDecimal sellingPrice = row[4] instanceof BigDecimal bd ? bd : (row[4] instanceof Number n ? BigDecimal.valueOf(n.doubleValue()) : BigDecimal.ZERO);
                 String snapDate = row[5] != null ? row[5].toString() : "2026-11-22";
                 if (latestSnapDate == null || snapDate.compareTo(latestSnapDate) > 0) {
                     latestSnapDate = snapDate;

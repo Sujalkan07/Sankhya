@@ -180,10 +180,22 @@ public interface UnifiedSalesMartRepository extends JpaRepository<UnifiedSalesMa
     // ================= Latest Inventory Context (Deduplicated by Product) =================
 
     // Deduplicated inventory snapshot: [productId, productName, category, unitCost, sellingPrice, latestDate, closingStock, reorderLevel, status]
-    @Query("SELECT m.productId, MAX(m.productName), MAX(m.category), MAX(m.unitCost), MAX(m.sellingPrice), " +
-            "MAX(m.latestInventorySnapshotDate), MAX(m.currentClosingStock), MAX(m.currentReorderLevel), MAX(m.currentInventoryStatus) " +
-            "FROM UnifiedSalesMart m WHERE m.workspace.id = :workspaceId GROUP BY m.productId")
+    // Uses ROW_NUMBER() window function so all 9 attributes originate from the exact same latest snapshot transaction record
+    @Query(value = "SELECT t.product_id, t.product_name, t.category, t.unit_cost, t.selling_price, " +
+            "t.latest_inventory_snapshot_date, t.current_closing_stock, t.current_reorder_level, t.current_inventory_status " +
+            "FROM (" +
+            "  SELECT m.product_id, m.product_name, m.category, m.unit_cost, m.selling_price, " +
+            "         m.latest_inventory_snapshot_date, m.current_closing_stock, m.current_reorder_level, m.current_inventory_status, " +
+            "         ROW_NUMBER() OVER (PARTITION BY m.product_id ORDER BY m.latest_inventory_snapshot_date DESC, m.transaction_date DESC, m.id DESC) as rn " +
+            "  FROM unified_sales_mart m WHERE m.workspace_id = :workspaceId" +
+            ") t WHERE t.rn = 1", nativeQuery = true)
     List<Object[]> findLatestInventoryPerProductByWorkspaceId(@Param("workspaceId") Long workspaceId);
+
+    @Query("SELECT COUNT(m) FROM UnifiedSalesMart m WHERE m.workspace.id = :workspaceId AND m.currentClosingStock IS NOT NULL")
+    long countInventoryObservationsByWorkspaceId(@Param("workspaceId") Long workspaceId);
+
+    @Query("SELECT COALESCE(m.category, 'General'), COUNT(DISTINCT m.productId) FROM UnifiedSalesMart m WHERE m.workspace.id = :workspaceId GROUP BY COALESCE(m.category, 'General')")
+    List<Object[]> findCategoryProductCountsByWorkspaceId(@Param("workspaceId") Long workspaceId);
 
     // ================= Market Basket Analysis (Apriori) =================
 

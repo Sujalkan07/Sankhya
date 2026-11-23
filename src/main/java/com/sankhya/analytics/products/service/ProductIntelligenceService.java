@@ -152,7 +152,9 @@ public class ProductIntelligenceService {
                         workspaceId, filter.getStartDateTime(), filter.getEndDateTime());
 
         Map<String, Long> categoryCatalogCounts = new HashMap<>();
-        List<Object[]> catSummary = productRepository.findCategoryProductSummaryByWorkspaceId(workspaceId);
+        List<Object[]> catSummary = useMart
+                ? unifiedSalesMartRepository.findCategoryProductCountsByWorkspaceId(workspaceId)
+                : productRepository.findCategoryProductSummaryByWorkspaceId(workspaceId);
         for (Object[] r : catSummary) {
             String cat = (String) r[0];
             long count = ((Number) r[1]).longValue();

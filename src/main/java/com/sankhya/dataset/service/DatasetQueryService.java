@@ -62,16 +62,19 @@ public class DatasetQueryService {
 
         long martCount = unifiedSalesMartRepository.countByWorkspaceId(workspaceId);
         if (martCount > 0) {
+            boolean alreadyCounted = datasets.stream().anyMatch(d -> d.getDatasetType() == DatasetType.UNIFIED_MART && d.getRecordCount() > 0);
             categoryCounts.put(DatasetType.UNIFIED_MART.name(), martCount);
             totalRecords = Math.max(totalRecords, martCount);
-            activeDatasets = Math.max(activeDatasets, 4);
+            if (!alreadyCounted) {
+                activeDatasets++;
+            }
         }
 
         summary.put("totalDatasets", DatasetType.values().length);
         summary.put("activeDatasets", activeDatasets);
         summary.put("totalRecords", totalRecords);
         summary.put("categoryCounts", categoryCounts);
-        summary.put("isReadyForAnalytics", activeDatasets >= 3 || martCount > 0);
+        summary.put("isReadyForAnalytics", activeDatasets >= 1 && (martCount > 0 || hasRequiredAnalyticsData(workspaceId)));
 
         return summary;
     }
@@ -88,17 +91,17 @@ public class DatasetQueryService {
 
     @Transactional(readOnly = true)
     public boolean isProductIntelligenceReady(Long workspaceId) {
-        return productRepository.countByWorkspaceId(workspaceId) > 0 || unifiedSalesMartRepository.countByWorkspaceId(workspaceId) > 0;
+        return productRepository.countByWorkspaceId(workspaceId) > 0 || unifiedSalesMartRepository.countTotalProductsByWorkspaceId(workspaceId) > 0;
     }
 
     @Transactional(readOnly = true)
     public boolean isCustomerIntelligenceReady(Long workspaceId) {
-        return customerRepository.countByWorkspaceId(workspaceId) > 0 || unifiedSalesMartRepository.countByWorkspaceId(workspaceId) > 0;
+        return customerRepository.countByWorkspaceId(workspaceId) > 0 || unifiedSalesMartRepository.countTotalCustomersByWorkspaceId(workspaceId) > 0;
     }
 
     @Transactional(readOnly = true)
     public boolean isInventoryIntelligenceReady(Long workspaceId) {
-        return inventorySnapshotRepository.countByWorkspaceId(workspaceId) > 0 || unifiedSalesMartRepository.countByWorkspaceId(workspaceId) > 0;
+        return inventorySnapshotRepository.countByWorkspaceId(workspaceId) > 0 || unifiedSalesMartRepository.countInventoryObservationsByWorkspaceId(workspaceId) > 0;
     }
 
     @Transactional(readOnly = true)

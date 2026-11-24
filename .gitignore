@@ -38,4 +38,5 @@ target/
 Thumbs.db
 
 ### Sankhya Storage ###
-data/
+data/*
+!data/naveen_store_unified_mart.csv.gz

@@ -48,6 +48,7 @@ import javax.sql.DataSource;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -274,7 +275,7 @@ public class DevDataInitializer implements ApplicationRunner {
         long startTime = System.currentTimeMillis();
 
         try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(new FileInputStream(martFile), StandardCharsets.UTF_8), 65536);
+                new InputStreamReader(openMartInputStream(martFile), StandardCharsets.UTF_8), 65536);
              CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.builder()
                      .setHeader()
                      .setSkipHeaderRecord(true)
@@ -523,8 +524,16 @@ public class DevDataInitializer implements ApplicationRunner {
         log.info("================================================================================");
     }
 
+    private InputStream openMartInputStream(File file) throws Exception {
+        InputStream is = new FileInputStream(file);
+        if (file.getName().endsWith(".gz")) {
+            return new java.util.zip.GZIPInputStream(is, 65536);
+        }
+        return is;
+    }
+
     private boolean validateMartCsvHeader(File martFile) {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(martFile), StandardCharsets.UTF_8), 8192);
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(openMartInputStream(martFile), StandardCharsets.UTF_8), 8192);
              CSVParser parser = CSVFormat.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).setIgnoreHeaderCase(true).setTrim(true).build().parse(reader)) {
             List<String> headerNames = parser.getHeaderNames();
             Set<String> lowerHeaders = headerNames.stream().map(h -> h.toLowerCase(Locale.ROOT).trim()).collect(Collectors.toSet());
@@ -545,8 +554,12 @@ public class DevDataInitializer implements ApplicationRunner {
     private File resolveMartFile() {
         File f1 = new File("data/naveen_store_unified_mart.csv");
         if (f1.exists()) return f1;
+        File f1gz = new File("data/naveen_store_unified_mart.csv.gz");
+        if (f1gz.exists()) return f1gz;
         File f2 = new File("naveen_store_unified_mart.csv");
         if (f2.exists()) return f2;
+        File f2gz = new File("naveen_store_unified_mart.csv.gz");
+        if (f2gz.exists()) return f2gz;
         return null;
     }
 

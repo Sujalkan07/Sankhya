@@ -1,5 +1,6 @@
 target/
-data/
+data/*
+!data/naveen_store_unified_mart.csv.gz
 .git/
 .idea/
 .vscode/

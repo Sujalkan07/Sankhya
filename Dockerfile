@@ -24,6 +24,10 @@ RUN addgroup -S sankhyagroup && adduser -S sankhyauser -G sankhyagroup \
     && mkdir -p /app/data \
     && chown -R sankhyauser:sankhyagroup /app
 
+# Copy compressed dataset for automatic initial seeding
+COPY data/naveen_store_unified_mart.csv.gz /app/data/
+RUN chown -R sankhyauser:sankhyagroup /app/data
+
 USER sankhyauser
 
 COPY --from=builder /app/target/sankhya-platform-1.0.0-SNAPSHOT.jar app.jar

@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "https://sankhya-na0y.onrender.com/$1"
+    }
+  ]
+}

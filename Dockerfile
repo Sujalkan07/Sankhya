@@ -2,16 +2,18 @@
 FROM maven:3.9.6-eclipse-temurin-21-alpine AS builder
 WORKDIR /app
 
-# Copy pom and source files directly
-COPY pom.xml .
+# Copy Maven settings and project descriptors
 COPY .mvn .mvn
+COPY pom.xml .
+
+# Install Google Cloud Maven Central mirror globally to bypass Sonatype 429 IP blocks
+RUN mkdir -p /root/.m2 && cp .mvn/settings.xml /root/.m2/settings.xml
+
+# Copy application source code
 COPY src ./src
 
-# Build production JAR with connection pooling disabled and retries to avoid 429 rate-limiting
-RUN mvn clean package -DskipTests -B \
-    -Dmaven.wagon.http.pool=false \
-    -Dmaven.wagon.http.retryHandler.count=5 \
-    -Dmaven.wagon.http.retryHandler.requestSentRetryEnabled=true
+# Build production JAR using Google mirror
+RUN mvn clean package -DskipTests -B -s .mvn/settings.xml
 
 # Runtime Image
 FROM eclipse-temurin:21-jre-alpine

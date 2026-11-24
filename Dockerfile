@@ -2,14 +2,16 @@
 FROM maven:3.9.6-eclipse-temurin-21-alpine AS builder
 WORKDIR /app
 
-# Cache Maven dependencies
+# Copy pom and source files directly
 COPY pom.xml .
 COPY .mvn .mvn
-RUN mvn dependency:go-offline -B
-
-# Build production JAR
 COPY src ./src
-RUN mvn clean package -DskipTests -B
+
+# Build production JAR with connection pooling disabled and retries to avoid 429 rate-limiting
+RUN mvn clean package -DskipTests -B \
+    -Dmaven.wagon.http.pool=false \
+    -Dmaven.wagon.http.retryHandler.count=5 \
+    -Dmaven.wagon.http.retryHandler.requestSentRetryEnabled=true
 
 # Runtime Image
 FROM eclipse-temurin:21-jre-alpine

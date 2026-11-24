@@ -537,7 +537,7 @@ public class DevDataInitializer implements ApplicationRunner {
              CSVParser parser = CSVFormat.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).setIgnoreHeaderCase(true).setTrim(true).build().parse(reader)) {
             List<String> headerNames = parser.getHeaderNames();
             Set<String> lowerHeaders = headerNames.stream().map(h -> h.toLowerCase(Locale.ROOT).trim()).collect(Collectors.toSet());
-            List<String> required = List.of("transaction_id", "transaction_date", "product_id", "quantity", "revenue");
+            List<String> required = List.of("transaction_id", "transaction_date", "product_id", "quantity", "selling_price");
             for (String col : required) {
                 if (!lowerHeaders.contains(col)) {
                     log.error("CSV validation failed: missing required column '{}'. Found headers: {}", col, headerNames);

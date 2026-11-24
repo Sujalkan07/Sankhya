@@ -52,8 +52,8 @@ public class GeminiClient {
                 .build();
     }
 
-    private static final String VERIFIED_FALLBACK_MODEL = "gemini-3.5-flash-lite";
-    private static final String SECONDARY_FALLBACK_MODEL = "gemini-3-flash-preview";
+    private static final String VERIFIED_FALLBACK_MODEL = "gemini-3.5-flash";
+    private static final String SECONDARY_FALLBACK_MODEL = "gemini-flash-lite-latest";
 
     public GeminiResponse generateContent(String systemInstruction, String userPrompt) {
         if (!geminiConfig.isConfigured()) {
@@ -63,30 +63,37 @@ public class GeminiClient {
         String primaryModel = geminiConfig.getModel();
         GeminiResponse response = callGenerateContent(primaryModel, systemInstruction, userPrompt);
 
-        // Retry once with verified primary fallback model on 404/503 unavailable errors
+        // Retry once with verified primary fallback model on failure (except auth errors)
         if (!response.success()
-                && !VERIFIED_FALLBACK_MODEL.equalsIgnoreCase(primaryModel)
-                && isModelUnavailable(response.errorMessage())) {
+                && !isAuthError(response.errorMessage())
+                && !VERIFIED_FALLBACK_MODEL.equalsIgnoreCase(primaryModel)) {
             log.warn("Primary model {} unavailable ({}), attempting fallback to {}",
                     primaryModel, sanitizeMessage(response.errorMessage()), VERIFIED_FALLBACK_MODEL);
             response = callGenerateContent(VERIFIED_FALLBACK_MODEL, systemInstruction, userPrompt);
         }
 
-        // Secondary fallback on transient 503/404 using live-verified gemini-3-flash-preview
+        // Secondary fallback on transient 503/404/quota
         if (!response.success()
+                && !isAuthError(response.errorMessage())
                 && !SECONDARY_FALLBACK_MODEL.equalsIgnoreCase(primaryModel)
-                && isModelUnavailable(response.errorMessage())) {
+                && !SECONDARY_FALLBACK_MODEL.equalsIgnoreCase(VERIFIED_FALLBACK_MODEL)) {
             log.warn("Gemini model {} unavailable ({}), attempting secondary fallback to {}",
-                    primaryModel, sanitizeMessage(response.errorMessage()), SECONDARY_FALLBACK_MODEL);
+                    VERIFIED_FALLBACK_MODEL, sanitizeMessage(response.errorMessage()), SECONDARY_FALLBACK_MODEL);
             response = callGenerateContent(SECONDARY_FALLBACK_MODEL, systemInstruction, userPrompt);
         }
 
         return response;
     }
 
+    private boolean isAuthError(String errorMessage) {
+        return errorMessage != null && (errorMessage.contains("AUTH_ERROR") || errorMessage.contains("not configured"));
+    }
+
     private boolean isModelUnavailable(String errorMessage) {
-        return errorMessage != null
-                && (errorMessage.contains("MODEL_UNAVAILABLE") || errorMessage.contains("404") || errorMessage.contains("503"));
+        if (errorMessage == null) return false;
+        String upper = errorMessage.toUpperCase(Locale.ROOT);
+        return upper.contains("MODEL_UNAVAILABLE") || upper.contains("404") || upper.contains("503")
+                || upper.contains("UNAVAILABLE") || upper.contains("RESOURCE_EXHAUSTED") || upper.contains("429");
     }
 
     private GeminiResponse callGenerateContent(String model, String systemInstruction, String userPrompt) {
@@ -114,15 +121,21 @@ public class GeminiClient {
             genConfig.put("maxOutputTokens", 2048);
             body.put("generationConfig", genConfig);
 
-            String responseBody = restClient.post()
+            byte[] responseBytes = restClient.post()
                     .uri("/models/{model}:generateContent?key={key}", model, geminiConfig.getApiKey())
                     .contentType(MediaType.APPLICATION_JSON)
+                    .accept(MediaType.APPLICATION_JSON)
                     .body(body)
                     .retrieve()
-                    .body(String.class);
+                    .body(byte[].class);
 
-            if (responseBody == null || responseBody.isBlank()) {
+            if (responseBytes == null || responseBytes.length == 0) {
                 return GeminiResponse.failure("MALFORMED_RESPONSE: Empty response received from Gemini API.");
+            }
+
+            String responseBody = new String(responseBytes, java.nio.charset.StandardCharsets.UTF_8).trim();
+            if (responseBody.isEmpty()) {
+                return GeminiResponse.failure("MALFORMED_RESPONSE: Empty text response received from Gemini API.");
             }
 
             JsonNode root = objectMapper.readTree(responseBody);

@@ -137,24 +137,30 @@ public class GeminiChatService {
     }
 
     private String buildAnalystSystemInstruction() {
-        return "You are 'Ask Naveen Store AI', the dedicated retail analytics assistant for Naveen Store (STORE-001) owned by Sujal Kansal in Lucknow, Uttar Pradesh, India.\n" +
-                "STRICT RULES:\n" +
-                "1. SINGLE-STORE & CURRENCY LOCK: Every answer is strictly for Naveen Store (STORE-001, Lucknow) and MUST use Indian Rupees (₹), never $.\n" +
-                "2. VERIFIED GROUNDING ONLY: Quote ONLY exact figures from VERIFIED_QUERY_RESULT JSON. Never invent numbers, customer emails/phones, historical daily inventory movements, or external store comparisons.\n" +
-                "3. PROVENANCE HONESTY: Note relevant dataset scope/limitations concisely when applicable (synthetic INR financials, reconstructed 2025-11-22 to 2026-11-22 dates, Lucknow standardized city, top-1,000 Instacart-derived products, single 2026-11-22 inventory snapshot).\n" +
-                "4. FORMAT: Write a clear, concise executive summary with bullet points in Markdown (headings, bold key metrics) that complements the KPI cards, data table, and chart rendered right below your answer.";
+        return "You are 'Ask Naveen Store AI', the intelligent retail analytics AI consultant for Naveen Store (STORE-001) owned by Sujal Kansal in Lucknow, Uttar Pradesh, India.\n" +
+                "GUIDELINES:\n" +
+                "1. SINGLE-STORE & INR CURRENCY: You represent Naveen Store (STORE-001, Lucknow, UP). All monetary figures MUST be formatted in Indian Rupees (₹), never dollars ($).\n" +
+                "2. DIRECT & SPECIFIC ANSWERS: Answer the user's specific question directly, insightfully, and conversationally. If the user asks about top customers, name the specific top customers, their spend, and order frequency from the provided table. If they ask about products, highlight the top SKUs and their revenue.\n" +
+                "3. ACCURATE GROUNDING: Quote and ground your analysis in the figures, customer profiles, product names, and categories present in VERIFIED_QUERY_RESULT. Do not invent contradictory figures.\n" +
+                "4. STRATEGIC BUSINESS VALUE: Provide practical, actionable retail recommendations for store owner Sujal Kansal to optimize inventory, retain top shoppers, and boost margins.\n" +
+                "5. NATURAL PROFESSIONAL TONE: Speak naturally and professionally as a senior supermarket data consultant. Do NOT include generic disclaimers or repetitive technical caveats unless explicitly asked about dataset architecture.\n" +
+                "6. FORMAT: Structure your answer using clean Markdown (clear section headings, bold metrics, and concise bullet points) that pairs with the KPI cards, table, and chart displayed below your response.";
     }
 
     private String buildGroundedAnalystPrompt(String userMessage,
                                               List<Map<String, String>> history,
                                               NaveenStoreDataQueryService.StructuredQueryResult verified) {
         Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("store", "Naveen Store (STORE-001), Lucknow, Uttar Pradesh");
+        payload.put("owner", "Sujal Kansal");
         payload.put("intent", verified.intent().name());
         payload.put("timeWindow", verified.timeWindow());
-        payload.put("meta", verified.meta());
         payload.put("kpis", verified.kpis());
         payload.put("table", verified.table());
-        payload.put("baselineSummary", verified.deterministicNarrative());
+        payload.put("chart", verified.chart());
+        if (verified.deterministicNarrative() != null && !verified.deterministicNarrative().isBlank()) {
+            payload.put("telemetrySummary", verified.deterministicNarrative());
+        }
 
         String json;
         try {
@@ -165,7 +171,7 @@ public class GeminiChatService {
 
         StringBuilder sb = new StringBuilder();
         if (history != null && !history.isEmpty()) {
-            sb.append("RECENT SESSION TURNS:\n");
+            sb.append("CONVERSATION HISTORY:\n");
             int start = Math.max(0, history.size() - 6);
             for (int i = start; i < history.size(); i++) {
                 Map<String, String> turn = history.get(i);
@@ -174,9 +180,10 @@ public class GeminiChatService {
             }
             sb.append("\n");
         }
-        sb.append("USER QUESTION: \"").append(userMessage).append("\"\n\n");
-        sb.append("VERIFIED_QUERY_RESULT (Naveen Store STORE-001, Lucknow, INR):\n```json\n")
-                .append(json).append("\n```");
+        sb.append("STORE OWNER QUESTION: \"").append(userMessage).append("\"\n\n");
+        sb.append("VERIFIED_QUERY_RESULT (Naveen Store STORE-001, Lucknow, INR ₹):\n```json\n")
+                .append(json).append("\n```\n\n");
+        sb.append("Analyze the verified store data above and provide a comprehensive, intelligent answer to the owner's question. Directly highlight the specific customers, products, or metrics requested.");
         return sb.toString();
     }
 }

@@ -171,4 +171,17 @@ class NaveenStoreDataQueryServiceTest {
         assertEquals(NaveenStoreDataQueryService.QueryIntent.CATEGORY_MARGINS,
                 service.classifyIntent("Which categories have the lowest profit margins?"));
     }
+
+    @Test
+    @DisplayName("Intent classification: 'Who were the top customers this month' correctly routes to TOP_CUSTOMERS")
+    void testTopCustomersAndProductsIntentClassification() {
+        assertEquals(NaveenStoreDataQueryService.QueryIntent.TOP_CUSTOMERS,
+                service.classifyIntent("Who were the top customers this month"));
+        assertEquals(NaveenStoreDataQueryService.QueryIntent.TOP_CUSTOMERS,
+                service.classifyIntent("Which customers spend the most?"));
+        assertEquals(NaveenStoreDataQueryService.QueryIntent.TOP_PRODUCTS,
+                service.classifyIntent("Top products this month"));
+        assertEquals(NaveenStoreDataQueryService.QueryIntent.TOP_PRODUCTS,
+                service.classifyIntent("Which products are our top sellers?"));
+    }
 }

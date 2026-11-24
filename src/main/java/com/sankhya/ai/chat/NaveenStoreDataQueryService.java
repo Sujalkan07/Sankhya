@@ -153,45 +153,61 @@ public class NaveenStoreDataQueryService {
             return QueryIntent.UNAVAILABLE_OR_MISSING_DATA;
         }
 
-        // Exact & near matches for the 6 core analytical questions + key retail topics
-        if ((lower.contains("changed") || lower.contains("recent") || lower.contains("trend") || lower.contains("growth") || lower.contains("month") || lower.contains("weekly") || lower.contains("daily"))
-                && (lower.contains("sale") || lower.contains("revenue") || lower.contains("profit") || lower.contains("turnover") || lower.contains("week") || lower.contains("month") || lower.contains("drop") || lower.contains("change") || lower.contains("trend"))) {
-            return QueryIntent.SALES_CHANGE_AND_TREND;
+        // Exact & near matches for the core analytical questions + key retail topics
+        // 1. Specific Entity Checks FIRST (so words like "month" or "best" do not hijack specific entities)
+        if ((lower.contains("customer") || lower.contains("buyer") || lower.contains("shopper") || lower.contains("client"))
+                && (lower.contains("top") || lower.contains("best") || lower.contains("highest") || lower.contains("most") || lower.contains("who") || lower.contains("spend") || lower.contains("frequent") || lower.contains("loyal") || lower.contains("rank"))) {
+            return QueryIntent.TOP_CUSTOMERS;
         }
-        if ((lower.contains("highest") || lower.contains("top") || lower.contains("best") || lower.contains("most"))
-                && (lower.contains("product") || lower.contains("sku") || lower.contains("item"))
-                && !lower.contains("bought together")) {
+        if (lower.contains("who") && (lower.contains("customer") || lower.contains("buyer") || lower.contains("shopper") || lower.contains("spend"))) {
+            return QueryIntent.TOP_CUSTOMERS;
+        }
+
+        if (lower.contains("segment") || lower.contains("rfm") || lower.contains("cluster") || lower.contains("churn") || lower.contains("loyal")) {
+            return QueryIntent.CUSTOMER_SEGMENTS;
+        }
+
+        if ((lower.contains("product") || lower.contains("sku") || lower.contains("item") || lower.contains("seller") || lower.contains("selling"))
+                && (lower.contains("highest") || lower.contains("top") || lower.contains("best") || lower.contains("most") || lower.contains("popular") || lower.contains("leader"))
+                && !lower.contains("bought together") && !lower.contains("bundle")) {
             return QueryIntent.TOP_PRODUCTS;
         }
+
         if (lower.contains("margin") || lower.contains("categor") || lower.contains("department")
                 || (lower.contains("lowest") && (lower.contains("margin") || lower.contains("profit") || lower.contains("categor") || lower.contains("department")))) {
             return QueryIntent.CATEGORY_MARGINS;
         }
-        if ((lower.contains("top") || lower.contains("best") || lower.contains("most") || lower.contains("who"))
-                && (lower.contains("customer") || lower.contains("buyer") || lower.contains("shopper") || lower.contains("spend") || lower.contains("frequency"))) {
-            return QueryIntent.TOP_CUSTOMERS;
-        }
-        if (lower.contains("segment") || lower.contains("rfm") || lower.contains("cluster") || lower.contains("churn") || lower.contains("loyal")) {
-            return QueryIntent.CUSTOMER_SEGMENTS;
-        }
+
         if (lower.contains("reorder") || lower.contains("low stock") || lower.contains("stockout") || lower.contains("out of stock")
                 || (lower.contains("below") && (lower.contains("reorder") || lower.contains("stock") || lower.contains("threshold") || lower.contains("level") || lower.contains("safety")))
                 || ((lower.contains("inventory") || lower.contains("stock")) && !lower.contains("daily") && !lower.contains("history"))) {
             return QueryIntent.BELOW_REORDER_INVENTORY;
         }
+
         if (lower.contains("together") || lower.contains("bundle") || lower.contains("basket")
                 || lower.contains("co-occur") || lower.contains("apriori") || lower.contains("cross-sell") || lower.contains("affinity")) {
             return QueryIntent.FREQUENTLY_BOUGHT_TOGETHER;
         }
+
         if (lower.contains("payment") || lower.contains("upi") || lower.contains("cash") || lower.contains("card")
                 || lower.contains("hour") || lower.contains("peak") || lower.contains("time of day")) {
             return QueryIntent.PAYMENT_METHODS_AND_HOURLY;
         }
-        if (lower.contains("forecast") || lower.contains("predict") || lower.contains("next 14") || lower.contains("recommend") || lower.contains("action")) {
+
+        if (lower.contains("forecast") || lower.contains("predict") || lower.contains("next 14") || lower.contains("recommend") || lower.contains("action plan")) {
             return QueryIntent.FORECAST_AND_RECOMMENDATIONS;
         }
+
+        // 2. Sales Change & Trends (requires actual sales/profit/trend indicator, not just "month")
+        if (lower.contains("sale") || lower.contains("revenue") || lower.contains("turnover")
+                || lower.contains("profit trend") || lower.contains("sales trend") || lower.contains("revenue trend")
+                || (lower.contains("trend") && (lower.contains("growth") || lower.contains("drop") || lower.contains("change") || lower.contains("profit") || lower.contains("performance")))
+                || ((lower.contains("changed") || lower.contains("recent") || lower.contains("growth")) && (lower.contains("sale") || lower.contains("revenue") || lower.contains("profit")))) {
+            return QueryIntent.SALES_CHANGE_AND_TREND;
+        }
+
         if (lower.contains("overview") || lower.contains("summary") || lower.contains("how is naveen store")
-                || lower.contains("total revenue") || lower.contains("profit")) {
+                || lower.contains("total revenue") || lower.contains("store performance")) {
             return QueryIntent.STORE_OVERVIEW;
         }
 
@@ -350,8 +366,13 @@ public class NaveenStoreDataQueryService {
     }
 
     private StructuredQueryResult buildTopProductsResult(Workspace ws, Long wsId, long totalRows, LocalDateTime minDate, LocalDateTime maxDate, String q) {
-        List<Object[]> prods = unifiedSalesMartRepository.findProductPerformanceBetween(wsId, minDate, maxDate);
-        boolean sortByProfit = q.toLowerCase(Locale.ROOT).contains("profit") && !q.toLowerCase(Locale.ROOT).contains("revenue");
+        LocalDateTime effectiveMin = minDate;
+        String lowerQ = q != null ? q.toLowerCase(Locale.ROOT) : "";
+        if (lowerQ.contains("month") || lowerQ.contains("30 day") || lowerQ.contains("recent")) {
+            effectiveMin = maxDate.minusDays(30);
+        }
+        List<Object[]> prods = unifiedSalesMartRepository.findProductPerformanceBetween(wsId, effectiveMin, maxDate);
+        boolean sortByProfit = lowerQ.contains("profit") && !lowerQ.contains("revenue");
 
         List<Object[]> sorted = new ArrayList<>(prods);
         if (sortByProfit) {
@@ -416,7 +437,7 @@ public class NaveenStoreDataQueryService {
                 top1Name, AnalyticsMathUtils.formatInr(top1Rev), AnalyticsMathUtils.formatInr(top1Profit),
                 topProfitName, AnalyticsMathUtils.formatInr(maxProfit));
 
-        return new StructuredQueryResult(QueryIntent.TOP_PRODUCTS, windowLabel(minDate, maxDate),
+        return new StructuredQueryResult(QueryIntent.TOP_PRODUCTS, windowLabel(effectiveMin, maxDate),
                 kpis, table, chart, baseMeta(ws, totalRows, "Top 1,000 Instacart-derived SKUs with synthetic INR pricing."), narrative, false);
     }
 
@@ -473,8 +494,13 @@ public class NaveenStoreDataQueryService {
     }
 
     private StructuredQueryResult buildTopCustomersResult(Workspace ws, Long wsId, long totalRows, LocalDateTime minDate, LocalDateTime maxDate, String q) {
-        List<Object[]> raw = unifiedSalesMartRepository.findCustomerRfmMetricsBetween(wsId, minDate, maxDate);
-        boolean sortByFreq = q.toLowerCase(Locale.ROOT).contains("frequency") && !q.toLowerCase(Locale.ROOT).contains("spend");
+        LocalDateTime effectiveMin = minDate;
+        String lowerQ = q != null ? q.toLowerCase(Locale.ROOT) : "";
+        if (lowerQ.contains("month") || lowerQ.contains("30 day") || lowerQ.contains("recent")) {
+            effectiveMin = maxDate.minusDays(30);
+        }
+        List<Object[]> raw = unifiedSalesMartRepository.findCustomerRfmMetricsBetween(wsId, effectiveMin, maxDate);
+        boolean sortByFreq = lowerQ.contains("frequency") && !lowerQ.contains("spend");
         List<Object[]> sorted = new ArrayList<>(raw);
         if (sortByFreq) {
             sorted.sort((a, b) -> Long.compare(toLong(b[5]), toLong(a[5])));
@@ -524,7 +550,7 @@ public class NaveenStoreDataQueryService {
                 mostFreq != null ? str(mostFreq[1], "") : "-", mostFreq != null ? str(mostFreq[0], "") : "-",
                 mostFreq != null ? toLong(mostFreq[5]) : 0, mostFreq != null ? AnalyticsMathUtils.formatInr(toBd(mostFreq[6])) : "₹0.00");
 
-        return new StructuredQueryResult(QueryIntent.TOP_CUSTOMERS, windowLabel(minDate, maxDate),
+        return new StructuredQueryResult(QueryIntent.TOP_CUSTOMERS, windowLabel(effectiveMin, maxDate),
                 kpis, table, chart, baseMeta(ws, totalRows, "All 9,978 customers are fictional profiles assigned to Lucknow."), narrative, false);
     }
 

@@ -30,10 +30,10 @@ class GeminiClientTest {
     }
 
     @Test
-    @DisplayName("GeminiConfig defaults model to gemini-2.5-flash")
+    @DisplayName("GeminiConfig defaults model to gemini-3.5-flash-lite")
     void testGeminiConfigDefaults() {
         GeminiConfig config = new GeminiConfig();
-        assertEquals("gemini-2.5-flash", config.getModel());
+        assertEquals("gemini-3.5-flash-lite", config.getModel());
         assertEquals(30, config.getTimeoutSeconds());
         assertFalse(config.isConfigured());
     }

@@ -2,7 +2,7 @@ spring:
   application:
     name: sankhya-platform
   profiles:
-    active: dev
+    active: ${SPRING_PROFILES_ACTIVE:dev}
   servlet:
     multipart:
       max-file-size: 150MB
@@ -24,10 +24,9 @@ server:
       cookie:
         name: SANKHYA_SESSION
         http-only: true
-        same-site: none
-        secure: true
+        same-site: lax
+        secure: false
 
-# Reserved for future phases / ML & AI
 sankhya:
   auth:
     dev-default-password: ${DEV_DEFAULT_PASSWORD:Password@123}

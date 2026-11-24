@@ -9,7 +9,7 @@ public class GeminiConfig {
     @Value("${sankhya.ai.gemini.api-key:}")
     private String apiKey;
 
-    @Value("${sankhya.ai.gemini.model:gemini-2.5-flash}")
+    @Value("${sankhya.ai.gemini.model:gemini-3.5-flash-lite}")
     private String model;
 
     @Value("${sankhya.ai.gemini.timeout-seconds:30}")

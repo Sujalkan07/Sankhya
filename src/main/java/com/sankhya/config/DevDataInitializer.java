@@ -141,6 +141,11 @@ public class DevDataInitializer implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
+        if (Arrays.stream(environment.getActiveProfiles()).anyMatch("prod"::equalsIgnoreCase)) {
+            log.warn("Production profile detected. DevDataInitializer execution is strictly disabled in production.");
+            return;
+        }
+
         User primaryOwner = ensureUser("admin@sankhya.com", STORE_OWNER);
         User ownerAlias = ensureUser("sujal@naveenstore.com", STORE_OWNER);
 

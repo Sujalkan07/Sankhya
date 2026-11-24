@@ -1,263 +1,455 @@
-# Sankhya — Supermarket Analytics, ML & AI Platform
+<p align="center">
+  <img src="src/main/resources/static/images/sankhya-logo.jpg" alt="SANKHYA Logo" width="120" style="border-radius: 16px;" />
+</p>
 
-**Sankhya** is a full-stack **Supermarket Business Intelligence, Machine Learning, and Conversational Data Analyst** platform built with **Java 21** and **Spring Boot 3.3.5**. It is pre-configured as a turnkey single-store analytics suite for **Naveen Store (`STORE-001`)**, a supermarket in **Lucknow, Uttar Pradesh, India**, owned by **Sujal Kansal**.
+<h1 align="center">SANKHYA</h1>
 
-Instead of setting up separate data warehouses, Python notebooks, or paid BI tools, Sankhya boots with an integrated **500,000-row analytical data mart** and immediately delivers live financial KPIs, pure-Java machine learning insights, CSV reporting exports, and an interactive conversational AI analyst (**Ask Naveen Store AI**) — with every figure formatted in **Indian Rupees (`INR`, `₹`)** using Indian lakh/crore grouping (for example, `₹18,25,42,617.45`).
+<p align="center">
+  <strong>Turn Supermarket Data Into Smarter Decisions.</strong>
+</p>
+
+<p align="center">
+  <a href="#core-features"><img src="https://img.shields.io/badge/Spring%20Boot-3.3.5-brightgreen.svg" alt="Spring Boot 3.3.5"></a>
+  <a href="#technology-stack"><img src="https://img.shields.io/badge/Java-21-orange.svg" alt="Java 21"></a>
+  <a href="#machine-learning-engine"><img src="https://img.shields.io/badge/ML-Pure%20Java%2021-blue.svg" alt="Pure Java ML"></a>
+  <a href="#ai-integration"><img src="https://img.shields.io/badge/AI-Google%20Gemini-8E75C4.svg" alt="Google Gemini"></a>
+  <a href="#testing--verification"><img src="https://img.shields.io/badge/Tests-78%20Passing-success.svg" alt="Tests 78 Passing"></a>
+  <a href="#dataset-documentation"><img src="https://img.shields.io/badge/Mart%20Volume-500K%20Rows-informational.svg" alt="500K Rows"></a>
+</p>
+
+<p align="center">
+  A full-stack, enterprise-grade <strong>Supermarket Business Intelligence, Machine Learning & Conversational AI Platform</strong> built with <strong>Java 21</strong> and <strong>Spring Boot 3.3.5</strong>.<br/>
+  Pre-configured as a turnkey analytical platform for <strong>Naveen Store (<code>STORE-001</code>)</strong> in <strong>Lucknow, Uttar Pradesh, India</strong>, with all figures natively calculated and formatted in <strong>Indian Rupees (<code>INR</code>, <code>₹</code>)</strong>.
+</p>
 
 ---
 
 ## Table of Contents
 
-- [At a Glance](#at-a-glance)
-- [How It Works (Architecture & Data Flow)](#how-it-works-architecture--data-flow)
-- [Quick Start Guide (Run Locally in Minutes)](#quick-start-guide-run-locally-in-minutes)
-- [Platform Tour (What Each Page Does)](#platform-tour-what-each-page-does)
-- [Inside the Dataset (`naveen_store_unified_mart.csv`)](#inside-the-dataset-naveen_store_unified_martcsv)
-- [Technology Stack & Project Structure](#technology-stack--project-structure)
-- [Running Tests & Verification](#running-tests--verification)
-- [Further Documentation](#further-documentation)
+- [Project Overview](#project-overview)
+- [System Architecture](#system-architecture)
+- [Core Features](#core-features)
+- [Application Pages](#application-pages)
+- [Machine Learning Engine](#machine-learning-engine)
+- [AI Integration (Ask Naveen Store AI)](#ai-integration)
+- [Dataset Documentation](#dataset-documentation)
+- [Technology Stack](#technology-stack)
+- [Quick Start Guide](#quick-start-guide)
+- [Deployment Architecture](#deployment-architecture)
+- [Testing & Verification](#testing--verification)
+- [Project Structure](#project-structure)
+- [Documentation Links](#documentation-links)
+- [Author & Acknowledgements](#author--acknowledgements)
 
 ---
 
-## At a Glance
+## Project Overview
 
-| Aspect | Details |
-| :--- | :--- |
-| **Store Identity** | **Naveen Store (`STORE-001`)** — Owner: **Sujal Kansal** — Lucknow, Uttar Pradesh, India |
-| **Currency & Formatting** | Indian Rupees (`INR`, `₹`) with Indian numbering (`1,00,000`, `1,00,00,000`) everywhere in UI, CSVs & AI replies |
-| **Dataset Volume** | `500,000` line items • `83,439` distinct receipts • `9,978` customers • `1,000` SKUs • `19` categories |
-| **Transaction Date Window** | `2025-11-22 08:00:00` to `2026-11-22 23:00:00` (Full 1-year retail history) |
-| **Built-In ML Engine** | Pure Java 21 implementations of **Apriori**, **K-Means++**, **Random Forest**, and **Linear Regression** |
-| **Conversational AI** | **Ask Naveen Store AI** powered by allowlisted store queries + Google Gemini (`gemini-3.5-flash-lite`) with deterministic fallback |
+Modern supermarkets generate thousands of transaction lines every single day. Yet most independent store managers remain stranded between two unworkable extremes: clumsy, disconnected spreadsheets that crash under real retail volumes, or costly enterprise data warehouses requiring specialized data engineering teams.
+
+**SANKHYA** bridges this gap as an integrated, self-contained retail analytics platform:
+
+1. **Eliminates Spreadsheet Silos:** Replaces error-prone manual books with a persistent 500,000-line analytical data mart covering a full year of retail sales history.
+2. **Real-Time Financial Telemetry:** Computes exact net revenue, promotional discounts, estimated Cost of Goods Sold (COGS), gross margins, basket sizes, and hourly footfall curves in sub-second queries.
+3. **Pure-Java Machine Learning:** Runs 4 classical machine learning algorithms directly on the JVM without external Python microservices or heavy runtime dependencies.
+4. **Data-Grounded Conversational AI:** Integrates **Ask Naveen Store AI**, combining parameterized server-side SQL queries with Google Gemini (`gemini-3.5-flash-lite`) and a deterministic fallback engine that guarantees truthful, hallucination-free answers.
+
+### The Naveen Store Showcase
+
+SANKHYA boots pre-configured for **Naveen Store (`STORE-001`)**, a supermarket located in **Lucknow, Uttar Pradesh, India**, owned by **Sujal Kansal**. All financial dashboards, basket analyses, customer RFM codes, and AI responses use Indian numbering (e.g., `₹18,25,42,617.45`) and local city retail dynamics.
 
 ---
 
-## How It Works (Architecture & Data Flow)
-
-When the application starts, `DevDataInitializer` checks whether **Naveen Store (`STORE-001`)** and its `500,000` rows are already loaded in the database. On first launch, it batches and validates [`data/naveen_store_unified_mart.csv`](data/naveen_store_unified_mart.csv) into the database, refreshes normalized product/customer/inventory views, runs the 4 pure-Java ML pipelines, and exposes everything through Spring MVC dashboards and APIs:
+## System Architecture
 
 ```mermaid
 flowchart TD
-    CSV["data/naveen_store_unified_mart.csv (500,000 rows, 25 columns)"] --> Init["DevDataInitializer (Idempotent Seed + Bootstrap)"]
-    Init --> DB["H2 File DB / MySQL 8+ (unified_sales_mart + normalized entities)"]
-    DB --> BI["Analytics Engine (Overview, Sales, Products, Customers, Inventory, Recommendations)"]
-    DB --> ML["Pure Java 21 ML Engine (Apriori, K-Means++, Random Forest, Linear Regression)"]
-    DB --> AIQuery["NaveenStoreDataQueryService (Parameterized Allowlisted Queries & Prompt Guard)"]
-    AIQuery --> Gemini["GeminiChatService (Gemini API + Deterministic Data-Grounded Fallback)"]
-    BI --> UI["Thymeleaf + Chart.js Web Platform (http://localhost:8080/)"]
-    ML --> UI
-    Gemini --> UI
+    subgraph UI ["Presentation Layer (Thymeleaf & Client-Side)"]
+        Browser["Responsive Web Interface (Tailwind CSS, Material Symbols)"]
+        Charts["Interactive Visualizations (Chart.js)"]
+    end
+
+    subgraph SpringApp ["Spring Boot 3.3.5 Application (Java 21)"]
+        Security["Spring Security 6 (BCrypt, Session Fixation, Role-Based Access)"]
+        Controllers["Spring MVC Controllers (/dashboard, /analytics/*, /settings)"]
+        Cache["AnalyticsCacheService (Thread-Safe In-Memory Cache)"]
+        Services["Domain Analytics Services (Overview, Sales, Products, Customers, Inventory)"]
+    end
+
+    subgraph Intelligence ["Machine Learning & Conversational AI Layer"]
+        MLJobs["MLJobService (Executor Lifecycle & Job Coordination)"]
+        MLModels["Pure-Java ML Algorithms (Apriori, K-Means++, Random Forest, Ridge Regression)"]
+        QueryLayer["NaveenStoreDataQueryService (Prompt Guard & Parameterized Queries)"]
+        GeminiService["GeminiChatService (Google Gemini API + Deterministic Fallback)"]
+    end
+
+    subgraph DataLayer ["Persistence & Storage Layer"]
+        Init["DevDataInitializer (Idempotent 500K-Row Seeder)"]
+        H2["H2 Database Engine (Local Dev, MySQL Mode)"]
+        MySQL["MySQL 8.0+ (Production Profile)"]
+        CSV["data/naveen_store_unified_mart.csv.gz (500K Lines, 25 Columns)"]
+    end
+
+    Browser <--> Security
+    Security <--> Controllers
+    Controllers <--> Services
+    Controllers <--> Charts
+    Services <--> Cache
+    Services <--> DataLayer
+    Controllers <--> GeminiService
+    GeminiService <--> QueryLayer
+    QueryLayer <--> DataLayer
+    MLJobs <--> MLModels
+    MLModels <--> DataLayer
+    Init --> CSV
+    Init --> DataLayer
 ```
 
 ---
 
-## Quick Start Guide (Run Locally in Minutes)
+## Core Features
 
-### 1. Prerequisites
-
-- **Java 21 (JDK 21)** — Eclipse Temurin 21 or equivalent (`java -version` should report `21.x`)
-- **Maven 3.9+** (`mvn -version`)
-- **Unified Dataset File**: Place `naveen_store_unified_mart.csv` inside the `data/` directory at the project root (`data/naveen_store_unified_mart.csv`). *(Note: `data/` is gitignored so large dataset and database files are not committed to Git.)*
-
-### 2. Optional: Enable Live Gemini AI Responses (`.env`)
-
-Create a `.env` file in the project root directory to enable live Google Gemini narrative synthesis in **Ask Naveen Store AI**:
-
-```properties
-GEMINI_API_KEY=your_google_gemini_api_key
-GEMINI_MODEL=gemini-3.5-flash-lite
-```
-
-> **No API key yet?** You can still run and explore the entire platform. Without `GEMINI_API_KEY` (or if the external Gemini service is temporarily unreachable), **Ask Naveen Store AI** automatically falls back to deterministic, data-grounded store answers built directly from database query results.
-
-### 3. Build & Start the Server
-
-Using the default development profile (`dev`), Sankhya automatically stores data in a local H2 file database (`./data/sankhya_dev_db.mv.db` in MySQL compatibility mode) so **you do not need to install or configure a separate MySQL server** to try the project locally.
-
-**Windows (PowerShell):**
-
-```powershell
-mvn clean package
-java -Xmx2g -jar target\sankhya-platform-1.0.0-SNAPSHOT.jar --spring.profiles.active=dev
-```
-
-**macOS / Linux:**
-
-```bash
-mvn clean package
-java -Xmx2g -jar target/sankhya-platform-1.0.0-SNAPSHOT.jar --spring.profiles.active=dev
-```
-
-#### What happens during startup?
-- **First startup:** `DevDataInitializer` imports all `500,000` rows from `data/naveen_store_unified_mart.csv`, validates store identity (`Naveen Store` / `STORE-001`), and bootstraps the 4 ML models and initial recommendations. Give it ~30–60 seconds to finish seeding and print the `Store & Owner` / `Mart Identity` startup banner.
-- **Subsequent startups:** Sankhya detects the existing `500,000` verified rows, skips CSV re-seeding automatically, and starts in seconds.
-
-### 4. Open & Sign In
-
-Once Tomcat reports `Started SankhyaApplication`, open your browser to:
-
-- **URL:** [http://localhost:8080/](http://localhost:8080/)
-
-Sign in with either pre-seeded store owner account (after login you are taken directly to `/dashboard`):
-
-| Email | Password | Role |
+| Feature | Description | Business Value |
 | :--- | :--- | :--- |
-| `admin@sankhya.com` | `Password@123` | `ROLE_ADMIN` (Store Owner) |
-| `sujal@naveenstore.com` | `Password@123` | `ROLE_ADMIN` (Store Owner) |
+| **Executive Overview** | Real-time command center showing Net Revenue, Transactions, ATV, Active Buyers, Margin %, and Stockout Alerts with period-over-period comparison. | Instant store health visibility with automated operational takeaways. |
+| **Sales Intelligence** | Detailed breakdown of billing volume, discounts, payment methods (UPI, Cash, Cards), hourly store traffic, and a 14-day revenue trajectory. | Optimizes store staffing schedules and cashier counter throughput. |
+| **Product Intelligence** | 19-category margin ranking, BCG Growth-Share Matrix (Stars, Cash Cows, Opportunities, Underperformers), and searchable SKU directory. | Identifies high-margin categories and eliminates non-performing inventory. |
+| **Customer Intelligence** | Recency, Frequency, and Monetary (RFM) scoring across 9 lifecycle segments, returning buyer rates, and top customer leaderboards. | Enhances customer retention and pinpoints high-value loyal shoppers. |
+| **Inventory Intelligence** | Warehouse stock valuation at cost and retail price, health categorization (Healthy, Low Stock, Overstock), and reorder alerts. | Prevents costly stockouts and reduces tied-up working capital. |
+| **Business Directives** | Automated rule-based operational recommendations ranked by severity (`CRITICAL`, `HIGH`, `MEDIUM`). | Actionable directives for merchandising, inventory replenishment, and margin recovery. |
+| **Ask Naveen Store AI** | Full-page conversational retail analyst combining parameterized store queries with Google Gemini and deterministic fallback. | Natural language questions answered strictly from verified store data. |
+| **Reporting & Exports** | Chunked, streaming UTF-8 CSV exports for Sales, Products, Customers, and Inventory with explicit `(INR)` headers. | Ready-to-share spreadsheets for accountants, suppliers, and tax filing. |
 
 ---
 
-## Platform Tour (What Each Page Does)
+## Application Pages
 
-Every screen reflects live database queries over **Naveen Store (`STORE-001`)** with interactive date range presets (`LAST_7_DAYS`, `LAST_30_DAYS`, `THIS_MONTH`, `THIS_YEAR`, `CUSTOM`):
-
-### 1. Executive Overview (`/dashboard`)
-Your high-level store command center:
-- **Core KPIs with period-over-period comparisons:** Net Revenue (`₹`), Distinct Customer Receipts, Average Transaction Value (`₹`), Active Customers, Gross Margin %, and Low-Stock Reorder Alert count.
-- **Charts & Summaries:** Daily revenue trend line, category revenue distribution, automated descriptive takeaways, and urgent recommendations.
-
-### 2. Sales Intelligence (`/analytics/sales`)
-Deep dive into store billing, basket size, and footfall patterns:
-- **Financial & Basket Metrics:** Net Revenue, Promotional Discounts (`₹`), Average Ticket Value, Units Sold, and Items per Basket (`sales lines / distinct receipts`).
-- **Operational Charts:** Hourly shopping traffic curve, payment method distribution, and a **14-day Linear Regression** revenue forecast.
-- **Receipt Inspector:** Click any receipt (`BILL-...`) in the ledger modal to view its full line-item breakdown, quantities, prices, and discounts.
-
-### 3. Product Intelligence (`/analytics/products`)
-Understand what sells best and what makes the highest margin:
-- **19-Category Profitability Table:** Compare revenue, COGS, gross profit, and gross margin % across all 19 supermarket categories.
-- **BCG Growth-Share Classification:** Categorizes SKUs into *Star*, *Cash Cow*, *Opportunity*, and *Underperformer* quadrants.
-- **Searchable 1,000-SKU Matrix & Apriori Bundles:** Filter all `1,000` products and inspect **Apriori Market Basket Analysis** rules (`Support`, `Confidence`, `Lift`) showing which items shoppers frequently buy together.
-
-### 4. Customer Intelligence (`/analytics/customers`)
-Analyze repeat shopping behavior across Naveen Store's `9,978` Lucknow buyers:
-- **RFM Scoring & Lifecycle Segments:** Customers are scored on *Recency*, *Frequency*, and *Monetary* spend across 9 lifecycle segments, alongside Repeat Purchase Rate and Average Revenue Per User (`₹`).
-- **Top Buyers & K-Means++ Clusters:** Leaderboard of highest-spend customers and **K-Means++** behavioral cluster assignments.
-
-### 5. Inventory Intelligence (`/analytics/inventory`)
-Track warehouse stock valuation and replenishment risk across all `1,000` deduplicated SKUs:
-- **Warehouse Valuations & Health Breakdown:** Inventory cost value and retail value in `₹`, grouped into `HEALTHY` (`994`), `LOW_STOCK` (`3`), `OVERSTOCK` (`3`), and `OUT_OF_STOCK` (`0`), plus `169` SKUs currently at or below their safety reorder threshold.
-- **Snapshot Transparency & ML Risk:** Explicitly displays the single inventory snapshot banner (`2026-11-22`), searchable 1,000-SKU stock position table, and **Random Forest** demand risk alerts.
-
-### 6. Ask Naveen Store AI (`/analytics/ai-insights`)
-A full-page conversational data analyst built directly into the sidebar — no complex BI filters required:
-- **Safe Grounded Execution:** Natural-language questions are routed by `NaveenStoreDataQueryService` to parameterized, allowlisted store queries (never trusting raw LLM-generated SQL, and actively guarding against prompt-injection attempts).
-- **Rich Answers:** Responses combine executive summaries with inline KPI tiles, sortable structured tables, and rendered Chart.js visualizations.
-- **Honest Refusals:** If asked for data that does not exist in the mart (such as historical daily warehouse stock movement logs or supplier lead times), it explains the data gap directly instead of guessing.
-
-**Example Questions to Try:**
-- *"What changed in sales recently?"*
-- *"Which products generate the highest revenue and profit?"*
-- *"Which categories have the lowest gross margin?"*
-- *"Who are the top customers by spend and frequency?"*
-- *"Which inventory items are below reorder level?"*
-- *"What products are frequently bought together?"*
-
-### 7. Recommendations, Reports & Store Settings
-- **Business Recommendations (`/analytics/recommendations`):** Rule-based operational alerts ranked by severity (`CRITICAL`, `HIGH`, `MEDIUM`) with status tracking.
-- **CSV Export Hub (`/analytics/reports`):** Download UTF-8 CSV exports for Sales, Products, Customers, and Inventory with explicit `(INR)` monetary column headers.
-- **Store Settings (`/settings`):** View store profile details (`STORE-001`, `Naveen Store`, `Sujal Kansal`, `Lucknow, Uttar Pradesh, India`) and connected user account info.
+```text
+/dashboard                  Executive Overview & Store KPIs
+/analytics/sales            Sales Velocity, Hourly Curves & Receipt Breakdown
+/analytics/products         Product Intelligence, Category Margins & BCG Matrix
+/analytics/customers        Customer RFM Scoring, Retention & Segment Directory
+/analytics/inventory        Inventory Snapshot Health, Reorder Levels & SKU Valuation
+/analytics/recommendations  Ranked Operational Directives & Corrective Actions
+/analytics/ai-insights      Ask Naveen Store AI Conversational Analyst & ML Lab
+/analytics/reports          CSV Reporting & Analytical Export Hub
+/settings                   Store Profile Metadata (STORE-001) & User Account
+/login & /register          Secure Authentication & Store Onboarding
+```
 
 ---
 
-## Inside the Dataset (`naveen_store_unified_mart.csv`)
+## Machine Learning Engine
 
-### Verified Full-Year Totals (`2025-11-22` to `2026-11-22`)
+SANKHYA features four genuine, pure-Java machine learning algorithms implemented from foundational mathematical principles without third-party Python wrappers:
 
-| Metric | Verified Value |
+### 1. Market Basket Analysis (Apriori Algorithm)
+- **Algorithm:** Apriori itemset mining (`AprioriService.java`).
+- **Application:** Analyzes customer receipt co-occurrences across 83,439 receipts to uncover multi-item purchasing patterns.
+- **Metrics Computed:** Support, Confidence, Lift, and Conviction.
+- **Business Use:** Identifies high-lift product affinities (e.g., milk and bakery pairings) to guide aisle co-location and promotional bundle discounts.
+
+### 2. Customer Behavioral Clustering (K-Means++)
+- **Algorithm:** K-Means++ clustering (`KMeansService.java`) with z-score standardization (`FeatureScaler.java`).
+- **Application:** Groups 9,978 customer profiles into 4 distinct clusters based on Recency, Frequency, and Total Spend.
+- **Metrics Computed:** Centroid coordinates, Inertia (Sum of Squared Errors), and Silhouette validation score.
+- **Business Use:** Segments shoppers into Champions, Loyal Regulars, At-Risk Customers, and Occasional Buyers for targeted loyalty programs.
+
+### 3. Product Demand Classification (Random Forest)
+- **Algorithm:** Random Forest Classifier (`RandomForestClassifier.java`) with bootstrap aggregation and random feature splitting across decision trees (`DecisionTree.java`).
+- **Application:** Classifies 1,000 SKUs into demand velocity tiers (`HIGH`, `MEDIUM`, `LOW`).
+- **Metrics Computed:** Accuracy, Precision, Recall, F1-Score, and feature importance distribution.
+- **Business Use:** Detects stockout vulnerabilities for high-velocity SKUs and alerts managers before inventory depletes.
+
+### 4. Forward Sales Forecasting (Multiple Linear Regression)
+- **Algorithm:** Ridge-regularized Multiple Linear Regression (`MultipleLinearRegression.java`) solved via Gaussian elimination with partial pivoting.
+- **Application:** Projects daily store revenue 14 days into the future using temporal features, day-of-week indicators, and rolling demand velocity.
+- **Metrics Computed:** Root Mean Squared Error (RMSE), Mean Absolute Error (MAE), Mean Absolute Percentage Error (MAPE), and Coefficient of Determination ($R^2$).
+- **Business Use:** Supports cash-flow planning, vendor purchase order timing, and seasonal working-capital allocation.
+
+---
+
+## AI Integration
+
+**Ask Naveen Store AI** (`/analytics/ai-insights`) provides an interactive conversational interface that allows store owners to query store performance in plain English.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Owner as Store Owner
+    participant Web as Web Interface
+    participant Guard as NaveenStoreDataQueryService
+    participant DB as Analytical Mart (H2 / MySQL)
+    participant Gemini as GeminiClient
+    participant Fallback as Deterministic Synthesis
+
+    Owner->>Web: "Which categories have the lowest gross margin?"
+    Web->>Guard: POST /chat { message }
+    Guard->>Guard: Inspect for Prompt Injection / Secret Probing
+    Guard->>DB: Execute Parameterized Aggregation Query
+    DB-->>Guard: Verified Row Aggregates (Revenue, COGS, Profit, Margin)
+    
+    alt Gemini Configured & Reachable
+        Guard->>Gemini: Synthesize Narrative (Grounded Prompt + Verified Aggregates)
+        Gemini-->>Web: Structured Narrative + KPIs + Chart.js Config
+    else API Key Missing, Rate-Limited, or Network Failure
+        Guard->>Fallback: Trigger Deterministic Formatter
+        Fallback-->>Web: Grounded Tabular Narrative + KPIs + Chart.js Config
+    end
+    Web-->>Owner: Render Executive Answer with Charts & Tables
+```
+
+### Safety & Grounding Principles
+
+1. **Prompt Guardrail Layer:** Requests containing SQL injection (`DROP TABLE`, `UNION SELECT`), secret harvesting (`api_key`, `System.getenv`), or prompt overrides are blocked immediately before reaching the database or LLM.
+2. **Zero Financial Hallucination:** Gemini is never asked to perform arithmetic or invent numbers. The server executes parameterized queries first, formats the results in Indian Rupees (`₹`), and passes only verified metrics to the LLM for narrative synthesis.
+3. **Deterministic Fallback Guarantee:** If `GEMINI_API_KEY` is not configured, or if Google Gemini is temporarily unreachable, the platform automatically serves a comprehensive, data-grounded answer directly from database calculations.
+4. **Transparent Data Gap Disclosure:** When asked for data absent from the dataset (such as daily warehouse stock logs, spoilage drift, or supplier lead times), the assistant explicitly reports the limitation rather than fabricating trends.
+
+---
+
+## Dataset Documentation
+
+SANKHYA's analytical mart is backed by `naveen_store_unified_mart.csv.gz` (`16.4 MB` compressed, `125 MB` uncompressed, 25 columns).
+
+### Verified Single-Store Metrics (`STORE-001`)
+
+| Metric | Verified Analytical Total |
 | :--- | :--- |
-| **Total Sales Line Items (`unified_sales_mart`)** | `500,000` |
+| **Total Line Items** | `500,000` |
 | **Distinct Receipts (`transaction_id`)** | `83,439` |
-| **Distinct Customers (`customer_id`)** | `9,978` (Lucknow) |
-| **Distinct Products (`product_id`)** | `1,000` across `19` categories |
-| **Gross Revenue (before discounts)** | `₹18,46,85,091.30` |
+| **Distinct Customers (`customer_id`)** | `9,978` (Lucknow, Uttar Pradesh) |
+| **Distinct Products (`product_id`)** | `1,000` SKUs across `19` supermarket categories |
+| **Date Window** | `2025-11-22 08:00:00` to `2026-11-22 23:00:00` (1 Full Year) |
+| **Gross Sales Value** | `₹18,46,85,091.30` |
 | **Promotional Discounts** | `₹21,42,473.85` |
 | **Net Revenue** | `₹18,25,42,617.45` |
 | **Cost of Goods Sold (COGS)** | `₹13,85,29,200.70` |
-| **Gross Profit** | `₹4,40,13,416.75` (`24.11%` gross margin) |
-| **Inventory Snapshot (`2026-11-22`)** | `994` `HEALTHY` • `3` `LOW_STOCK` • `3` `OVERSTOCK` • `0` `OUT_OF_STOCK` (`169` ≤ reorder level) |
+| **Gross Profit** | `₹4,40,13,416.75` (`24.11%` Gross Margin) |
+| **Inventory Snapshot Date** | `2026-11-22` (994 Healthy • 3 Low Stock • 3 Overstock • 0 Out of Stock • 169 ≤ Reorder Level) |
 
-### Schema: All 25 Columns Explained
+<details>
+<summary><strong>View Schema: All 25 Columns</strong></summary>
 
-| Domain | Columns |
-| :--- | :--- |
-| **Store Identity (3)** | `store_id` (`STORE-001`), `store_name` (`Naveen Store`), `store_owner` (`Sujal Kansal`) |
-| **Transaction & Receipt (6)** | `transaction_id` (`BILL-...`), `transaction_date`, `payment_method`, `cashier_name`, `quantity`, `discount` |
-| **Customer Profile (4)** | `customer_id` (`CUST-...`), `customer_name`, `city` (`Lucknow`), `customer_segment` |
-| **Product & Pricing (8)** | `product_id` (`SKU-...`), `product_name`, `category`, `subcategory`, `brand`, `unit_cost`, `selling_price`, `unit_price` |
-| **Inventory Snapshot (4)** | `latest_inventory_snapshot_date`, `current_closing_stock`, `current_reorder_level`, `current_inventory_status` |
+| Column Name | Type | Description |
+| :--- | :--- | :--- |
+| `store_id` | `VARCHAR(50)` | Canonical store identifier (`STORE-001`). |
+| `store_name` | `VARCHAR(150)` | Store legal trade name (`Naveen Store`). |
+| `store_owner` | `VARCHAR(150)` | Registered owner name (`Sujal Kansal`). |
+| `transaction_id` | `VARCHAR(100)` | Unique receipt voucher number (`BILL-...`). |
+| `transaction_date` | `DATETIME` | Point-of-sale timestamp. |
+| `payment_method` | `VARCHAR(50)` | Payment mode (`UPI`, `CASH`, `CARD`). |
+| `cashier_name` | `VARCHAR(100)` | Staff member operating the checkout counter. |
+| `customer_id` | `VARCHAR(50)` | Loyalty account identifier (`CUST-...`). |
+| `customer_name` | `VARCHAR(150)` | Registered shopper name. |
+| `city` | `VARCHAR(100)` | Primary market territory (`Lucknow`). |
+| `customer_segment` | `VARCHAR(50)` | Baseline segment (`REGULAR`, `PREMIUM`, `BUDGET`). |
+| `product_id` | `VARCHAR(50)` | Stock keeping unit identifier (`SKU-...`). |
+| `product_name` | `VARCHAR(255)` | Commercial item description. |
+| `category` | `VARCHAR(100)` | Supermarket department (19 distinct categories). |
+| `subcategory` | `VARCHAR(100)` | Specific product classification. |
+| `brand` | `VARCHAR(100)` | Manufacturer brand name. |
+| `unit_cost` | `DECIMAL(12,2)` | Wholesale procurement cost in Indian Rupees (`₹`). |
+| `selling_price` | `DECIMAL(12,2)` | Retail sticker price in Indian Rupees (`₹`). |
+| `quantity` | `INT` | Number of units purchased. |
+| `unit_price` | `DECIMAL(12,2)` | Effective billed unit price in Indian Rupees (`₹`). |
+| `discount` | `DECIMAL(12,2)` | Receipt line discount deduction in Indian Rupees (`₹`). |
+| `revenue` | `DECIMAL(12,2)` | Net recognized sales value in Indian Rupees (`₹`). |
+| `gross_profit` | `DECIMAL(12,2)` | Net revenue minus cost of goods in Indian Rupees (`₹`). |
+| `latest_inventory_snapshot_date` | `DATE` | Closing warehouse snapshot date (`2026-11-22`). |
+| `current_closing_stock` | `INT` | Physical units on hand at snapshot timestamp. |
+| `current_reorder_level` | `INT` | Replenishment safety buffer threshold. |
+| `current_inventory_status` | `VARCHAR(50)` | Health label (`HEALTHY`, `LOW_STOCK`, `OVERSTOCK`). |
 
-### Dataset Provenance & Explicit Limitations
+</details>
 
-- **Source & Synthetic Enrichment:** Product names, categories/subcategories, and co-occurrence basket structure derive from the public Instacart Market Basket dataset filtered to its top 1,000 products (some multi-item receipts reflect filtered partial baskets). Unit costs, selling prices, quantities, discounts, payment methods, cashiers, fictional Indian customer names, Lucknow assignment, and closing stock quantities are synthetic demonstration data, and transaction timestamps are reconstructed over `2025-11-22` through `2026-11-22`.
-- **Single-Snapshot Inventory Disclosure:** The mart includes one product-level closing stock snapshot per SKU dated `2026-11-22`. It does **not** include daily stock-movement logs, opening/received stock drifts, shrinkage history, or supplier lead times — both `/analytics/inventory` and **Ask Naveen Store AI** explicitly disclose this limitation instead of fabricating historical inventory trends.
+> **Data Provenance Disclosure:** Product names, categories, and basket co-occurrences originate from the public Instacart Market Basket dataset filtered to the top 1,000 supermarket items. Customer demographics, retail pricing, unit costs, discounts, payment channels, and inventory snapshots are synthetic demonstration data enriched for Naveen Store Lucknow. The dataset contains a single closing inventory snapshot (`2026-11-22`); historical shrinkage or daily stock drift logs are not modeled.
 
 ---
 
-## Technology Stack & Project Structure
+## Technology Stack
 
-### Tech Stack
+- **Backend Framework:** Java 21, Spring Boot 3.3.5, Spring MVC, Spring Security 6, Spring Data JPA / Hibernate
+- **Database & Persistence:** H2 Database (local development, MySQL compatibility mode), MySQL 8.0+ (production), HikariCP connection pooling
+- **Data Ingestion & Export:** Apache Commons CSV 1.11.0, Apache POI 5.3.0
+- **Frontend & Templates:** Thymeleaf, Tailwind CSS (embedded design tokens), Chart.js 4.4, Google Material Symbols
+- **Machine Learning:** Pure-Java 21 implementations (Apriori, K-Means++, Random Forest, Multiple Linear Regression)
+- **AI Integration:** Google Gemini API (`gemini-3.5-flash-lite`), Spring `RestClient`, custom parameterized allowlisted query engine
+- **Build & Containerization:** Apache Maven 3.9+, Docker (Multi-stage Eclipse Temurin 21)
 
-| Layer | Technologies |
-| :--- | :--- |
-| **Backend** | Java 21, Spring Boot 3.3.5, Spring MVC, Spring Security 6 (form login, CSRF, BCrypt) |
-| **Data & Persistence** | Spring Data JPA / Hibernate, H2 (`dev` file DB in MySQL mode), MySQL 8+ (`prod`), Flyway (`V2`–`V6`), Spring `JdbcTemplate` |
-| **Data Parsing & Export** | Apache Commons CSV, Apache POI |
-| **Machine Learning** | Pure Java 21 implementations (Apriori, K-Means++, Random Forest, Linear Regression) |
-| **AI Integration** | Google Gemini API via Spring `RestClient` + `NaveenStoreDataQueryService` |
-| **Frontend** | Thymeleaf Server-Side Templates, Chart.js, Vanilla JavaScript, Custom CSS |
+---
 
-### Repository Layout
+## Quick Start Guide
 
-```text
-Sankhya/
-├── data/                                    # Place naveen_store_unified_mart.csv here; H2 dev DB stored here (gitignored)
-├── docs/                                    # In-depth architecture, formula, ML, schema, and Gemini guides
-├── src/
-│   ├── main/
-│   │   ├── java/com/sankhya/
-│   │   │   ├── ai/                          # Safe allowlisted NaveenStoreDataQueryService, GeminiClient & GeminiChatService
-│   │   │   ├── analytics/                   # Overview, Sales, Products, Customers, Inventory, Recommendations, Reports & AI
-│   │   │   ├── auth/ & security/            # Login/registration controllers, AuthService, CustomUserDetails, SecurityConfig
-│   │   │   ├── common/                      # AnalyticsMathUtils (INR formatting), GlobalModelAttributes, exceptions
-│   │   │   ├── config/                      # DevDataInitializer (500,000-row idempotent seeder & ML bootstrap)
-│   │   │   ├── dataset/                     # UnifiedSalesMart entity, repository, CSV/Excel parsers & query service
-│   │   │   ├── ml/                          # Apriori, K-Means++, Random Forest, Linear Regression & MLJobService
-│   │   │   ├── dashboard/                   # Executive overview controller (`/`, `/dashboard`, `/api/overview`)
-│   │   │   └── customers/, products/, sales/, inventory/, workspace/, user/, onboarding/, generator/
-│   │   └── resources/
-│   │       ├── db/migration/                # Flyway SQL schemas (V2__phase2_datasets.sql .. V6__unified_sales_mart.sql)
-│   │       ├── static/                      # Stylesheets and client-side JS chart/dashboard controllers
-│   │       ├── templates/                   # Thymeleaf views (`analytics/`, `auth/`, `dashboard/`, `fragments/`, `layout/`, `settings/`)
-│   │       ├── application.yml              # Base Spring Boot configuration
-│   │       └── application-dev.yml          # Zero-setup H2 `dev` profile & `.env` Gemini configuration
-│   └── test/java/com/sankhya/               # 33 JUnit / Spring MockMvc / ML / analytics test suites
-└── pom.xml                                  # Maven build configuration (Java 21, Spring Boot 3.3.5)
+### Prerequisites
+- **Java 21 JDK** installed (e.g., Eclipse Temurin 21; verify with `java -version`)
+- **Maven 3.9+** (verify with `mvn -version`)
+
+### 1. Clone & Configure Environment
+
+```bash
+git clone https://github.com/Sujalkan07/Sankhya.git
+cd Sankhya
 ```
 
+*(Optional)* To enable live Google Gemini narrative synthesis in Ask Naveen Store AI, create a `.env` file in the project root:
+
+```properties
+GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_MODEL=gemini-3.5-flash-lite
+```
+
+> **Note:** SANKHYA runs completely without an API key. If `GEMINI_API_KEY` is omitted, Ask Naveen Store AI seamlessly serves deterministic, data-grounded responses derived directly from the database.
+
+### 2. Build the Application
+
+**Windows (PowerShell):**
+```powershell
+mvn clean package
+```
+
+**macOS / Linux:**
+```bash
+mvn clean package
+```
+
+### 3. Launch the Server
+
+**Windows (PowerShell):**
+```powershell
+java -Xmx2g -jar target\sankhya-platform-1.0.0-SNAPSHOT.jar
+```
+
+**macOS / Linux:**
+```bash
+java -Xmx2g -jar target/sankhya-platform-1.0.0-SNAPSHOT.jar
+```
+
+#### What Happens on Startup?
+- **First Run:** `DevDataInitializer` detects that Naveen Store's mart is unseeded. It automatically reads `data/naveen_store_unified_mart.csv.gz`, validates the schema, streams all 500,000 lines into the local database, bootstraps the 4 ML models, and generates initial business recommendations (~30–50 seconds).
+- **Subsequent Runs:** SANKHYA verifies that the 500,000 rows already exist and boots in approximately 2 seconds.
+
+### 4. Open in Browser & Sign In
+
+Navigate to: **[http://localhost:8080/](http://localhost:8080/)**
+
+Pre-seeded demonstration credentials:
+
+| Email | Password | Role | Description |
+| :--- | :--- | :--- | :--- |
+| `admin@sankhya.com` | `Password@123` | `ROLE_ADMIN` | Store Owner Account |
+| `sujal@naveenstore.com` | `Password@123` | `ROLE_ADMIN` | Store Owner Alias |
+
 ---
 
-## Running Tests & Verification
+## Deployment Architecture
 
-Run the complete automated test suite (covering authentication, security, data ingestion, analytics calculations, Indian Rupee formatting, and all 4 ML algorithms):
+SANKHYA is packaged as a multi-stage Docker image and ready for deployment on **Render**, **AWS ECS**, or any container platform.
+
+```mermaid
+flowchart LR
+    User["Client Browser"] --> Edge["Vercel Edge Proxy (Optional)"]
+    Edge --> Render["Render Web Service (Docker Container)"]
+    User --> Render
+    Render --> DB["External MySQL 8+ Database"]
+    Render --> GeminiAPI["Google Gemini API"]
+```
+
+### Production Docker Build
+
+```bash
+docker build -t sankhya-platform:latest .
+docker run -p 8080:8080 \
+  -e SPRING_PROFILES_ACTIVE=prod \
+  -e DB_URL=jdbc:mysql://<host>:3306/<database>?useSSL=true \
+  -e DB_USERNAME=<username> \
+  -e DB_PASSWORD=<password> \
+  -e GEMINI_API_KEY=<key> \
+  sankhya-platform:latest
+```
+
+### Production Security Safeguards
+1. `DevDataInitializer` contains an explicit safeguard disabling development seeding whenever the `prod` profile is active.
+2. In production, session cookies enforce `Secure` and `HttpOnly` attributes.
+3. Database credentials and API keys are passed exclusively via environment variables and never logged or exposed.
+
+---
+
+## Testing & Verification
+
+The test suite validates database persistence, analytics calculations, Indian Rupee string formatting, machine learning pipelines, and security controls.
+
+To run the automated test suite:
 
 ```bash
 mvn test
 ```
 
-Or run the full clean build and packaged JAR verification:
+### Verified Test Results
 
-```bash
-mvn clean package
+```text
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 78, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
 ```
 
 ---
 
-## Further Documentation
+## Project Structure
 
-Detailed design and engineering specifications are available inside [`docs/`](docs/):
+```text
+Sankhya/
+├── data/
+│   └── naveen_store_unified_mart.csv.gz     # 500,000-row canonical mart (tracked)
+├── docs/                                    # Technical architecture specifications
+│   ├── ANALYTICS_FORMULA_DOCUMENTATION.md   # Mathematical definitions & formulas
+│   ├── DATASET_SCHEMA_DOCUMENTATION.md      # Field specifications & data types
+│   ├── FEATURE_ENGINEERING_DOCUMENTATION.md # RFM, lagging & scaling logic
+│   ├── ML_MODEL_DOCUMENTATION.md            # ML model design & evaluation metrics
+│   └── GEMINI_INTEGRATION_DOCUMENTATION.md  # Grounding, prompts & fallback design
+├── src/
+│   ├── main/
+│   │   ├── java/com/sankhya/
+│   │   │   ├── ai/                          # Gemini client, chat service & allowlisted queries
+│   │   │   ├── analytics/                   # Analytics controllers, DTOs & domain services
+│   │   │   ├── auth/ & security/            # Authentication handlers, user service & config
+│   │   │   ├── common/                      # Math utilities, INR formatting & cache service
+│   │   │   ├── config/                      # DevDataInitializer, security & web config
+│   │   │   ├── dataset/                     # Mart entity, repository & file parsers
+│   │   │   └── ml/                          # Apriori, K-Means++, Random Forest, Regression
+│   │   └── resources/
+│   │       ├── db/migration/                # Reference SQL schema migrations
+│   │       ├── static/images/               # Brand assets & logos
+│   │       ├── templates/                   # Thymeleaf HTML views (analytics, dashboard, auth)
+│   │       ├── application.yml              # Base configuration
+│   │       ├── application-dev.yml          # Local development profile (H2 DB)
+│   │       └── application-prod.yml         # Production profile (MySQL DB)
+│   └── test/java/com/sankhya/               # 34 JUnit 5 / Spring Boot test classes (78 tests)
+├── Dockerfile                               # Multi-stage production container descriptor
+├── vercel.json                              # Optional Vercel edge reverse proxy configuration
+└── pom.xml                                  # Maven project configuration
+```
 
-- [Dataset Schema Documentation](docs/DATASET_SCHEMA_DOCUMENTATION.md)
+---
+
+## Documentation Links
+
+For deeper engineering specifications, refer to the documentation in [`docs/`](docs/):
+
 - [Analytics Formula Documentation](docs/ANALYTICS_FORMULA_DOCUMENTATION.md)
+- [Dataset Schema Documentation](docs/DATASET_SCHEMA_DOCUMENTATION.md)
 - [Feature Engineering Documentation](docs/FEATURE_ENGINEERING_DOCUMENTATION.md)
-- [ML Model Documentation](docs/ML_MODEL_DOCUMENTATION.md)
-- [Gemini Integration Documentation](docs/GEMINI_INTEGRATION_DOCUMENTATION.md)
+- [Machine Learning Model Documentation](docs/ML_MODEL_DOCUMENTATION.md)
+- [Gemini AI Integration Documentation](docs/GEMINI_INTEGRATION_DOCUMENTATION.md)
+
+---
+
+## Author & Acknowledgements
+
+- **Developer & Owner:** [Sujal Kansal](https://github.com/Sujalkan07)
+- **Primary Showcase:** Naveen Store (`STORE-001`), Lucknow, Uttar Pradesh, India
+- **Built With:** Spring Boot, Tailwind CSS, Chart.js & Google Gemini

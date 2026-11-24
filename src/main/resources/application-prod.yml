@@ -19,6 +19,15 @@ spring:
       hibernate:
         format_sql: false
 
+server:
+  servlet:
+    session:
+      cookie:
+        name: SANKHYA_SESSION
+        http-only: true
+        same-site: none
+        secure: true
+
 logging:
   level:
     com.sankhya: INFO

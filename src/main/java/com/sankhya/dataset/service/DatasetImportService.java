@@ -68,6 +68,9 @@ public class DatasetImportService {
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
 
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.sankhya.common.cache.AnalyticsCacheService analyticsCacheService;
+
     public DatasetImportService(DatasetImportRepository importRepository,
                                 DatasetRepository datasetRepository,
                                 ImportErrorRepository errorRepository,
@@ -300,6 +303,10 @@ public class DatasetImportService {
         }
         datasetImport.setCompletedAt(LocalDateTime.now());
         importRepository.save(datasetImport);
+
+        if (workspace != null && analyticsCacheService != null) {
+            analyticsCacheService.invalidateWorkspace(workspace.getId());
+        }
     }
 
     private int importUnifiedMart(Workspace workspace, Dataset dataset, DatasetImport datasetImport,

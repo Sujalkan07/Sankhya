@@ -6,14 +6,12 @@ import com.sankhya.ml.clustering.CustomerClusteringService;
 import com.sankhya.ml.entity.MLModelExecution;
 import com.sankhya.ml.forecasting.SalesForecastingService;
 import com.sankhya.ml.registry.ModelRegistryService;
+import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 @Service
 public class MLJobService {
@@ -63,6 +61,12 @@ public class MLJobService {
 
     public CompletableFuture<Void> trainAllModelsAsync(Long workspaceId) {
         String jobKey = "workspace-" + workspaceId;
+        String currentStatus = activeJobs.get(jobKey);
+        if ("RUNNING".equals(currentStatus)) {
+            log.warn("An ML training job is already running for workspace {}. Ignoring duplicate request.", workspaceId);
+            return CompletableFuture.completedFuture(null);
+        }
+
         activeJobs.put(jobKey, "RUNNING");
 
         return CompletableFuture.runAsync(() -> {
@@ -86,5 +90,19 @@ public class MLJobService {
 
     public String getJobStatus(Long workspaceId) {
         return activeJobs.getOrDefault("workspace-" + workspaceId, "IDLE");
+    }
+
+    @PreDestroy
+    public void shutdown() {
+        log.info("Shutting down MLJobService executor service...");
+        executorService.shutdown();
+        try {
+            if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
+                executorService.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            executorService.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
     }
 }

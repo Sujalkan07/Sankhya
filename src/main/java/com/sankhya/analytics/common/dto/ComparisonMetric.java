@@ -19,6 +19,7 @@ public class ComparisonMetric<T> {
         this(current, previous, current != null ? AnalyticsMathUtils.formatInr(current) : "₹0.00");
     }
 
+    @SuppressWarnings("unchecked")
     public ComparisonMetric(BigDecimal current, BigDecimal previous, String formattedCurrent) {
         this.currentValue = (T) (current != null ? current : BigDecimal.ZERO);
         this.previousValue = (T) (previous != null ? previous : BigDecimal.ZERO);
@@ -32,6 +33,7 @@ public class ComparisonMetric<T> {
         this.formattedDelta = (diff >= 0 ? "+" : "") + String.format("%.2f", diff);
     }
 
+    @SuppressWarnings("unchecked")
     public ComparisonMetric(long current, long previous, String formattedCurrent) {
         this.currentValue = (T) Long.valueOf(current);
         this.previousValue = (T) Long.valueOf(previous);

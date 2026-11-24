@@ -17,13 +17,15 @@ spring:
 
 server:
   port: ${SERVER_PORT:8080}
+  forward-headers-strategy: framework
   servlet:
     session:
       timeout: 60m
       cookie:
         name: SANKHYA_SESSION
         http-only: true
-        same-site: lax
+        same-site: none
+        secure: true
 
 # Reserved for future phases / ML & AI
 sankhya:
